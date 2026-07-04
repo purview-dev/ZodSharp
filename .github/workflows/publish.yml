@@ -1,0 +1,43 @@
+name: Publish NuGet
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          TAG=${GITHUB_REF#refs/tags/v}
+          echo "version=$TAG" >> $GITHUB_OUTPUT
+
+      - name: Restore
+        run: dotnet restore src/ZodSharp/ZodSharp.csproj
+
+      - name: Build (release)
+        run: dotnet build src/ZodSharp/ZodSharp.csproj -c Release --no-restore /p:Version=${{ steps.version.outputs.version }}
+
+      - name: Pack
+        run: dotnet pack src/ZodSharp/ZodSharp.csproj -c Release --no-build -o ./nupkg /p:PackageVersion=${{ steps.version.outputs.version }}
+
+      - name: Push to NuGet
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          dotnet nuget push "./nupkg/*.nupkg" \
+            --api-key "$NUGET_API_KEY" \
+            --source "https://api.nuget.org/v3/index.json" \
+            --skip-duplicate
+

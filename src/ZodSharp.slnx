@@ -1,0 +1,16 @@
+<Solution>
+	<Folder Name="/tests/">
+		<Project Path="tests/ZodSharp.PerformanceTests/ZodSharp.PerformanceTests.csproj" />
+	</Folder>
+	<Folder Name="/Solution Items/">
+		<File Path="../.editorconfig" />
+		<File Path="../Directory.Packages.props" />
+		<File Path="../global.json" />
+		<File Path="Directory.Build.props" />
+		<File Path="Directory.Build.targets" />
+	</Folder>
+	<Folder Name="/src/">
+		<Project Path="src/ZodSharp/ZodSharp.csproj" />
+		<Project Path="src/ZodSharp.SourceGenerators/ZodSharp.SourceGenerators.csproj" />
+	</Folder>
+</Solution>

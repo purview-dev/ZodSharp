@@ -1,0 +1,13 @@
+﻿<Project>
+	<PropertyGroup>
+		<TargetFramework>net9.0</TargetFramework>
+		<NamespacePrefix>ZodSharp</NamespacePrefix>
+		<IsPackable>false</IsPackable>
+		<ExcludePurviewTelemetry>true</ExcludePurviewTelemetry>
+		<ExcludeMSTelemetryExtension>true</ExcludeMSTelemetryExtension>
+		<UsePackageJsonVersion>None</UsePackageJsonVersion>
+		<RepositoryUrl>https://github.com/guinhx/ZodSharp</RepositoryUrl>
+	</PropertyGroup>
+
+	<Import Sdk="Purview.DotNetProjectSdk" Project="Sdk.props" />
+</Project>

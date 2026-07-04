@@ -1,0 +1,52 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFrameworks>net9.0;netstandard2.1</TargetFrameworks>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<DisableGenerateAssemblyInfoClass>true</DisableGenerateAssemblyInfoClass>
+		<IsPackable>true</IsPackable>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<IsPackable>True</IsPackable>
+		<PackageId>ZodSharp</PackageId>
+		<PackageVersion>1.0.0</PackageVersion>
+		<Description>A high-performance C# port of Zod schema validation library. Features zero-allocation validation, struct-based rules, fluent API, and source generator support for maximum performance.</Description>
+		<PackageTags>Zod Schema Validation C# TypeScript Port Validation Library Fluent API Zero-Allocation Performance</PackageTags>
+		<Authors>ZodSharp Contributors</Authors>
+		<PackageReleaseNotes>Initial release of ZodSharp - A high-performance C# port of Zod with zero-allocation optimizations.</PackageReleaseNotes>
+		<PackageProjectUrl>https://github.com/guinhx/ZodSharp</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/guinhx/ZodSharp</RepositoryUrl>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference
+			Include="../ZodSharp.SourceGenerators/ZodSharp.SourceGenerators.csproj"
+			PrivateAssets="all"
+			ReferenceOutputAssembly="false"
+			OutputItemType="Analyzer"
+		/>
+
+		<None
+			Include="../ZodSharp.SourceGenerators/bin/$(Configuration)/netstandard2.0/ZodSharp.SourceGenerators.dll"
+			Condition="Exists('../ZodSharp.SourceGenerators/bin/$(Configuration)/netstandard2.0/ZodSharp.SourceGenerators.dll')"
+			Pack="true"
+			PackagePath="analyzers/dotnet/cs"
+		/>
+	</ItemGroup>
+
+	<ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.1' ">
+		<PackageReference Include="System.Collections.Immutable" />
+		<PackageReference Include="System.Memory" />
+		<PackageReference Include="System.Threading.Tasks.Extensions" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Newtonsoft.Json" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="..\..\..\README.md" Pack="true" PackagePath="\" />
+	</ItemGroup>
+</Project>
