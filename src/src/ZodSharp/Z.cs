@@ -12,6 +12,7 @@ public static class Z
 	/// <summary>
 	/// Creates a string schema.
 	/// </summary>
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1720:Identifier contains type name")]
 	public static ZodString String() => new();
 
 	/// <summary>
@@ -49,6 +50,7 @@ public static class Z
 	/// <summary>
 	/// Creates an object schema builder.
 	/// </summary>
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1720:Identifier contains type name")]
 	public static ZodObjectBuilder Object() => new();
 
 	/// <summary>

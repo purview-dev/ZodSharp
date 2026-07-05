@@ -4,7 +4,7 @@ namespace ZodSharp.Rules;
 /// Validation rule for multiple-of check.
 /// Uses struct to avoid allocations.
 /// </summary>
-public readonly struct MultipleOfRule : Core.IValidationRule<double>
+public readonly record struct MultipleOfRule : Core.IValidationRule<double>
 {
 	readonly double _divisor;
 	readonly string? _message;
@@ -18,8 +18,9 @@ public readonly struct MultipleOfRule : Core.IValidationRule<double>
 	{
 		if (divisor == 0)
 			throw new ArgumentException("Divisor cannot be zero", nameof(divisor));
+
 		_divisor = divisor;
-		_message = message;
+		_message = message.OrNull();
 	}
 
 	/// <summary>
@@ -38,8 +39,6 @@ public readonly struct MultipleOfRule : Core.IValidationRule<double>
 	/// </summary>
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
-	public string GetErrorMessage(in double value)
-	{
-		return _message ?? $"Number must be a multiple of {_divisor}, but got {value}";
-	}
+	public string GetErrorMessage(in double value) =>
+		_message ?? $"Number must be a multiple of {_divisor}, but got {value}";
 }

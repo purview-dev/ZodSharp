@@ -1,8 +1,8 @@
 using BenchmarkDotNet.Attributes;
-using ZodSharp;
 using ZodSharp.Core;
+using ZodSharp.Schemas;
 
-namespace ZodSharp.Performance;
+namespace ZodSharp;
 
 /// <summary>
 /// Performance tests for object validation scenarios.
@@ -11,13 +11,16 @@ namespace ZodSharp.Performance;
 [SimpleJob(launchCount: 1, warmupCount: 3, iterationCount: 5)]
 public class ObjectPerformanceTests
 {
-	readonly IZodSchema<Dictionary<string, object?>, Dictionary<string, object?>> _simpleObjectSchema;
-	readonly IZodSchema<Dictionary<string, object?>, Dictionary<string, object?>> _mediumObjectSchema;
-	readonly IZodSchema<Dictionary<string, object?>, Dictionary<string, object?>> _complexObjectSchema;
+	readonly ZodObject _simpleObjectSchema;
+	readonly ZodObject _mediumObjectSchema;
+	readonly ZodObject _complexObjectSchema;
 
 	readonly Dictionary<string, object?> _simpleObject;
 	readonly Dictionary<string, object?> _mediumObject;
 	readonly Dictionary<string, object?> _complexObject;
+
+	static readonly string[] TagTestingValues = ["developer", "csharp", "dotnet", "performance"];
+	static readonly double[] ScoreTestingValues = [95.0, 87.0, 92.0];
 
 	public ObjectPerformanceTests()
 	{
@@ -64,7 +67,7 @@ public class ObjectPerformanceTests
 			{ "email", "john@example.com" },
 			{ "age", 30.0 },
 			{ "active", true },
-			{ "tags", new[] { "developer", "csharp", "dotnet" } },
+			{ "tags", TagTestingValues },
 		};
 
 		_complexObject = new Dictionary<string, object?>
@@ -79,8 +82,8 @@ public class ObjectPerformanceTests
 			{ "weight", 75.0 },
 			{ "active", true },
 			{ "verified", true },
-			{ "tags", new[] { "developer", "csharp", "dotnet", "performance" } },
-			{ "scores", new[] { 95.0, 87.0, 92.0 } },
+			{ "tags", TagTestingValues },
+			{ "scores", ScoreTestingValues },
 			{
 				"metadata",
 				new Dictionary<string, object?>
@@ -94,22 +97,16 @@ public class ObjectPerformanceTests
 	}
 
 	[Benchmark]
-	public ValidationResult<Dictionary<string, object?>> ValidateSimpleObject()
-	{
-		return _simpleObjectSchema.Validate(_simpleObject);
-	}
+	public ValidationResult<Dictionary<string, object?>> ValidateSimpleObject() =>
+		_simpleObjectSchema.Validate(_simpleObject);
 
 	[Benchmark]
-	public ValidationResult<Dictionary<string, object?>> ValidateMediumObject()
-	{
-		return _mediumObjectSchema.Validate(_mediumObject);
-	}
+	public ValidationResult<Dictionary<string, object?>> ValidateMediumObject() =>
+		_mediumObjectSchema.Validate(_mediumObject);
 
 	[Benchmark]
-	public ValidationResult<Dictionary<string, object?>> ValidateComplexObject()
-	{
-		return _complexObjectSchema.Validate(_complexObject);
-	}
+	public ValidationResult<Dictionary<string, object?>> ValidateComplexObject() =>
+		_complexObjectSchema.Validate(_complexObject);
 
 	[Benchmark]
 	public ValidationResult<Dictionary<string, object?>> ValidateComplexObjectInvalid()

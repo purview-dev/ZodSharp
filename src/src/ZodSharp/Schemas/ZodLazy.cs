@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using ZodSharp.Core;
 
 namespace ZodSharp.Schemas;
@@ -9,20 +8,17 @@ namespace ZodSharp.Schemas;
 /// Equivalent to Zod's lazy method.
 /// </summary>
 /// <typeparam name="T">The type being validated</typeparam>
-public class ZodLazy<T> : ZodType<T>
+/// <remarks>
+/// Initializes a new instance of the ZodLazy class.
+/// </remarks>
+/// <param name="schemaGetter">The function that gets the schema</param>
+public class ZodLazy<T>(Func<IZodSchema<T, T>> schemaGetter) : ZodType<T>
 {
-	readonly Func<IZodSchema<T, T>> _schemaGetter;
-	IZodSchema<T, T>? _cachedSchema;
+#if NETSTANDARD2_1_OR_GREATER
 	readonly object _lock = new();
-
-	/// <summary>
-	/// Initializes a new instance of the ZodLazy class.
-	/// </summary>
-	/// <param name="schemaGetter">The function that gets the schema</param>
-	public ZodLazy(Func<IZodSchema<T, T>> schemaGetter)
-	{
-		_schemaGetter = schemaGetter;
-	}
+#else
+	readonly Lock _lock = new();
+#endif
 
 	/// <summary>
 	/// Gets the inner schema, evaluating it lazily if needed.
@@ -31,18 +27,19 @@ public class ZodLazy<T> : ZodType<T>
 	{
 		get
 		{
-			if (_cachedSchema == null)
+			if (field == null)
 			{
 				lock (_lock)
 				{
-					if (_cachedSchema == null)
-					{
-						_cachedSchema = _schemaGetter();
-					}
+					#pragma warning disable CA1508 // Avoid dead conditional code
+					field ??= schemaGetter();
+#pragma warning restore CA1508 // Avoid dead conditional code
 				}
 			}
-			return _cachedSchema;
+
+			return field;
 		}
+		private set;
 	}
 
 	/// <summary>
@@ -50,8 +47,5 @@ public class ZodLazy<T> : ZodType<T>
 	/// </summary>
 	/// <param name="value">The value to validate</param>
 	/// <returns>A validation result</returns>
-	protected override ValidationResult<T> ParseInternal(T value)
-	{
-		return Schema.Validate(value);
-	}
+	protected override ValidationResult<T> ParseInternal(T value) => Schema.Validate(value);
 }

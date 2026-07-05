@@ -5,7 +5,7 @@ namespace ZodSharp.Rules;
 /// Uses struct to avoid allocations.
 /// </summary>
 /// <typeparam name="T">The numeric type</typeparam>
-public readonly struct MaxValueRule<T> : Core.IValidationRule<T>
+public readonly record struct MaxValueRule<T> : Core.IValidationRule<T>
 	where T : IComparable<T>
 {
 	readonly T _maxValue;
@@ -24,18 +24,12 @@ public readonly struct MaxValueRule<T> : Core.IValidationRule<T>
 	/// </summary>
 	/// <param name="value">The value to validate</param>
 	/// <returns>True if valid, false otherwise</returns>
-	public bool IsValid(in T value)
-	{
-		return value.CompareTo(_maxValue) <= 0;
-	}
+	public bool IsValid(in T value) => value.CompareTo(_maxValue) <= 0;
 
 	/// <summary>
 	/// Gets the error message for a failed validation.
 	/// </summary>
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
-	public string GetErrorMessage(in T value)
-	{
-		return $"Value must be at most {_maxValue}, but got {value}";
-	}
+	public string GetErrorMessage(in T value) => $"Value must be at most {_maxValue}, but got {value}";
 }

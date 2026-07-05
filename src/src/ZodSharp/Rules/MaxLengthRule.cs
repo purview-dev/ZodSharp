@@ -4,7 +4,7 @@ namespace ZodSharp.Rules;
 /// Validation rule for maximum string length.
 /// Uses struct to avoid allocations.
 /// </summary>
-public readonly struct MaxLengthRule : Core.IValidationRule<string>
+public readonly record struct MaxLengthRule : Core.IValidationRule<string>
 {
 	readonly int _maxLength;
 
@@ -22,18 +22,13 @@ public readonly struct MaxLengthRule : Core.IValidationRule<string>
 	/// </summary>
 	/// <param name="value">The value to validate</param>
 	/// <returns>True if valid, false otherwise</returns>
-	public bool IsValid(in string value)
-	{
-		return value.Length <= _maxLength;
-	}
+	public bool IsValid(in string value) => value.LengthOrDefault() <= _maxLength;
 
 	/// <summary>
 	/// Gets the error message for a failed validation.
 	/// </summary>
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
-	public string GetErrorMessage(in string value)
-	{
-		return $"String must be at most {_maxLength} characters long, but got {value.Length}";
-	}
+	public string GetErrorMessage(in string value) =>
+		$"String must be at most {_maxLength} characters long, but got {value.LengthOrDefault()}";
 }

@@ -6,20 +6,13 @@ namespace ZodSharp.Schemas;
 /// Schema wrapper that makes a value nullable.
 /// </summary>
 /// <typeparam name="T">The inner schema type</typeparam>
-public class ZodNullable<T> : ZodType<T?, T?>
+/// <remarks>
+/// Initializes a new instance of the ZodNullable class.
+/// </remarks>
+/// <param name="innerSchema">The inner schema</param>
+public class ZodNullable<T>(IZodSchema<T, T> innerSchema) : ZodType<T?, T?>
 	where T : struct
 {
-	readonly IZodSchema<T, T> _innerSchema;
-
-	/// <summary>
-	/// Initializes a new instance of the ZodNullable class.
-	/// </summary>
-	/// <param name="innerSchema">The inner schema</param>
-	public ZodNullable(IZodSchema<T, T> innerSchema)
-	{
-		_innerSchema = innerSchema;
-	}
-
 	/// <summary>
 	/// Parses and validates the value, allowing null.
 	/// </summary>
@@ -28,16 +21,11 @@ public class ZodNullable<T> : ZodType<T?, T?>
 	protected override ValidationResult<T?> ParseInternal(T? value)
 	{
 		if (value == null)
-		{
 			return ValidationResult<T?>.Success(null);
-		}
 
-		var result = _innerSchema.Validate(value.Value);
-		if (!result.IsSuccess)
-		{
-			return ValidationResult<T?>.Failure(result.Errors);
-		}
-
-		return ValidationResult<T?>.Success(result.Value);
+		var result = innerSchema.Validate(value.Value);
+		return result.IsSuccess
+			? ValidationResult<T?>.Success(result.Value)
+			: ValidationResult<T?>.Failure(result.Errors);
 	}
 }

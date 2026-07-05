@@ -4,7 +4,7 @@ namespace ZodSharp.Rules;
 /// Validation rule for safe integer check.
 /// Uses struct to avoid allocations.
 /// </summary>
-public readonly struct SafeIntegerRule : Core.IValidationRule<double>
+public readonly record struct SafeIntegerRule : Core.IValidationRule<double>
 {
 	readonly string? _message;
 
@@ -14,7 +14,7 @@ public readonly struct SafeIntegerRule : Core.IValidationRule<double>
 	/// <param name="message">Optional error message</param>
 	public SafeIntegerRule(string? message = null)
 	{
-		_message = message;
+		_message = message.OrNull();
 	}
 
 	/// <summary>
@@ -22,18 +22,13 @@ public readonly struct SafeIntegerRule : Core.IValidationRule<double>
 	/// </summary>
 	/// <param name="value">The value to validate</param>
 	/// <returns>True if valid, false otherwise</returns>
-	public bool IsValid(in double value)
-	{
-		return value == Math.Truncate(value) && value >= int.MinValue && value <= int.MaxValue;
-	}
+	public bool IsValid(in double value) =>
+		value == Math.Truncate(value) && value >= int.MinValue && value <= int.MaxValue;
 
 	/// <summary>
 	/// Gets the error message for a failed validation.
 	/// </summary>
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
-	public string GetErrorMessage(in double value)
-	{
-		return _message ?? $"Number must be a safe integer, but got {value}";
-	}
+	public string GetErrorMessage(in double value) => _message ?? $"Number must be a safe integer, but got {value}";
 }

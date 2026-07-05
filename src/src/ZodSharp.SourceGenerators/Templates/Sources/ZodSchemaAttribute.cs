@@ -1,11 +1,12 @@
-namespace ZodSharp.SourceGenerators;
+namespace ZodSharp;
 
 /// <summary>
 /// Attribute to mark a class for automatic schema generation.
 /// When applied to a class, a zero-allocation validator will be generated at compile time.
 /// </summary>
-[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Record)]
-public sealed class ZodSchemaAttribute : Attribute
+{{CodeGen}}
+[global::System.AttributeUsage(global::System.AttributeTargets.Class | global::System.AttributeTargets.Struct, AllowMultiple = false, Inherited = false)]
+sealed class ZodSchemaAttribute : global::System.Attribute
 {
 	/// <summary>
 	/// Optional name for the generated schema class.

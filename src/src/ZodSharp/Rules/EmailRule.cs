@@ -6,9 +6,12 @@ namespace ZodSharp.Rules;
 /// Validation rule for email format.
 /// Uses struct to avoid allocations.
 /// </summary>
-public readonly struct EmailRule : Core.IValidationRule<string>
+public readonly record struct EmailRule : Core.IValidationRule<string>
 {
-	static readonly Regex EmailRegex = new(
+	/// <summary>
+	/// Regular expression for validating email format.
+	/// </summary>
+	public static readonly Regex EmailRegex = new(
 		@"^[^@\s]+@[^@\s]+\.[^@\s]+$",
 		RegexOptions.Compiled | RegexOptions.IgnoreCase,
 		TimeSpan.FromMilliseconds(100)
@@ -19,18 +22,12 @@ public readonly struct EmailRule : Core.IValidationRule<string>
 	/// </summary>
 	/// <param name="value">The value to validate</param>
 	/// <returns>True if valid, false otherwise</returns>
-	public bool IsValid(in string value)
-	{
-		return EmailRegex.IsMatch(value);
-	}
+	public bool IsValid(in string value) => EmailRegex.IsMatch(value);
 
 	/// <summary>
 	/// Gets the error message for a failed validation.
 	/// </summary>
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
-	public string GetErrorMessage(in string value)
-	{
-		return $"Invalid email format: {value}";
-	}
+	public string GetErrorMessage(in string value) => $"Invalid email format: {value}";
 }

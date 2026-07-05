@@ -1,6 +1,4 @@
-using ZodSharp;
 using ZodSharp.Core;
-using ZodSharp.Examples;
 
 Console.WriteLine("=== Basic ZodSharp Examples ===\n");
 
@@ -17,7 +15,7 @@ var emailResult = emailSchema.Validate("user@example.com");
 Console.WriteLine($"Email validation: {(emailResult.IsSuccess ? "Success" : "Failed")}");
 
 var numbersSchema = Z.Array(Z.Number()).Min(1).Max(10);
-var numbersResult = numbersSchema.Validate(new[] { 1.0, 2.0, 3.0 });
+var numbersResult = numbersSchema.Validate([1.0, 2.0, 3.0]);
 Console.WriteLine($"Numbers validation: {(numbersResult.IsSuccess ? "Success" : "Failed")}");
 
 var userSchema = Z.Object()

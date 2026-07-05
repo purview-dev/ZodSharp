@@ -1,8 +1,8 @@
 using BenchmarkDotNet.Attributes;
-using ZodSharp;
 using ZodSharp.Core;
+using ZodSharp.Schemas;
 
-namespace ZodSharp.Performance;
+namespace ZodSharp;
 
 /// <summary>
 /// Basic performance tests for common validation scenarios.
@@ -11,10 +11,10 @@ namespace ZodSharp.Performance;
 [SimpleJob(launchCount: 1, warmupCount: 3, iterationCount: 5)]
 public class BasicPerformanceTests
 {
-	readonly IZodSchema<string, string> _stringSchema;
-	readonly IZodSchema<double, double> _numberSchema;
-	readonly IZodSchema<bool, bool> _booleanSchema;
-	readonly IZodSchema<string[], string[]> _arraySchema;
+	readonly ZodString _stringSchema;
+	readonly ZodNumber _numberSchema;
+	readonly ZodBoolean _booleanSchema;
+	readonly ZodArray<string> _arraySchema;
 
 	public BasicPerformanceTests()
 	{
@@ -25,28 +25,16 @@ public class BasicPerformanceTests
 	}
 
 	[Benchmark]
-	public ValidationResult<string> ValidateString()
-	{
-		return _stringSchema.Validate("user@example.com");
-	}
+	public ValidationResult<string> ValidateString() => _stringSchema.Validate("user@example.com");
 
 	[Benchmark]
-	public ValidationResult<double> ValidateNumber()
-	{
-		return _numberSchema.Validate(42.0);
-	}
+	public ValidationResult<double> ValidateNumber() => _numberSchema.Validate(42.0);
 
 	[Benchmark]
-	public ValidationResult<bool> ValidateBoolean()
-	{
-		return _booleanSchema.Validate(true);
-	}
+	public ValidationResult<bool> ValidateBoolean() => _booleanSchema.Validate(true);
 
 	[Benchmark]
-	public ValidationResult<string[]> ValidateStringArray()
-	{
-		return _arraySchema.Validate(new[] { "a", "b", "c", "d", "e" });
-	}
+	public ValidationResult<string[]> ValidateStringArray() => _arraySchema.Validate(["a", "b", "c", "d", "e"]);
 
 	[Benchmark]
 	public ValidationResult<string> ValidateStringWithMultipleRules()

@@ -2,24 +2,22 @@
 	<PropertyGroup>
 		<CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
 		<!-- Keep compiler-facing Roslyn packages aligned with the minimum SDK pinned in global.json so analyser ProjectReferences load on build machines. -->
-		<RoslynCompilerVersion>[4.8.0]</RoslynCompilerVersion>
-		<RoslynAnalyzersVersion>[3.3.4]</RoslynAnalyzersVersion>
-		<TUnitVersion>1.56.35</TUnitVersion>
+		<RoslynCompilerVersion>[5.0.0]</RoslynCompilerVersion>
+		<RoslynAnalyzersVersion>[5.6.0]</RoslynAnalyzersVersion>
+		<TUnitVersion>1.58.0</TUnitVersion>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageVersion Include="TUnit.Mocks" Version="$(TUnitVersion)" />
 		<PackageVersion Include="Bogus" Version="35.6.5" />
-		<PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.102" />
+		<PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.300" />
 		<PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="$(RoslynCompilerVersion)" />
 		<PackageVersion
 			Include="Microsoft.CodeAnalysis.Analyzers"
 			Version="$(RoslynAnalyzersVersion)"
 		/>
 		<PackageVersion Include="TUnit" Version="$(TUnitVersion)" />
-		<PackageVersion Include="System.Collections.Immutable" Version="8.0.0" />
-		<PackageVersion Include="System.Memory" Version="4.5.5" />
-		<PackageVersion Include="System.Threading.Tasks.Extensions" Version="4.6.3" />
-		<PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
-		<PackageVersion Include="BenchmarkDotNet" Version="0.13.12" />
+		<PackageVersion Include="System.Collections.Immutable" Version="10.0.9" />
+		<PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
+		<PackageVersion Include="BenchmarkDotNet" Version="0.15.8" />
 	</ItemGroup>
 </Project>

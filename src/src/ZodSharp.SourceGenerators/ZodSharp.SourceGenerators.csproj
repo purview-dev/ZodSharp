@@ -1,16 +1,22 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
+		<TargetFrameworks></TargetFrameworks>
 		<TargetFramework>netstandard2.0</TargetFramework>
 		<PackageId>ZodSharp.SourceGenerators</PackageId>
 		<PackageVersion>1.0.0</PackageVersion>
 		<IsPackable>false</IsPackable>
 		<Description>Source generators for ZodSharp - generates zero-allocation validators at compile time</Description>
-		<DisableGenerateAssemblyInfoClass>true</DisableGenerateAssemblyInfoClass>
+		<!--<DisableGenerateAssemblyInfoClass>true</DisableGenerateAssemblyInfoClass>-->
 		<EmbedUntrackedSources>false</EmbedUntrackedSources>
 		<GenerateDocumentationFile>false</GenerateDocumentationFile>
 		<EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
 		<IsRoslynComponent>true</IsRoslynComponent>
 	</PropertyGroup>
+
+	<ItemGroup>
+		<Compile Remove="Templates\Sources\**\*.cs" />
+		<EmbeddedResource Include="Templates\Sources\**\*.cs" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />

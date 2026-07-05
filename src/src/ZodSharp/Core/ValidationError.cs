@@ -1,10 +1,12 @@
+using System.Collections.Immutable;
+
 namespace ZodSharp.Core;
 
 /// <summary>
 /// Represents a validation error.
 /// Uses struct to minimize allocations.
 /// </summary>
-public readonly struct ValidationError
+public readonly record struct ValidationError
 {
 	/// <summary>
 	/// The error code (e.g., "invalid_type", "too_small", "too_big")
@@ -19,7 +21,7 @@ public readonly struct ValidationError
 	/// <summary>
 	/// The path to the field that failed validation (e.g., ["user", "email"])
 	/// </summary>
-	public string[] Path { get; }
+	public ImmutableArray<string> Path { get; }
 
 	/// <summary>
 	/// Additional error parameters
@@ -42,7 +44,7 @@ public readonly struct ValidationError
 	{
 		Code = code;
 		Message = message;
-		Path = path ?? Array.Empty<string>();
+		Path = path is null ? [] : ImmutableArray.Create(path);
 		Parameters = parameters;
 	}
 }

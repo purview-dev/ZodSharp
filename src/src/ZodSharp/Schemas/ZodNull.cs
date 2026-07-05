@@ -12,15 +12,10 @@ public class ZodNull : ZodType<object?>
 	/// </summary>
 	/// <param name="value">The value to validate</param>
 	/// <returns>A validation result</returns>
-	protected override ValidationResult<object?> ParseInternal(object? value)
-	{
-		if (value != null)
-		{
-			return ValidationResult<object?>.Failure(
-				new ValidationError("invalid_type", "Expected null, but got non-null value", Array.Empty<string>())
+	protected override ValidationResult<object?> ParseInternal(object? value) =>
+		value == null
+			? ValidationResult<object?>.Success(null)
+			: ValidationResult<object?>.Failure(
+				new ValidationError("invalid_type", "Expected null, but got non-null value", [])
 			);
-		}
-
-		return ValidationResult<object?>.Success(null);
-	}
 }

@@ -5,19 +5,12 @@ namespace ZodSharp.Schemas;
 /// <summary>
 /// Schema for union types (one of multiple schemas).
 /// </summary>
-public class ZodUnion : ZodType<object, object>
+/// <remarks>
+/// Initializes a new instance of the ZodUnion class.
+/// </remarks>
+/// <param name="options">The union options</param>
+public class ZodUnion(IReadOnlyList<IZodSchema<object, object>> options) : ZodType<object, object>
 {
-	readonly IReadOnlyList<IZodSchema<object, object>> _options;
-
-	/// <summary>
-	/// Initializes a new instance of the ZodUnion class.
-	/// </summary>
-	/// <param name="options">The union options</param>
-	public ZodUnion(IReadOnlyList<IZodSchema<object, object>> options)
-	{
-		_options = options;
-	}
-
 	/// <summary>
 	/// Parses and validates the value against union options.
 	/// </summary>
@@ -27,7 +20,7 @@ public class ZodUnion : ZodType<object, object>
 	{
 		var allErrors = new List<ValidationError>();
 
-		foreach (var option in _options)
+		foreach (var option in options)
 		{
 			var result = option.Validate(value);
 			if (result.IsSuccess)
@@ -42,7 +35,7 @@ public class ZodUnion : ZodType<object, object>
 			new ValidationError(
 				"invalid_union",
 				"Value does not match any of the union options",
-				Array.Empty<string>(),
+				[],
 				new Dictionary<string, object?> { { "errors", allErrors } }
 			)
 		);

@@ -1,8 +1,8 @@
 using BenchmarkDotNet.Attributes;
-using ZodSharp;
 using ZodSharp.Core;
+using ZodSharp.Schemas;
 
-namespace ZodSharp.Performance;
+namespace ZodSharp;
 
 /// <summary>
 /// Memory performance tests to identify allocation issues.
@@ -11,9 +11,9 @@ namespace ZodSharp.Performance;
 [SimpleJob(launchCount: 1, warmupCount: 3, iterationCount: 10)]
 public class MemoryPerformanceTests
 {
-	readonly IZodSchema<string, string> _stringSchema;
-	readonly IZodSchema<double[], double[]> _arraySchema;
-	readonly IZodSchema<Dictionary<string, object?>, Dictionary<string, object?>> _objectSchema;
+	readonly ZodString _stringSchema;
+	readonly ZodArray<double> _arraySchema;
+	readonly ZodObject _objectSchema;
 
 	public MemoryPerformanceTests()
 	{
@@ -23,10 +23,7 @@ public class MemoryPerformanceTests
 	}
 
 	[Benchmark(Baseline = true)]
-	public ValidationResult<string> ValidateString_Allocations()
-	{
-		return _stringSchema.Validate("user@example.com");
-	}
+	public ValidationResult<string> ValidateString_Allocations() => _stringSchema.Validate("user@example.com");
 
 	[Benchmark]
 	public ValidationResult<double[]> ValidateArray_Allocations()

@@ -10,24 +10,19 @@ namespace ZodSharp.Schemas;
 /// </summary>
 public class ZodString : ZodType<string>
 {
-	static readonly string[] EmptyPath = Array.Empty<string>();
+	static readonly string[] EmptyPath = [];
 
 	/// <summary>
 	/// Parses and validates a string value.
 	/// </summary>
 	/// <param name="value">The value to validate</param>
 	/// <returns>A validation result</returns>
-	protected override ValidationResult<string> ParseInternal(string value)
-	{
-		if (value == null)
-		{
-			return ValidationResult<string>.Failure(
+	protected override ValidationResult<string> ParseInternal(string value) =>
+		value == null
+			? ValidationResult<string>.Failure(
 				new ValidationError("invalid_type", "Expected string, but got null", EmptyPath)
-			);
-		}
-
-		return ValidationResult<string>.Success(value);
-	}
+			)
+			: ValidationResult<string>.Success(value);
 
 	/// <summary>
 	/// Validates a ReadOnlySpan of characters without allocating a string.
@@ -163,6 +158,7 @@ public class ZodString : ZodType<string>
 	/// Transforms the string to lowercase.
 	/// </summary>
 	/// <returns>A new schema that transforms the value</returns>
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1308:Normalize strings to uppercase")]
 	public ZodString ToLower()
 	{
 		var transform = Transform(s => s.ToLowerInvariant());
@@ -189,18 +185,8 @@ public class ZodString : ZodType<string>
 		return new ZodStringWrapper(transform);
 	}
 
-	class ZodStringWrapper : ZodString
+	class ZodStringWrapper(ZodTransform<string, string> transform) : ZodString
 	{
-		readonly ZodTransform<string, string> _transform;
-
-		public ZodStringWrapper(ZodTransform<string, string> transform)
-		{
-			_transform = transform;
-		}
-
-		protected override ValidationResult<string> ParseInternal(string value)
-		{
-			return _transform.Validate(value);
-		}
+		protected override ValidationResult<string> ParseInternal(string value) => transform.Validate(value);
 	}
 }

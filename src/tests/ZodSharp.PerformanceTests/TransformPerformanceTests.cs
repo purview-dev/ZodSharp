@@ -1,8 +1,8 @@
 using BenchmarkDotNet.Attributes;
-using ZodSharp;
 using ZodSharp.Core;
+using ZodSharp.Schemas;
 
-namespace ZodSharp.Performance;
+namespace ZodSharp;
 
 /// <summary>
 /// Performance tests for transform operations.
@@ -11,10 +11,10 @@ namespace ZodSharp.Performance;
 [SimpleJob(launchCount: 1, warmupCount: 3, iterationCount: 5)]
 public class TransformPerformanceTests
 {
-	readonly IZodSchema<string, string> _toLowerSchema;
-	readonly IZodSchema<string, string> _toUpperSchema;
-	readonly IZodSchema<string, string> _trimSchema;
-	readonly IZodSchema<string, string> _chainedTransformSchema;
+	readonly ZodString _toLowerSchema;
+	readonly ZodString _toUpperSchema;
+	readonly ZodString _trimSchema;
+	readonly ZodString _chainedTransformSchema;
 
 	public TransformPerformanceTests()
 	{
@@ -25,28 +25,16 @@ public class TransformPerformanceTests
 	}
 
 	[Benchmark]
-	public ValidationResult<string> TransformToLower()
-	{
-		return _toLowerSchema.Validate("HELLO WORLD");
-	}
+	public ValidationResult<string> TransformToLower() => _toLowerSchema.Validate("HELLO WORLD");
 
 	[Benchmark]
-	public ValidationResult<string> TransformToUpper()
-	{
-		return _toUpperSchema.Validate("hello world");
-	}
+	public ValidationResult<string> TransformToUpper() => _toUpperSchema.Validate("hello world");
 
 	[Benchmark]
-	public ValidationResult<string> TransformTrim()
-	{
-		return _trimSchema.Validate("  hello world  ");
-	}
+	public ValidationResult<string> TransformTrim() => _trimSchema.Validate("  hello world  ");
 
 	[Benchmark]
-	public ValidationResult<string> TransformChained()
-	{
-		return _chainedTransformSchema.Validate("  HELLO WORLD  ");
-	}
+	public ValidationResult<string> TransformChained() => _chainedTransformSchema.Validate("  HELLO WORLD  ");
 
 	[Benchmark]
 	public ValidationResult<string> TransformWithValidation()

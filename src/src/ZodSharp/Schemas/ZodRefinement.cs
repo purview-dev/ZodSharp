@@ -7,25 +7,14 @@ namespace ZodSharp.Schemas;
 /// Equivalent to Zod's refine method.
 /// </summary>
 /// <typeparam name="T">The type being validated</typeparam>
-public class ZodRefinement<T> : ZodType<T>
+/// <remarks>
+/// Initializes a new instance of the ZodRefinement class.
+/// </remarks>
+/// <param name="baseSchema">The base schema</param>
+/// <param name="refinement">The refinement function</param>
+/// <param name="message">Optional error message</param>
+public class ZodRefinement<T>(IZodSchema<T> baseSchema, Func<T, bool> refinement, string? message = null) : ZodType<T>
 {
-	readonly IZodSchema<T> _baseSchema;
-	readonly Func<T, bool> _refinement;
-	readonly string? _message;
-
-	/// <summary>
-	/// Initializes a new instance of the ZodRefinement class.
-	/// </summary>
-	/// <param name="baseSchema">The base schema</param>
-	/// <param name="refinement">The refinement function</param>
-	/// <param name="message">Optional error message</param>
-	public ZodRefinement(IZodSchema<T> baseSchema, Func<T, bool> refinement, string? message = null)
-	{
-		_baseSchema = baseSchema;
-		_refinement = refinement;
-		_message = message;
-	}
-
 	/// <summary>
 	/// Parses and validates the value with refinement.
 	/// </summary>
@@ -33,19 +22,15 @@ public class ZodRefinement<T> : ZodType<T>
 	/// <returns>A validation result</returns>
 	protected override ValidationResult<T> ParseInternal(T value)
 	{
-		var baseResult = _baseSchema.Validate(value);
+		var baseResult = baseSchema.Validate(value);
 		if (!baseResult.IsSuccess)
-		{
 			return baseResult;
-		}
 
-		if (!_refinement(baseResult.Value!))
-		{
-			return ValidationResult<T>.Failure(
-				new ValidationError("refinement_failed", _message ?? "Custom validation failed", Array.Empty<string>())
+		// On success...
+		return refinement(baseResult.Value!)
+			? ValidationResult<T>.Success(baseResult.Value!)
+			: ValidationResult<T>.Failure(
+				new ValidationError("refinement_failed", message ?? "Custom validation failed", [])
 			);
-		}
-
-		return ValidationResult<T>.Success(baseResult.Value!);
 	}
 }

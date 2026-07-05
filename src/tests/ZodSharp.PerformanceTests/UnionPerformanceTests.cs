@@ -1,8 +1,8 @@
 using BenchmarkDotNet.Attributes;
-using ZodSharp;
 using ZodSharp.Core;
+using ZodSharp.Schemas;
 
-namespace ZodSharp.Performance;
+namespace ZodSharp;
 
 /// <summary>
 /// Performance tests for union and discriminated union scenarios.
@@ -11,11 +11,13 @@ namespace ZodSharp.Performance;
 [SimpleJob(launchCount: 1, warmupCount: 3, iterationCount: 5)]
 public class UnionPerformanceTests
 {
-	readonly IZodSchema<object, object> _unionSchema;
-	readonly IZodSchema<object, object> _discriminatedUnionSchema;
+	readonly ZodUnion _unionSchema;
+	readonly ZodDiscriminatedUnion _discriminatedUnionSchema;
 
 	readonly Dictionary<string, object?> _discriminatedObject1;
 	readonly Dictionary<string, object?> _discriminatedObject2;
+
+	static readonly string[] PermissionTestValues = ["read", "write", "delete"];
 
 	public UnionPerformanceTests()
 	{
@@ -57,78 +59,51 @@ public class UnionPerformanceTests
 		{
 			{ "type", "admin" },
 			{ "name", "Admin" },
-			{ "permissions", new[] { "read", "write", "delete" } },
+			{ "permissions", PermissionTestValues },
 		};
 	}
 
-	class SchemaWrapper<T> : IZodSchema<object, object>
+	sealed class SchemaWrapper<T>(IZodSchema<T, T> inner) : IZodSchema<object, object>
 	{
-		readonly IZodSchema<T, T> _inner;
-
-		public SchemaWrapper(IZodSchema<T, T> inner)
-		{
-			_inner = inner;
-		}
-
 		public ValidationResult<object> Validate(object value)
 		{
 			if (value is T typedValue)
 			{
-				var result = _inner.Validate(typedValue);
-				if (result.IsSuccess)
-				{
-					return ValidationResult<object>.Success(result.Value!);
-				}
-				return ValidationResult<object>.Failure(result.Errors);
+				var result = inner.Validate(typedValue);
+				return result.IsSuccess
+					? ValidationResult<object>.Success(result.Value!)
+					: ValidationResult<object>.Failure(result.Errors);
 			}
+
 			return ValidationResult<object>.Failure(
 				new ValidationError(
 					"invalid_type",
 					$"Expected {typeof(T).Name}, but got {value?.GetType().Name ?? "null"}",
-					Array.Empty<string>()
+					[]
 				)
 			);
 		}
 
-		public ValueTask<ValidationResult<object>> ValidateAsync(object value)
-		{
-			return new ValueTask<ValidationResult<object>>(Validate(value));
-		}
+		public ValueTask<ValidationResult<object>> ValidateAsync(object value) => new(Validate(value));
 	}
 
 	[Benchmark]
-	public ValidationResult<object> ValidateUnion_String()
-	{
-		return _unionSchema.Validate("user@example.com");
-	}
+	public ValidationResult<object> ValidateUnion_String() => _unionSchema.Validate("user@example.com");
 
 	[Benchmark]
-	public ValidationResult<object> ValidateUnion_Number()
-	{
-		return _unionSchema.Validate(42.0);
-	}
+	public ValidationResult<object> ValidateUnion_Number() => _unionSchema.Validate(42.0);
 
 	[Benchmark]
-	public ValidationResult<object> ValidateUnion_Boolean()
-	{
-		return _unionSchema.Validate(true);
-	}
+	public ValidationResult<object> ValidateUnion_Boolean() => _unionSchema.Validate(true);
 
 	[Benchmark]
-	public ValidationResult<object> ValidateDiscriminatedUnion_FirstOption()
-	{
-		return _discriminatedUnionSchema.Validate(_discriminatedObject1);
-	}
+	public ValidationResult<object> ValidateDiscriminatedUnion_FirstOption() =>
+		_discriminatedUnionSchema.Validate(_discriminatedObject1);
 
 	[Benchmark]
-	public ValidationResult<object> ValidateDiscriminatedUnion_SecondOption()
-	{
-		return _discriminatedUnionSchema.Validate(_discriminatedObject2);
-	}
+	public ValidationResult<object> ValidateDiscriminatedUnion_SecondOption() =>
+		_discriminatedUnionSchema.Validate(_discriminatedObject2);
 
 	[Benchmark]
-	public ValidationResult<object> ValidateUnion_Invalid()
-	{
-		return _unionSchema.Validate("invalid");
-	}
+	public ValidationResult<object> ValidateUnion_Invalid() => _unionSchema.Validate("invalid");
 }

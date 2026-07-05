@@ -1,8 +1,8 @@
 using BenchmarkDotNet.Attributes;
-using ZodSharp;
 using ZodSharp.Core;
+using ZodSharp.Schemas;
 
-namespace ZodSharp.Performance;
+namespace ZodSharp;
 
 /// <summary>
 /// Performance tests for array validation scenarios with varying sizes.
@@ -11,10 +11,10 @@ namespace ZodSharp.Performance;
 [SimpleJob(launchCount: 1, warmupCount: 3, iterationCount: 5)]
 public class ArrayPerformanceTests
 {
-	readonly IZodSchema<string[], string[]> _smallArraySchema;
-	readonly IZodSchema<string[], string[]> _mediumArraySchema;
-	readonly IZodSchema<string[], string[]> _largeArraySchema;
-	readonly IZodSchema<double[], double[]> _numberArraySchema;
+	readonly ZodArray<string> _smallArraySchema;
+	readonly ZodArray<string> _mediumArraySchema;
+	readonly ZodArray<string> _largeArraySchema;
+	readonly ZodArray<double> _numberArraySchema;
 
 	readonly string[] _smallArray;
 	readonly string[] _mediumArray;
@@ -28,35 +28,23 @@ public class ArrayPerformanceTests
 		_largeArraySchema = Z.Array(Z.String().Min(1).Max(50)).Min(1).Max(1000);
 		_numberArraySchema = Z.Array(Z.Number().Min(0).Max(100).Int()).Min(1).Max(1000);
 
-		_smallArray = Enumerable.Range(1, 10).Select(i => $"item{i}").ToArray();
-		_mediumArray = Enumerable.Range(1, 100).Select(i => $"user{i}@example.com").ToArray();
-		_largeArray = Enumerable.Range(1, 1000).Select(i => $"item{i}").ToArray();
-		_numberArray = Enumerable.Range(1, 1000).Select(i => (double)i).ToArray();
+		_smallArray = [.. Enumerable.Range(1, 10).Select(i => $"item{i}")];
+		_mediumArray = [.. Enumerable.Range(1, 100).Select(i => $"user{i}@example.com")];
+		_largeArray = [.. Enumerable.Range(1, 1000).Select(i => $"item{i}")];
+		_numberArray = [.. Enumerable.Range(1, 1000).Select(i => (double)i)];
 	}
 
 	[Benchmark]
-	public ValidationResult<string[]> ValidateSmallArray()
-	{
-		return _smallArraySchema.Validate(_smallArray);
-	}
+	public ValidationResult<string[]> ValidateSmallArray() => _smallArraySchema.Validate(_smallArray);
 
 	[Benchmark]
-	public ValidationResult<string[]> ValidateMediumArray()
-	{
-		return _mediumArraySchema.Validate(_mediumArray);
-	}
+	public ValidationResult<string[]> ValidateMediumArray() => _mediumArraySchema.Validate(_mediumArray);
 
 	[Benchmark]
-	public ValidationResult<string[]> ValidateLargeArray()
-	{
-		return _largeArraySchema.Validate(_largeArray);
-	}
+	public ValidationResult<string[]> ValidateLargeArray() => _largeArraySchema.Validate(_largeArray);
 
 	[Benchmark]
-	public ValidationResult<double[]> ValidateNumberArray()
-	{
-		return _numberArraySchema.Validate(_numberArray);
-	}
+	public ValidationResult<double[]> ValidateNumberArray() => _numberArraySchema.Validate(_numberArray);
 
 	[Benchmark]
 	public ValidationResult<string[]> ValidateLargeArrayWithComplexSchema()
@@ -70,7 +58,7 @@ public class ArrayPerformanceTests
 	[Benchmark]
 	public ValidationResult<string[]> ValidateLargeArrayInvalid()
 	{
-		var invalid = _largeArray.Concat(new[] { "" }).ToArray();
+		var invalid = _largeArray.Concat([""]).ToArray();
 		return _largeArraySchema.Validate(invalid);
 	}
 }

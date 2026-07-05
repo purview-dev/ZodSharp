@@ -1,13 +1,10 @@
-using System.ComponentModel.DataAnnotations;
-using ZodSharp;
 using ZodSharp.Core;
 using ZodSharp.Expressions;
-using ZodSharp.Json;
-using ZodSharp.SourceGenerators;
+using ZodSharp.Schemas;
 
-namespace ZodSharp.Examples;
+namespace ZodSharp;
 
-public static class AdvancedExamples
+static class AdvancedExamples
 {
 	public static void RunAll()
 	{
@@ -27,7 +24,7 @@ public static class AdvancedExamples
 		SourceGeneratorExamples();
 	}
 
-	private static void StringAdvancedExamples()
+	static void StringAdvancedExamples()
 	{
 		Console.WriteLine("--- String Advanced Methods ---");
 
@@ -66,7 +63,7 @@ public static class AdvancedExamples
 		Console.WriteLine();
 	}
 
-	private static void NumberAdvancedExamples()
+	static void NumberAdvancedExamples()
 	{
 		Console.WriteLine("--- Number Advanced Methods ---");
 
@@ -93,7 +90,7 @@ public static class AdvancedExamples
 		Console.WriteLine();
 	}
 
-	private static void TransformExamples()
+	static void TransformExamples()
 	{
 		Console.WriteLine("--- Transform Examples ---");
 
@@ -112,7 +109,7 @@ public static class AdvancedExamples
 		Console.WriteLine();
 	}
 
-	private static void RefinementExamples()
+	static void RefinementExamples()
 	{
 		Console.WriteLine("--- Refinement Examples ---");
 
@@ -132,7 +129,7 @@ public static class AdvancedExamples
 		Console.WriteLine();
 	}
 
-	private static void DiscriminatedUnionExamples()
+	static void DiscriminatedUnionExamples()
 	{
 		Console.WriteLine("--- Discriminated Union Examples ---");
 
@@ -154,12 +151,12 @@ public static class AdvancedExamples
 		Console.WriteLine();
 	}
 
-	private static void LazyEvaluationExamples()
+	static void LazyEvaluationExamples()
 	{
 		Console.WriteLine("--- Lazy Evaluation Examples ---");
 
 		ZodLazy<Dictionary<string, object?>>? categorySchema = null;
-		categorySchema = Z.Lazy<Dictionary<string, object?>>(() =>
+		categorySchema = Z.Lazy(() =>
 			Z.Object().Field("name", Z.String()).Field("subcategories", Z.Array(categorySchema!)).Build()
 		);
 
@@ -185,7 +182,7 @@ public static class AdvancedExamples
 		Console.WriteLine();
 	}
 
-	private static void SpanValidationExamples()
+	static void SpanValidationExamples()
 	{
 		Console.WriteLine("--- Span<T> Validation Examples ---");
 
@@ -202,7 +199,7 @@ public static class AdvancedExamples
 		Console.WriteLine();
 	}
 
-	private static void CompiledValidatorExamples()
+	static void CompiledValidatorExamples()
 	{
 		Console.WriteLine("--- Compiled Validator Examples ---");
 
@@ -226,7 +223,7 @@ public static class AdvancedExamples
 		Console.WriteLine();
 	}
 
-	private static void JsonIntegrationExamples()
+	static void JsonIntegrationExamples()
 	{
 		Console.WriteLine("--- JSON Integration Examples ---");
 
@@ -256,7 +253,7 @@ public static class AdvancedExamples
 		Console.WriteLine();
 	}
 
-	private static void DefaultValueExamples()
+	static void DefaultValueExamples()
 	{
 		Console.WriteLine("--- Default Value Examples ---");
 
@@ -271,7 +268,7 @@ public static class AdvancedExamples
 		Console.WriteLine();
 	}
 
-	private static void SchemaCachingExamples()
+	static void SchemaCachingExamples()
 	{
 		Console.WriteLine("--- Schema Caching Examples ---");
 
@@ -286,7 +283,7 @@ public static class AdvancedExamples
 		Console.WriteLine();
 	}
 
-	private static void SourceGeneratorExamples()
+	static void SourceGeneratorExamples()
 	{
 		Console.WriteLine("--- Source Generator Examples ---");
 
@@ -324,19 +321,4 @@ public static class AdvancedExamples
 
 		Console.WriteLine();
 	}
-}
-
-[ZodSchema]
-public class User
-{
-	[Required]
-	[StringLength(50, MinimumLength = 3)]
-	public string Name { get; set; } = string.Empty;
-
-	[Required]
-	[Range(0, 120)]
-	public int Age { get; set; }
-
-	[EmailAddress]
-	public string? Email { get; set; }
 }

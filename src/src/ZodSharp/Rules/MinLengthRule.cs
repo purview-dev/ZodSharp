@@ -4,7 +4,7 @@ namespace ZodSharp.Rules;
 /// Validation rule for minimum string length.
 /// Uses struct to avoid allocations.
 /// </summary>
-public readonly struct MinLengthRule : Core.IValidationRule<string>
+public readonly record struct MinLengthRule : Core.IValidationRule<string>
 {
 	readonly int _minLength;
 
@@ -22,18 +22,13 @@ public readonly struct MinLengthRule : Core.IValidationRule<string>
 	/// </summary>
 	/// <param name="value">The value to validate</param>
 	/// <returns>True if valid, false otherwise</returns>
-	public bool IsValid(in string value)
-	{
-		return value.Length >= _minLength;
-	}
+	public bool IsValid(in string value) => value.LengthOrDefault() >= _minLength;
 
 	/// <summary>
 	/// Gets the error message for a failed validation.
 	/// </summary>
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
-	public string GetErrorMessage(in string value)
-	{
-		return $"String must be at least {_minLength} characters long, but got {value.Length}";
-	}
+	public string GetErrorMessage(in string value) =>
+		$"String must be at least {_minLength} characters long, but got {value.LengthOrDefault()}";
 }

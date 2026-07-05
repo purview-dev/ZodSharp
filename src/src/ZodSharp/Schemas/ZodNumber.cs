@@ -9,24 +9,19 @@ namespace ZodSharp.Schemas;
 /// </summary>
 public class ZodNumber : ZodType<double>
 {
-	static readonly string[] EmptyPath = Array.Empty<string>();
+	static readonly string[] EmptyPath = [];
 
 	/// <summary>
 	/// Parses and validates a number value.
 	/// </summary>
 	/// <param name="value">The value to validate</param>
 	/// <returns>A validation result</returns>
-	protected override ValidationResult<double> ParseInternal(double value)
-	{
-		if (double.IsNaN(value))
-		{
-			return ValidationResult<double>.Failure(
+	protected override ValidationResult<double> ParseInternal(double value) =>
+		double.IsNaN(value)
+			? ValidationResult<double>.Failure(
 				new ValidationError("invalid_type", "Expected number, but got NaN", EmptyPath)
-			);
-		}
-
-		return ValidationResult<double>.Success(value);
-	}
+			)
+			: ValidationResult<double>.Success(value);
 
 	/// <summary>
 	/// Adds a minimum value validation.
@@ -54,6 +49,7 @@ public class ZodNumber : ZodType<double>
 	/// Adds an integer validation (must be a whole number).
 	/// </summary>
 	/// <returns>This schema for method chaining</returns>
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1720:Identifier contains type name")]
 	public ZodNumber Int()
 	{
 		AddRule(new IntRule());

@@ -1,6 +1,6 @@
 ﻿<Project>
 	<PropertyGroup>
-		<TargetFramework>net9.0</TargetFramework>
+		<TargetFrameworks>netstandard2.1;net10.0;</TargetFrameworks>
 		<NamespacePrefix>ZodSharp</NamespacePrefix>
 		<IsPackable>false</IsPackable>
 		<ExcludePurviewTelemetry>true</ExcludePurviewTelemetry>
@@ -9,5 +9,19 @@
 		<RepositoryUrl>https://github.com/guinhx/ZodSharp</RepositoryUrl>
 	</PropertyGroup>
 
+	<PropertyGroup>
+		<!--
+			- CA1510 is because of .NET Standard, we can't use APIs such as
+				ArgumentNullException.ThrowIfNull()
+		-->
+		<NoWarn>$(NoWarn);CA1510;</NoWarn>
+	</PropertyGroup>
+
 	<Import Sdk="Purview.DotNetProjectSdk" Project="Sdk.props" />
+
+	<PropertyGroup Condition="'$(IsTestProject)' == 'true'">
+		<!-- Test projects aren't executable so we need to remove .NET Standard 2.1 -->
+		<TargetFrameworks></TargetFrameworks>
+		<TargetFramework>net10.0</TargetFramework>
+	</PropertyGroup>
 </Project>

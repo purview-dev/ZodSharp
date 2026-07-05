@@ -6,20 +6,13 @@ namespace ZodSharp.Schemas;
 /// Schema wrapper that makes a value optional.
 /// </summary>
 /// <typeparam name="T">The inner schema type</typeparam>
-public class ZodOptional<T> : ZodType<T?, T?>
+/// <remarks>
+/// Initializes a new instance of the ZodOptional class.
+/// </remarks>
+/// <param name="innerSchema">The inner schema</param>
+public class ZodOptional<T>(IZodSchema<T, T> innerSchema) : ZodType<T?, T?>
 	where T : class
 {
-	readonly IZodSchema<T, T> _innerSchema;
-
-	/// <summary>
-	/// Initializes a new instance of the ZodOptional class.
-	/// </summary>
-	/// <param name="innerSchema">The inner schema</param>
-	public ZodOptional(IZodSchema<T, T> innerSchema)
-	{
-		_innerSchema = innerSchema;
-	}
-
 	/// <summary>
 	/// Parses and validates the value, allowing null.
 	/// </summary>
@@ -28,16 +21,11 @@ public class ZodOptional<T> : ZodType<T?, T?>
 	protected override ValidationResult<T?> ParseInternal(T? value)
 	{
 		if (value == null)
-		{
 			return ValidationResult<T?>.Success(null);
-		}
 
-		var result = _innerSchema.Validate(value);
-		if (!result.IsSuccess)
-		{
-			return ValidationResult<T?>.Failure(result.Errors);
-		}
-
-		return ValidationResult<T?>.Success(result.Value);
+		var result = innerSchema.Validate(value);
+		return result.IsSuccess
+			? ValidationResult<T?>.Success(result.Value)
+			: ValidationResult<T?>.Failure(result.Errors);
 	}
 }

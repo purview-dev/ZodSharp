@@ -4,7 +4,7 @@ namespace ZodSharp.Rules;
 /// Validation rule for string suffix.
 /// Uses struct to avoid allocations.
 /// </summary>
-public readonly struct EndsWithRule : Core.IValidationRule<string>
+public readonly record struct EndsWithRule : Core.IValidationRule<string>
 {
 	readonly string _suffix;
 	readonly string? _message;
@@ -17,7 +17,7 @@ public readonly struct EndsWithRule : Core.IValidationRule<string>
 	public EndsWithRule(string suffix, string? message = null)
 	{
 		_suffix = suffix ?? throw new ArgumentNullException(nameof(suffix));
-		_message = message;
+		_message = message.OrNull();
 	}
 
 	/// <summary>
@@ -25,21 +25,13 @@ public readonly struct EndsWithRule : Core.IValidationRule<string>
 	/// </summary>
 	/// <param name="value">The value to validate</param>
 	/// <returns>True if valid, false otherwise</returns>
-	public bool IsValid(in string value)
-	{
-		if (value == null)
-			return false;
-
-		return value.EndsWith(_suffix, StringComparison.Ordinal);
-	}
+	public bool IsValid(in string value) => value != null && value.EndsWith(_suffix, StringComparison.Ordinal);
 
 	/// <summary>
 	/// Gets the error message for a failed validation.
 	/// </summary>
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
-	public string GetErrorMessage(in string value)
-	{
-		return _message ?? $"String must end with '{_suffix}', but got '{value}'";
-	}
+	public string GetErrorMessage(in string value) =>
+		_message ?? $"String must end with '{_suffix}', but got '{value}'";
 }

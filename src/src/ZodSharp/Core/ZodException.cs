@@ -27,7 +27,7 @@ public class ZodException : Exception
 	/// </summary>
 	/// <param name="errors">The validation errors</param>
 	public ZodException(IEnumerable<ValidationError> errors)
-		: this(errors.ToImmutableArray()) { }
+		: this([.. errors]) { }
 
 	/// <summary>
 	/// Returns a string representation of the exception including all validation errors.
@@ -42,4 +42,15 @@ public class ZodException : Exception
 
 		return $"{Message}\n{string.Join("\n", errorMessages)}";
 	}
+
+	/// <inheritdoc/>
+	public ZodException() { }
+
+	/// <inheritdoc/>
+	public ZodException(string message)
+		: base(message) { }
+
+	/// <inheritdoc/>
+	public ZodException(string message, Exception innerException)
+		: base(message, innerException) { }
 }

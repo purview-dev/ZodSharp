@@ -11,10 +11,7 @@ static class ZeroAllocationHelpers
 	/// <summary>
 	/// Rents an array from the pool and returns it when done.
 	/// </summary>
-	public static T[] RentArray<T>(int minimumLength)
-	{
-		return ArrayPool<T>.Shared.Rent(minimumLength);
-	}
+	public static T[] RentArray<T>(int minimumLength) => ArrayPool<T>.Shared.Rent(minimumLength);
 
 	/// <summary>
 	/// Returns an array to the pool.
@@ -38,6 +35,7 @@ static class ZeroAllocationHelpers
 			if (predicate(items[i]))
 				count++;
 		}
+
 		return count;
 	}
 

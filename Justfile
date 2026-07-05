@@ -1,6 +1,8 @@
 set quiet
 
-solution := "src/ZodSharp.slnx"
+root_folder := "src"
+solution := root_folder / "ZodSharp.slnx"
+perf_tests_project := root_folder / "tests" / "ZodSharp.PerformanceTests" / "ZodSharp.PerformanceTests.csproj"
 build_configuration := "Release"
 artifacts_folder := "./artifacts"
 default_test_filter:= "/*/*/*/*/"
@@ -14,8 +16,13 @@ build solutionOrProject=solution configuration=build_configuration:
     echo "Building {{ BLUE }}{{ solutionOrProject }}{{ NORMAL }} with configuration {{ YELLOW }}{{ configuration }}{{ NORMAL }}"
     dotnet build {{ solutionOrProject }} -c {{ configuration }}
 
+# Run the performance tests with the specified configuration, defaulting to "Release"
+perf-tests configuration=build_configuration *args:
+    echo "Running performance tests for {{ BLUE }}{{ perf_tests_project }}{{ NORMAL }} with configuration {{ YELLOW }}{{ configuration }}{{ NORMAL }}"
+    dotnet run --project {{ perf_tests_project }} -c {{ configuration }} {{ args }}
+
 # Run tests with the specified configuration, defaulting to "Release"
-test solutionOrProject=solution configuration=build_configuration filter=default_test_filter *args:
+tests solutionOrProject=solution configuration=build_configuration filter=default_test_filter *args:
     echo "Running tests for {{ BLUE }}{{ solutionOrProject }}{{ NORMAL }} with configuration {{ YELLOW }}{{ configuration }}{{ NORMAL }} and filter {{ GREEN }}{{ filter }}{{ NORMAL }}"
     dotnet test {{ solutionOrProject }} -c {{ configuration }} --treenode-filter "{{ filter }}" {{ args }}
 

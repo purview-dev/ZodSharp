@@ -12,8 +12,5 @@ public class ZodBoolean : ZodType<bool>
 	/// </summary>
 	/// <param name="value">The value to validate</param>
 	/// <returns>A validation result</returns>
-	protected override ValidationResult<bool> ParseInternal(bool value)
-	{
-		return ValidationResult<bool>.Success(value);
-	}
+	protected override ValidationResult<bool> ParseInternal(bool value) => ValidationResult<bool>.Success(value);
 }

@@ -7,7 +7,7 @@ namespace ZodSharp.Core;
 /// Uses struct to avoid allocations.
 /// </summary>
 /// <typeparam name="T">The type of the validated value</typeparam>
-public readonly struct ValidationResult<T>
+public readonly record struct ValidationResult<T>
 {
 	/// <summary>
 	/// Indicates whether the validation was successful.
@@ -32,36 +32,34 @@ public readonly struct ValidationResult<T>
 	}
 
 	/// <summary>
+	/// Throws a <see cref="ZodException"/> if validation failed.
+	/// </summary>
+	/// <returns>The validated value</returns>
+	/// <exception cref="ZodException">Thrown when validation fails</exception>
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1024:Use properties where appropriate")]
+	public T GetValueOrThrow() => IsSuccess ? Value! : throw new ZodException(Errors);
+
+	/// <summary>
 	/// Creates a successful validation result.
 	/// </summary>
-	public static ValidationResult<T> Success(T value) => new(true, value, ImmutableArray<ValidationError>.Empty);
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1000:Do not declare static members on generic types")]
+	public static ValidationResult<T> Success(T value) => new(true, value, []);
 
 	/// <summary>
 	/// Creates a failed validation result with a single error.
 	/// </summary>
-	public static ValidationResult<T> Failure(ValidationError error) =>
-		new(false, default, ImmutableArray.Create(error));
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1000:Do not declare static members on generic types")]
+	public static ValidationResult<T> Failure(ValidationError error) => new(false, default, [error]);
 
 	/// <summary>
 	/// Creates a failed validation result with multiple errors.
 	/// </summary>
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1000:Do not declare static members on generic types")]
 	public static ValidationResult<T> Failure(ImmutableArray<ValidationError> errors) => new(false, default, errors);
 
 	/// <summary>
 	/// Creates a failed validation result with multiple errors.
 	/// </summary>
-	public static ValidationResult<T> Failure(IEnumerable<ValidationError> errors) =>
-		new(false, default, errors.ToImmutableArray());
-
-	/// <summary>
-	/// Throws a ZodException if validation failed.
-	/// </summary>
-	/// <returns>The validated value</returns>
-	/// <exception cref="ZodException">Thrown when validation fails</exception>
-	public T GetValueOrThrow()
-	{
-		if (!IsSuccess)
-			throw new ZodException(Errors);
-		return Value!;
-	}
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1000:Do not declare static members on generic types")]
+	public static ValidationResult<T> Failure(IEnumerable<ValidationError> errors) => new(false, default, [.. errors]);
 }

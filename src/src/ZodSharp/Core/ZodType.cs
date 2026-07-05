@@ -11,15 +11,14 @@ namespace ZodSharp.Core;
 /// <typeparam name="TInput">The input type before validation</typeparam>
 public abstract class ZodType<TOutput, TInput> : IZodSchema<TOutput, TInput>
 {
-	static readonly string[] EmptyPath = Array.Empty<string>();
+	static readonly string[] EmptyPath = [];
 
-	ImmutableArray<IValidationRule<TOutput>> _rules = ImmutableArray<IValidationRule<TOutput>>.Empty;
-	string? _description;
+	ImmutableArray<IValidationRule<TOutput>> _rules = [];
 
 	/// <summary>
 	/// Gets the description of this schema.
 	/// </summary>
-	public string? Description => _description;
+	public string? Description { get; private set; }
 
 	/// <summary>
 	/// Validates the input value and returns a validation result.
@@ -45,25 +44,21 @@ public abstract class ZodType<TOutput, TInput> : IZodSchema<TOutput, TInput>
 		{
 			if (!rule.IsValid(validatedValue))
 			{
-				errors ??= new List<ValidationError>(rulesCount);
+				errors ??= [with(rulesCount)];
 				errors.Add(new ValidationError("validation_failed", rule.GetErrorMessage(validatedValue), EmptyPath));
 			}
 		}
 
-		if (errors != null && errors.Count > 0)
-			return ValidationResult<TOutput>.Failure(errors);
-
-		return ValidationResult<TOutput>.Success(validatedValue);
+		return errors != null && errors.Count > 0
+			? ValidationResult<TOutput>.Failure(errors)
+			: ValidationResult<TOutput>.Success(validatedValue);
 	}
 
 	/// <summary>
 	/// Validates the input value asynchronously.
 	/// Equivalent to Zod's safeParseAsync method.
 	/// </summary>
-	public ValueTask<ValidationResult<TOutput>> ValidateAsync(TInput value)
-	{
-		return new ValueTask<ValidationResult<TOutput>>(Validate(value));
-	}
+	public ValueTask<ValidationResult<TOutput>> ValidateAsync(TInput value) => new(Validate(value));
 
 	/// <summary>
 	/// Parses the input value to the output type.
@@ -86,7 +81,7 @@ public abstract class ZodType<TOutput, TInput> : IZodSchema<TOutput, TInput>
 	/// </summary>
 	public ZodType<TOutput, TInput> Describe(string description)
 	{
-		_description = description;
+		Description = description;
 		return this;
 	}
 
@@ -94,19 +89,13 @@ public abstract class ZodType<TOutput, TInput> : IZodSchema<TOutput, TInput>
 	/// Validates and returns the value, throwing an exception if validation fails.
 	/// Equivalent to Zod's parse method.
 	/// </summary>
-	public TOutput Parse(TInput value)
-	{
-		return Validate(value).GetValueOrThrow();
-	}
+	public TOutput Parse(TInput value) => Validate(value).GetValueOrThrow();
 
 	/// <summary>
 	/// Validates and returns a result without throwing.
 	/// Equivalent to Zod's safeParse method.
 	/// </summary>
-	public ValidationResult<TOutput> SafeParse(TInput value)
-	{
-		return Validate(value);
-	}
+	public ValidationResult<TOutput> SafeParse(TInput value) => Validate(value);
 
 	/// <summary>
 	/// Transforms the validated value using a function.
@@ -154,44 +143,21 @@ public abstract class ZodType<TOutput, TInput> : IZodSchema<TOutput, TInput>
 		return new Schemas.ZodDefault<TOutput>(new RefinementAdapter<TOutput>(adapter), defaultValue);
 	}
 
-	class TransformInputAdapter<TAdapterInput, TAdapterOutput> : IZodSchema<TAdapterOutput, TAdapterInput>
+	sealed class TransformInputAdapter<TAdapterInput, TAdapterOutput>(IZodSchema<TAdapterOutput, TAdapterInput> inner)
+		: IZodSchema<TAdapterOutput, TAdapterInput>
 	{
-		readonly IZodSchema<TAdapterOutput, TAdapterInput> _inner;
+		public ValidationResult<TAdapterOutput> Validate(TAdapterInput value) => inner.Validate(value);
 
-		public TransformInputAdapter(IZodSchema<TAdapterOutput, TAdapterInput> inner)
-		{
-			_inner = inner;
-		}
-
-		public ValidationResult<TAdapterOutput> Validate(TAdapterInput value)
-		{
-			return _inner.Validate(value);
-		}
-
-		public ValueTask<ValidationResult<TAdapterOutput>> ValidateAsync(TAdapterInput value)
-		{
-			return _inner.ValidateAsync(value);
-		}
+		public ValueTask<ValidationResult<TAdapterOutput>> ValidateAsync(TAdapterInput value) =>
+			inner.ValidateAsync(value);
 	}
 
-	class RefinementAdapter<TAdapterType> : IZodSchema<TAdapterType>
+	class RefinementAdapter<TAdapterType>(IZodSchema<TAdapterType, TAdapterType> inner) : IZodSchema<TAdapterType>
 	{
-		readonly IZodSchema<TAdapterType, TAdapterType> _inner;
+		public ValidationResult<TAdapterType> Validate(TAdapterType value) => inner.Validate(value);
 
-		public RefinementAdapter(IZodSchema<TAdapterType, TAdapterType> inner)
-		{
-			_inner = inner;
-		}
-
-		public ValidationResult<TAdapterType> Validate(TAdapterType value)
-		{
-			return _inner.Validate(value);
-		}
-
-		public ValueTask<ValidationResult<TAdapterType>> ValidateAsync(TAdapterType value)
-		{
-			return _inner.ValidateAsync(value);
-		}
+		public ValueTask<ValidationResult<TAdapterType>> ValidateAsync(TAdapterType value) =>
+			inner.ValidateAsync(value);
 	}
 }
 
