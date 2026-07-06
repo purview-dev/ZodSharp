@@ -9,17 +9,18 @@ readonly record struct MaxLengthAttributeData(bool Exists, int Length, string? E
 
 	public static MaxLengthAttributeData FromAttributeData(
 		ExecutionContext executionContext,
-		ImmutableArray<AttributeData> attributeData
+		ImmutableArray<AttributeData> attributes
 	)
 	{
-		if (executionContext.RequiredAttribute is not null)
+		if (executionContext.MaxLengthAttribute is null)
+			return Empty;
+
+		for (var i = 0; i < attributes.Length; i++)
 		{
-			for (var i = 0; i < attributeData.Length; i++)
-			{
-				var result = FromAttributeData(executionContext, attributeData[i]);
-				if (result.Exists)
-					return result;
-			}
+			var result = FromAttributeData(executionContext, attributes[i]);
+
+			if (result.Exists)
+				return result;
 		}
 
 		return Empty;
@@ -30,35 +31,34 @@ readonly record struct MaxLengthAttributeData(bool Exists, int Length, string? E
 		AttributeData attributeData
 	)
 	{
-		var exists =
-			executionContext.MaxLengthAttribute is not null
-			&& SymbolEqualityComparer.Default.Equals(
-				attributeData?.AttributeClass,
-				executionContext.MaxLengthAttribute
-			);
-		var length = 0;
-		var errorMessage = (string?)null;
-		if (exists)
-		{
-			if (
-				attributeData!
-					.ConstructorArguments.FirstOrDefault(arg =>
-						string.Equals(arg.Type?.Name, nameof(Length), StringComparison.OrdinalIgnoreCase)
-					)
-					.Value
-				is int maxLenArg
-			)
-				length = maxLenArg;
+		var attributeSymbol = executionContext.MaxLengthAttribute;
 
-			foreach (var namedArg in attributeData!.NamedArguments)
+		if (
+			attributeSymbol is null
+			|| !SymbolEqualityComparer.Default.Equals(attributeData.AttributeClass, attributeSymbol)
+		)
+		{
+			return Empty;
+		}
+
+		// MaxLengthAttribute() uses -1 to represent the unspecified/
+		// database-provider maximum.
+		var length = -1;
+		string? errorMessage = null;
+
+		if (attributeData.ConstructorArguments.Length == 1 && attributeData.ConstructorArguments[0].Value is int value)
+		{
+			length = value;
+		}
+
+		foreach (var namedArgument in attributeData.NamedArguments)
+		{
+			if (namedArgument.Key == nameof(ErrorMessage) && namedArgument.Value.Value is string message)
 			{
-				if (namedArg.Key == nameof(Length) && namedArg.Value.Value is int len)
-					length = len;
-				else if (namedArg.Key == nameof(ErrorMessage) && namedArg.Value.Value is string errorMsg)
-					errorMessage = errorMsg;
+				errorMessage = message;
 			}
 		}
 
-		return new(exists, length, errorMessage);
+		return new(Exists: true, Length: length, ErrorMessage: errorMessage);
 	}
 }

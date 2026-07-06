@@ -2,6 +2,7 @@
 using System.Globalization;
 using System.Text;
 using Microsoft.CodeAnalysis;
+using ZodSharp.SourceGenerators.Helpers;
 using ZodSharp.SourceGenerators.Helpers.Models;
 using ExecutionContext = ZodSharp.SourceGenerators.Helpers.Models.ExecutionContext;
 
@@ -30,7 +31,7 @@ partial class ZodSchemaGenerator
 				$"            if (global::System.Linq.Enumerable.Count(value.{propertyName}) < {minLengthAttr.Length})"
 			);
 			sb.AppendLine("            {");
-			sb.AppendLine("                errors.Add(new ValidationError(");
+			sb.AppendLine($"                errors.Add(new {TypeHelpers.ValidationError.Global()}(");
 			sb.AppendLine("                    \"too_small\",");
 			sb.AppendLine($"                    \"{errorMessage}\",");
 			sb.AppendLine($"                    new[] {{ \"{propertyName}\" }}");
@@ -53,7 +54,7 @@ partial class ZodSchemaGenerator
 					$"            if (global::System.Linq.Enumerable.Count(value.{propertyName}) > {maxLengthAttr.Length})"
 				);
 				sb.AppendLine("            {");
-				sb.AppendLine("                errors.Add(new ValidationError(");
+				sb.AppendLine($"                errors.Add(new {TypeHelpers.ValidationError.Global()}(");
 				sb.AppendLine("                    \"too_big\",");
 				sb.AppendLine($"                    \"{errorMessage}\",");
 				sb.AppendLine($"                    new[] {{ \"{propertyName}\" }}");

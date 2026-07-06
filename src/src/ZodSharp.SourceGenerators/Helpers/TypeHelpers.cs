@@ -46,6 +46,11 @@ static class TypeHelpers
 		};
 	}
 
+	public static bool CanBeNull(ITypeSymbol typeSymbol) =>
+		typeSymbol.IsReferenceType
+		|| typeSymbol.NullableAnnotation == NullableAnnotation.Annotated
+		|| typeSymbol is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T };
+
 	public static bool IsNumericType(ITypeSymbol type) =>
 		type.SpecialType
 			is SpecialType.System_Byte

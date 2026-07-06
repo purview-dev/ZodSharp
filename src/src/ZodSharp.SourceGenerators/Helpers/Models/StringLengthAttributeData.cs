@@ -9,17 +9,18 @@ readonly record struct StringLengthAttribute(bool Exists, int MaximumLength, int
 
 	public static StringLengthAttribute FromAttributeData(
 		ExecutionContext executionContext,
-		ImmutableArray<AttributeData> attributeData
+		ImmutableArray<AttributeData> attributes
 	)
 	{
-		if (executionContext.RequiredAttribute is not null)
+		if (executionContext.StringLengthAttribute is null)
+			return Empty;
+
+		for (var i = 0; i < attributes.Length; i++)
 		{
-			for (var i = 0; i < attributeData.Length; i++)
-			{
-				var result = FromAttributeData(executionContext, attributeData[i]);
-				if (result.Exists)
-					return result;
-			}
+			var result = FromAttributeData(executionContext, attributes[i]);
+
+			if (result.Exists)
+				return result;
 		}
 
 		return Empty;
@@ -30,38 +31,44 @@ readonly record struct StringLengthAttribute(bool Exists, int MaximumLength, int
 		AttributeData attributeData
 	)
 	{
-		var exists =
-			executionContext.StringLengthAttribute is not null
-			&& SymbolEqualityComparer.Default.Equals(
-				attributeData?.AttributeClass,
-				executionContext.StringLengthAttribute
-			);
+		var attributeSymbol = executionContext.StringLengthAttribute;
+
+		if (
+			attributeSymbol is null
+			|| !SymbolEqualityComparer.Default.Equals(attributeData.AttributeClass, attributeSymbol)
+		)
+		{
+			return Empty;
+		}
+
 		var maximumLength = int.MaxValue;
 		var minimumLength = 0;
-		var errorMessage = (string?)null;
-		if (exists)
-		{
-			if (
-				attributeData!
-					.ConstructorArguments.FirstOrDefault(arg =>
-						string.Equals(arg.Type?.Name, nameof(MaximumLength), StringComparison.OrdinalIgnoreCase)
-					)
-					.Value
-				is int maxLenArg
-			)
-				maximumLength = maxLenArg;
+		string? errorMessage = null;
 
-			foreach (var namedArg in attributeData!.NamedArguments)
+		if (attributeData.ConstructorArguments.Length > 0 && attributeData.ConstructorArguments[0].Value is int maximum)
+		{
+			maximumLength = maximum;
+		}
+
+		foreach (var namedArgument in attributeData.NamedArguments)
+		{
+			switch (namedArgument.Key)
 			{
-				if (namedArg.Key == nameof(MaximumLength) && namedArg.Value.Value is int maxLen)
-					maximumLength = maxLen;
-				else if (namedArg.Key == nameof(MinimumLength) && namedArg.Value.Value is int minLen)
-					minimumLength = minLen;
-				else if (namedArg.Key == nameof(ErrorMessage) && namedArg.Value.Value is string errorMsg)
-					errorMessage = errorMsg;
+				case nameof(MinimumLength) when namedArgument.Value.Value is int minimum:
+					minimumLength = minimum;
+					break;
+
+				case nameof(ErrorMessage) when namedArgument.Value.Value is string message:
+					errorMessage = message;
+					break;
 			}
 		}
 
-		return new(exists, maximumLength, minimumLength, errorMessage);
+		return new(
+			Exists: true,
+			MaximumLength: maximumLength,
+			MinimumLength: minimumLength,
+			ErrorMessage: errorMessage
+		);
 	}
 }

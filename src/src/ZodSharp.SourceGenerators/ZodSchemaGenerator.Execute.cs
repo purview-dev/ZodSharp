@@ -79,7 +79,7 @@ partial class ZodSchemaGenerator
 		sb.AppendLine("/// This class is generated at compile time for zero-allocation validation.");
 		sb.AppendLine("/// </summary>");
 		sb.AppendLine("{{CodeGen}}");
-		sb.AppendLine($"{modifier} static class {schemaName}");
+		sb.AppendLine($"{modifier} static partial class {schemaName}");
 		sb.AppendLine("{");
 		sb.AppendLine("    static readonly string[] EmptyPath = global::System.Array.Empty<string>();");
 		sb.AppendLine();
@@ -109,12 +109,14 @@ partial class ZodSchemaGenerator
 		sb.AppendLine("    /// <summary>");
 		sb.AppendLine("    /// Validates an instance of the target type.");
 		sb.AppendLine("    /// </summary>");
-		sb.AppendLine($"    public static ValidationResult<{fullTypeName}> Validate({fullTypeName} value)");
+		sb.AppendLine(
+			$"    public static {TypeHelpers.ValidationResult.Global()}<{fullTypeName}> Validate({fullTypeName} value)"
+		);
 		sb.AppendLine("    {");
 		sb.AppendLine("        if (value == null)");
 		sb.AppendLine("        {");
-		sb.AppendLine($"            return ValidationResult<{fullTypeName}>.Failure(");
-		sb.AppendLine("                new ValidationError(");
+		sb.AppendLine($"            return {TypeHelpers.ValidationResult.Global()}<{fullTypeName}>.Failure(");
+		sb.AppendLine($"                new {TypeHelpers.ValidationError.Global()}(");
 		sb.AppendLine("                    \"invalid_type\",");
 		sb.AppendLine("                    \"Value cannot be null\",");
 		sb.AppendLine("                    EmptyPath");
@@ -123,7 +125,9 @@ partial class ZodSchemaGenerator
 		sb.AppendLine("        }");
 		sb.AppendLine();
 
-		sb.AppendLine("        var errors = new List<ValidationError>();");
+		sb.AppendLine(
+			$"        var errors = new {typeof(List<>).Namespace.Global()}.List<{TypeHelpers.ValidationError.Global()}>();"
+		);
 		sb.AppendLine();
 
 		var properties = classSymbol
@@ -140,10 +144,10 @@ partial class ZodSchemaGenerator
 		sb.AppendLine();
 		sb.AppendLine("        if (errors.Count > 0)");
 		sb.AppendLine("        {");
-		sb.AppendLine($"            return ValidationResult<{fullTypeName}>.Failure(errors);");
+		sb.AppendLine($"            return {TypeHelpers.ValidationResult.Global()}<{fullTypeName}>.Failure(errors);");
 		sb.AppendLine("        }");
 		sb.AppendLine();
-		sb.AppendLine($"        return ValidationResult<{fullTypeName}>.Success(value);");
+		sb.AppendLine($"        return {TypeHelpers.ValidationResult.Global()}<{fullTypeName}>.Success(value);");
 		sb.AppendLine("    }");
 	}
 
@@ -157,26 +161,32 @@ partial class ZodSchemaGenerator
 		var propertyName = property.Name;
 		var propertyType = property.Type;
 		//var propertyTypeName = propertyType.ToDisplayString();
-		var isNullable =
-			propertyType.NullableAnnotation == NullableAnnotation.Annotated
-			|| (propertyType.IsReferenceType && propertyType.NullableAnnotation != NullableAnnotation.NotAnnotated);
+		var canBeNull = TypeHelpers.CanBeNull(propertyType);
 
 		var attributes = property.GetAttributes();
 		var requiredAttrib = RequiredAttributeData.FromAttributeData(executionContext, attributes);
-		if (!isNullable && propertyType.IsReferenceType)
-			requiredAttrib = new(true, false, null);
-
-		if (requiredAttrib.Exists)
+		if (canBeNull && requiredAttrib.Exists)
 		{
+			var isStringAndAllowEmptyStrings =
+				propertyType.SpecialType == SpecialType.System_String && requiredAttrib.AllowEmptyStrings;
+			var localErrorMessage =
+				(isStringAndAllowEmptyStrings)
+					? "Field '{0}' is required and cannot be null or empty"
+					: "Required field '{0}' is null";
+
 			var errorMessage = string.Format(
 				CultureInfo.InvariantCulture,
-				(requiredAttrib.ErrorMessage ?? "Required field '{0}' is null"),
+				(requiredAttrib.ErrorMessage ?? localErrorMessage),
 				propertyName
 			);
 
-			sb.AppendLine($"        if (value.{propertyName} == null)");
+			var comparision = isStringAndAllowEmptyStrings
+				? $"string.IsNullOrEmpty(value.{propertyName})"
+				: $"value.{propertyName} == null";
+
+			sb.AppendLine($"        if ({comparision})");
 			sb.AppendLine("        {");
-			sb.AppendLine("            errors.Add(new ValidationError(");
+			sb.AppendLine($"            errors.Add(new {TypeHelpers.ValidationError.Global()}(");
 			sb.AppendLine("                \"missing_field\",");
 			sb.AppendLine($"                \"{errorMessage}\",");
 			sb.AppendLine($"                new[] {{ \"{propertyName}\" }}");
@@ -185,7 +195,7 @@ partial class ZodSchemaGenerator
 			sb.AppendLine("        else");
 			sb.AppendLine("        {");
 		}
-		else
+		else if (canBeNull)
 		{
 			sb.AppendLine($"        if (value.{propertyName} != null)");
 			sb.AppendLine("        {");
@@ -193,7 +203,9 @@ partial class ZodSchemaGenerator
 
 		GenerateTypeSpecificValidations(executionContext, sb, property, propertyType, attributes, propertyName);
 
-		sb.AppendLine("        }");
+		if (canBeNull)
+			sb.AppendLine("        }");
+
 		sb.AppendLine();
 	}
 

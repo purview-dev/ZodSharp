@@ -2,6 +2,7 @@
 using System.Globalization;
 using System.Text;
 using Microsoft.CodeAnalysis;
+using ZodSharp.SourceGenerators.Helpers;
 using ZodSharp.SourceGenerators.Helpers.Models;
 using ExecutionContext = ZodSharp.SourceGenerators.Helpers.Models.ExecutionContext;
 
@@ -31,7 +32,7 @@ partial class ZodSchemaGenerator
 			{
 				sb.AppendLine($"           if (value.{propertyName}.Length < {stringLengthAttr.MinimumLength})");
 				sb.AppendLine("            {");
-				sb.AppendLine("                errors.Add(new ValidationError(");
+				sb.AppendLine($"                errors.Add(new {TypeHelpers.ValidationError.Global()}(");
 				sb.AppendLine("                    \"too_small\",");
 				sb.AppendLine($"                    \"{errorMessage}\",");
 				sb.AppendLine($"                    new[] {{ \"{propertyName}\" }}");
@@ -41,7 +42,7 @@ partial class ZodSchemaGenerator
 
 			sb.AppendLine($"           if (value.{propertyName}.Length > {stringLengthAttr.MaximumLength})");
 			sb.AppendLine("            {");
-			sb.AppendLine("                errors.Add(new ValidationError(");
+			sb.AppendLine($"                errors.Add(new {TypeHelpers.ValidationError.Global()}(");
 			sb.AppendLine("                    \"too_big\",");
 			sb.AppendLine($"                    \"{errorMessage}\",");
 			sb.AppendLine($"                    new[] {{ \"{propertyName}\" }}");
@@ -63,7 +64,7 @@ partial class ZodSchemaGenerator
 			{
 				sb.AppendLine($"           if (value.{propertyName}.Length < {minLengthAttr.Length})");
 				sb.AppendLine("            {");
-				sb.AppendLine("                errors.Add(new ValidationError(");
+				sb.AppendLine($"                errors.Add(new {TypeHelpers.ValidationError.Global()}(");
 				sb.AppendLine("                    \"too_small\",");
 				sb.AppendLine($"                    \"{errorMessage}\",");
 				sb.AppendLine($"                    new[] {{ \"{propertyName}\" }}");
@@ -84,7 +85,7 @@ partial class ZodSchemaGenerator
 
 			sb.AppendLine($"           if (value.{propertyName}.Length > {maxLengthAttr.Length})");
 			sb.AppendLine("            {");
-			sb.AppendLine("                errors.Add(new ValidationError(");
+			sb.AppendLine($"                errors.Add(new {TypeHelpers.ValidationError.Global()}(");
 			sb.AppendLine("                    \"too_big\",");
 			sb.AppendLine($"                    \"{errorMessage}\",");
 			sb.AppendLine($"                    new[] {{ \"{propertyName}\" }}");
@@ -105,7 +106,7 @@ partial class ZodSchemaGenerator
 				$"            if (!global::ZodSharp.Rules.EmailRule.EmailRegex.IsMatch(value.{propertyName}))"
 			);
 			sb.AppendLine("            {");
-			sb.AppendLine("                errors.Add(new ValidationError(");
+			sb.AppendLine($"                errors.Add(new {TypeHelpers.ValidationError.Global()}(");
 			sb.AppendLine("                    \"invalid_string\",");
 			sb.AppendLine($"                    \"{errorMessage}\",");
 			sb.AppendLine($"                    new[] {{ \"{propertyName}\" }}");

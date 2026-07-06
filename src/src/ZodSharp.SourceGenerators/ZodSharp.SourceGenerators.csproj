@@ -2,10 +2,7 @@
 	<PropertyGroup>
 		<TargetFrameworks></TargetFrameworks>
 		<TargetFramework>netstandard2.0</TargetFramework>
-		<PackageId>ZodSharp.SourceGenerators</PackageId>
-		<PackageVersion>1.0.0</PackageVersion>
 		<IsPackable>false</IsPackable>
-		<Description>Source generators for ZodSharp - generates zero-allocation validators at compile time</Description>
 		<!--<DisableGenerateAssemblyInfoClass>true</DisableGenerateAssemblyInfoClass>-->
 		<EmbedUntrackedSources>false</EmbedUntrackedSources>
 		<GenerateDocumentationFile>false</GenerateDocumentationFile>

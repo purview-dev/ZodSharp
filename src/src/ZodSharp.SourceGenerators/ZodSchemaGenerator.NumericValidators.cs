@@ -2,6 +2,7 @@
 using System.Globalization;
 using System.Text;
 using Microsoft.CodeAnalysis;
+using ZodSharp.SourceGenerators.Helpers;
 using ZodSharp.SourceGenerators.Helpers.Models;
 using ExecutionContext = ZodSharp.SourceGenerators.Helpers.Models.ExecutionContext;
 
@@ -21,25 +22,32 @@ partial class ZodSchemaGenerator
 	)
 	{
 		var rangeAttr = RangeAttributeData.FromAttributeData(executionContext, attributes);
-		if (!rangeAttr.Exists)
+		if (rangeAttr.Exists)
 		{
 			// This will never account for other numeric kinds, or OperandTypes of Double or Int...!
-			if (rangeAttr.Kind is RangeAttributeKind.Double or RangeAttributeKind.Double)
+			if (rangeAttr.Kind is RangeAttributeKind.Int32 or RangeAttributeKind.Double)
 			{
+				var minExclusive = rangeAttr.MinimumIsExclusive ? "exclusive" : "inclusive";
+				var maxExclusive = rangeAttr.MaximumIsExclusive ? "exclusive" : "inclusive";
+
 				var errorMessage = string.Format(
 					CultureInfo.InvariantCulture,
-					(rangeAttr.ErrorMessage ?? $"Field '{0}' must be between {1} and {2}"),
+					(rangeAttr.ErrorMessage ?? "Field '{0}' must be between {1} ({2}) and {3} ({4})"),
 					propertyName,
 					rangeAttr.Minimum,
-					rangeAttr.Maximum
+					minExclusive,
+					rangeAttr.Maximum,
+					maxExclusive
 				);
-				;
+
+				var minComparison = rangeAttr.MinimumIsExclusive ? "<" : "<=";
+				var maxComparison = rangeAttr.MaximumIsExclusive ? ">" : ">=";
 
 				sb.AppendLine(
-					$"            if (value.{propertyName} < {rangeAttr.Minimum} || value.{propertyName} > {rangeAttr.Maximum})"
+					$"            if (value.{propertyName} {minComparison} {rangeAttr.Minimum} || value.{propertyName} {maxComparison} {rangeAttr.Maximum})"
 				);
 				sb.AppendLine("            {");
-				sb.AppendLine("                errors.Add(new ValidationError(");
+				sb.AppendLine($"                errors.Add(new {TypeHelpers.ValidationError.Global()}(");
 				sb.AppendLine("                    \"invalid_number\",");
 				sb.AppendLine($"                    \"{errorMessage}\",");
 				sb.AppendLine($"                    new[] {{ \"{propertyName}\" }}");
