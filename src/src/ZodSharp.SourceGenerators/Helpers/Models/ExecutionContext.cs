@@ -22,7 +22,7 @@ sealed record class ExecutionContext(
 		cancellationToken.ThrowIfCancellationRequested();
 
 		return new(
-			ZodSchemaAttribute: compilation.GetTypeByMetadataName(TypeHelpers.ZodSchemaAttributeMetadataName),
+			ZodSchemaAttribute: compilation.GetTypeByMetadataName(TypeHelpers.ZodSchemaAttribute),
 			// Attributes from System.ComponentModel.DataAnnotations
 			RequiredAttribute: compilation.GetTypeByMetadataName(TypeHelpers.RequiredAttributeMetadataName),
 			EmailAddressAttribute: compilation.GetTypeByMetadataName(TypeHelpers.EmailAddressAttributeMetadataName),

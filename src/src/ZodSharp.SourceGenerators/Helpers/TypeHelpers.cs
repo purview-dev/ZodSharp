@@ -4,7 +4,8 @@ namespace ZodSharp.SourceGenerators.Helpers;
 
 static class TypeHelpers
 {
-	public const string ZodSchemaAttributeMetadataName = "ZodSharp.ZodSchemaAttribute";
+	// This matches the name of the class, just so we can use the `nameof` for later...
+	public const string ZodSchemaAttribute = "ZodSharp.ZodSchemaAttribute";
 
 	// Data Annotations attributes metadata names
 	public const string RequiredAttributeMetadataName = "System.ComponentModel.DataAnnotations.RequiredAttribute";
@@ -19,6 +20,31 @@ static class TypeHelpers
 	// Other ZodSharp types...
 	public const string ValidationResult = "ZodSharp.Core.ValidationResult";
 	public const string ValidationError = "ZodSharp.Core.ValidationError";
+
+	public static string GetLimitedAccessibilityKeyword(INamedTypeSymbol symbol)
+	{
+		return symbol.DeclaredAccessibility switch
+		{
+			Accessibility.Public => "public",
+			Accessibility.Private => "private",
+			_ => "internal",
+		};
+	}
+
+	public static string GetAccessibilityKeyword(INamedTypeSymbol symbol)
+	{
+		return symbol.DeclaredAccessibility switch
+		{
+			Accessibility.Public => "public",
+			Accessibility.Internal => "internal",
+			Accessibility.Private => "private",
+			Accessibility.Protected => "protected",
+			Accessibility.ProtectedAndInternal => "private protected",
+			Accessibility.ProtectedOrInternal => "protected internal",
+			//Accessibility.File => "file",
+			_ => string.Empty,
+		};
+	}
 
 	public static bool IsNumericType(ITypeSymbol type) =>
 		type.SpecialType

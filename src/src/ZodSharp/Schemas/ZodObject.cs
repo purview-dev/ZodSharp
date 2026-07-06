@@ -31,8 +31,8 @@ public class ZodObject(ImmutableDictionary<string, IZodSchema<object, object>> s
 		}
 
 		var shapeCount = shape.Count;
-		var errors = new List<ValidationError>(shapeCount);
-		var validatedObject = new Dictionary<string, object?>(shapeCount);
+		List<ValidationError> errors = [with(shapeCount)];
+		Dictionary<string, object?> validatedObject = [with(shapeCount)];
 
 		foreach (var (key, schema) in shape)
 		{

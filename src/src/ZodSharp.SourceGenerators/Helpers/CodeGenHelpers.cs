@@ -6,6 +6,7 @@ namespace ZodSharp.SourceGenerators.Helpers;
 static class CodeGenHelpers
 {
 	public const string CodeGenReplacementToken = "{{CodeGen}}";
+	public const string AttribCodeGenReplacementToken = "{{AttribCodeGen}}";
 	public const string NonClassCodeGenReplacementToken = "{{NonClassCodeGen}}";
 
 	const string EmbedAttributesHashDefineName = "ZODSHARP_ATTRIBUTES";
@@ -31,6 +32,10 @@ static class CodeGenHelpers
 	);
 
 	static readonly Lazy<string[]> GenAttributes = new(() =>
+		[EmbeddedConstant, ExcludeFromCodeCoverageConstant, CompilerGeneratedConstant, GeneratedCodeAttribute.Value]
+	);
+
+	static readonly Lazy<string[]> GenAttribAttributes = new(() =>
 		[
 			EmbeddedConstant,
 			ExcludeFromCodeCoverageConstant,
@@ -45,6 +50,7 @@ static class CodeGenHelpers
 	);
 
 	static readonly ConcurrentDictionary<int, string> GeneratedCodeAttributesByTabs = new();
+	static readonly ConcurrentDictionary<int, string> AttributeGeneratedCodeAttributesByTabs = new();
 	static readonly ConcurrentDictionary<int, string> NonClassGeneratedCodeAttributesByTabs = new();
 
 	public const string NewLine = "\n";
@@ -68,6 +74,21 @@ static class CodeGenHelpers
 			}
 		);
 
+	public static string GetAttributeGeneratedCodeAttribute(int tabs = 0) =>
+		AttributeGeneratedCodeAttributesByTabs.GetOrAdd(
+			tabs,
+			tabs =>
+			{
+				var t = string.Concat(Enumerable.Range(0, tabs).Select(_ => '\t'));
+
+				string result = string.Empty;
+				foreach (var attr in GenAttribAttributes.Value)
+					result += $"{t}{GlobalAttribute(attr)}{NewLine}";
+
+				return result;
+			}
+		);
+
 	public static string GetNonClassGeneratedCodeAttribute(int tabs = 0) =>
 		NonClassGeneratedCodeAttributesByTabs.GetOrAdd(
 			tabs,
@@ -82,4 +103,10 @@ static class CodeGenHelpers
 				return result;
 			}
 		);
+
+	public static string ProcessGeneratedCode(string source) =>
+		source
+			.Replace(CodeGenReplacementToken, GetGeneratedCodeAttribute())
+			.Replace(AttribCodeGenReplacementToken, GetAttributeGeneratedCodeAttribute())
+			.Replace(NonClassCodeGenReplacementToken, GetNonClassGeneratedCodeAttribute());
 }

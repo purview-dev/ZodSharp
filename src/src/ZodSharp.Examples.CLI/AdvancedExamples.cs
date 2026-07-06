@@ -102,7 +102,7 @@ static class AdvancedExamples
 		var doubleResult = doubleSchema.Validate(5.0);
 		Console.WriteLine($"Transform number (double): {doubleResult.Value}");
 
-		var chainSchema = Z.String().Transform(s => s.Trim()).Transform(s => s.ToLowerInvariant());
+		var chainSchema = Z.String().Transform(s => s.Trim()).Transform(static s => s.ToLowerInvariant());
 		var chainResult = chainSchema.Validate("  HELLO  ");
 		Console.WriteLine($"Chained transforms: '{chainResult.Value}'");
 
@@ -277,8 +277,10 @@ static class AdvancedExamples
 			() => Z.Object().Field("name", Z.String().Min(1)).Field("age", Z.Number().Min(0)).Build()
 		);
 
-		var cachedSchema = SchemaCache.GetOrCreate("user", () => null!);
-		Console.WriteLine($"Schema cached: {schema == cachedSchema}");
+		if (SchemaCache.TryGet("user", out ZodObject cachedSchema))
+			Console.WriteLine($"Schema cached: {schema == cachedSchema}");
+		else
+			Console.WriteLine("Schema not found in cache.");
 
 		Console.WriteLine();
 	}
@@ -299,7 +301,7 @@ static class AdvancedExamples
 
 		if (result.IsSuccess)
 		{
-			Console.WriteLine($"Validated user: {result.Value.Name}, Age: {result.Value.Age}");
+			Console.WriteLine($"Validated user: {result.Value!.Name}, Age: {result.Value.Age}");
 		}
 		else
 		{

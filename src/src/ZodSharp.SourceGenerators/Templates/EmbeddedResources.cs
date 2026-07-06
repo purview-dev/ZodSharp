@@ -16,7 +16,7 @@ static class EmbeddedResources
 		if (resourceStream is null)
 		{
 			var existingResources = OwnerAssembly.GetManifestResourceNames();
-			throw new ArgumentException(
+			throw new ArgumentNullException(
 				$"Could not find embedded resource {resourceName}. Available: {string.Join(", ", existingResources)}"
 			);
 		}
@@ -24,13 +24,6 @@ static class EmbeddedResources
 		using StreamReader reader = new(resourceStream, Encoding.UTF8);
 		var template = reader.ReadToEnd();
 
-		template = template
-			.Replace(CodeGenHelpers.CodeGenReplacementToken, CodeGenHelpers.GetGeneratedCodeAttribute())
-			.Replace(
-				CodeGenHelpers.NonClassCodeGenReplacementToken,
-				CodeGenHelpers.GetNonClassGeneratedCodeAttribute()
-			);
-
-		return template;
+		return CodeGenHelpers.ProcessGeneratedCode(template);
 	}
 }

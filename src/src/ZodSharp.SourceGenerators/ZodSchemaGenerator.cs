@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using ZodSharp.SourceGenerators.Helpers;
 using ZodSharp.SourceGenerators.Helpers.Models;
+using ZodSharp.SourceGenerators.Templates;
 using ExecutionContext = ZodSharp.SourceGenerators.Helpers.Models.ExecutionContext;
 
 namespace ZodSharp.SourceGenerators;
@@ -19,11 +20,17 @@ public sealed partial class ZodSchemaGenerator : IIncrementalGenerator
 	public void Initialize(IncrementalGeneratorInitializationContext context)
 	{
 		context.RegisterPostInitializationOutput(static ctx =>
+		{
 			// Adds the EmbeddedAttribute definition to the compilation if not already present
 			// ensuring that internal generated code doesn't cause visibility issues in referenced
 			// assemblies where InternalVisibleTo is set.
-			ctx.AddEmbeddedAttributeDefinition()
-		);
+			ctx.AddEmbeddedAttributeDefinition();
+
+			ctx.AddSource(
+				$"{nameof(TypeHelpers.ZodSchemaAttribute)}.g.cs",
+				EmbeddedResources.LoadTemplate(nameof(TypeHelpers.ZodSchemaAttribute))
+			);
+		});
 
 		var executionContextValueProvicer = context.CompilationProvider.Select(
 			static (compilation, cancellationToken) => ExecutionContext.Create(compilation, cancellationToken)
@@ -31,7 +38,7 @@ public sealed partial class ZodSchemaGenerator : IIncrementalGenerator
 		// Create a syntax provider that finds classes with [ZodSchema] attribute
 		var classDeclarations = context
 			.SyntaxProvider.ForAttributeWithMetadataName(
-				TypeHelpers.ZodSchemaAttributeMetadataName,
+				TypeHelpers.ZodSchemaAttribute,
 				predicate: static (s, _) => IsSyntaxTargetForGeneration(s),
 				transform: static (ctx, ct) => GetSemanticTargetForGeneration(ctx, ct)
 			)

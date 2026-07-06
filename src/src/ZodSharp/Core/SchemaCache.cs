@@ -17,6 +17,22 @@ public static class SchemaCache
 		where T : class => (T)Cache.GetOrAdd(key, _ => factory()!);
 
 	/// <summary>
+	/// Gets or creates a schema using a cache key.
+	/// </summary>
+	public static bool TryGet<T>(string key, out T value)
+		where T : class
+	{
+		if (Cache.TryGetValue(key, out var cached))
+		{
+			value = (T)cached;
+			return true;
+		}
+
+		value = null!;
+		return false;
+	}
+
+	/// <summary>
 	/// Clears the schema cache.
 	/// </summary>
 	public static void Clear() => Cache.Clear();
