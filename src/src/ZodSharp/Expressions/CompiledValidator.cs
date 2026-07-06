@@ -1,5 +1,4 @@
-using System.Linq.Expressions;
-using System.Reflection;
+﻿using System.Linq.Expressions;
 using ZodSharp.Core;
 
 namespace ZodSharp.Expressions;
@@ -18,51 +17,7 @@ public static class CompiledValidator
 	/// Compiles a validator function from a schema using Expression Trees.
 	/// This creates a highly optimized delegate that can be cached and reused.
 	/// </summary>
-	public static Func<T, ValidationResult<T>> Compile<T>(IZodSchema<T, T> schema) =>
-		schema is ZodType<T> zodType ? CompileWithInlining<T>(zodType) : CompileStandard<T>(schema);
-
-	/// <summary>
-	/// Compiles with inlining of validation rules for maximum performance.
-	/// </summary>
-	static Func<T, ValidationResult<T>> CompileWithInlining<T>(ZodType<T> zodType)
-	{
-		var inputParam = Expression.Parameter(typeof(T), "input");
-
-		var parseInternalMethod = zodType
-			.GetType()
-			.GetMethod("ParseInternal", BindingFlags.NonPublic | BindingFlags.Instance, null, [typeof(T)], null);
-
-		if (parseInternalMethod == null)
-		{
-			return CompileStandard<T>(zodType);
-		}
-
-		var parseResult = Expression.Call(Expression.Constant(zodType), parseInternalMethod, inputParam);
-
-		var isSuccessProperty = typeof(ValidationResult<T>).GetProperty("IsSuccess")!;
-		//var isSuccess = Expression.Property(parseResult, isSuccessProperty);
-
-		var resultVar = Expression.Variable(typeof(ValidationResult<T>), "result");
-		var assignResult = Expression.Assign(resultVar, parseResult);
-
-		var returnLabel = Expression.Label(typeof(ValidationResult<T>));
-		//var returnResult = Expression.Return(returnLabel, resultVar);
-		var returnTarget = Expression.Label(returnLabel, Expression.Default(typeof(ValidationResult<T>)));
-
-		var block = Expression.Block(
-			[resultVar],
-			assignResult,
-			Expression.IfThen(
-				Expression.Not(Expression.Property(resultVar, isSuccessProperty)),
-				Expression.Return(returnLabel, resultVar)
-			),
-			returnTarget
-		);
-
-		var lambda = Expression.Lambda<Func<T, ValidationResult<T>>>(block, inputParam);
-
-		return lambda.Compile();
-	}
+	public static Func<T, ValidationResult<T>> Compile<T>(IZodSchema<T, T> schema) => CompileStandard(schema);
 
 	/// <summary>
 	/// Standard compilation that calls Validate method.

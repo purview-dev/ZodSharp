@@ -1,4 +1,5 @@
-using System.Collections.Immutable;
+﻿using System.Collections.Immutable;
+using System.Reflection;
 using ZodSharp.Core;
 
 namespace ZodSharp.Schemas;
@@ -32,19 +33,16 @@ public class ZodDiscriminatedUnion(
 			);
 		}
 
-		var type = value.GetType();
-		var discriminatorProperty = type.GetProperty(discriminator);
+		var discriminatorValue = GetDiscriminatorValue(value);
 
-		if (discriminatorProperty == null)
+		if (discriminatorValue is null)
 		{
 			return ValidationResult<object>.Failure(
 				new ValidationError("missing_discriminator", $"Discriminator field '{discriminator}' not found", [])
 			);
 		}
 
-		var discriminatorValue = discriminatorProperty.GetValue(value)?.ToString();
-
-		return discriminatorValue == null || !options.TryGetValue(discriminatorValue, out var schema)
+		return !options.TryGetValue(discriminatorValue, out var schema)
 			? ValidationResult<object>.Failure(
 				new ValidationError(
 					"invalid_discriminator",
@@ -53,5 +51,37 @@ public class ZodDiscriminatedUnion(
 				)
 			)
 			: schema.Validate(value);
+	}
+
+	string? GetDiscriminatorValue(object value)
+	{
+		if (value is IReadOnlyDictionary<string, object?> readOnlyDictionary)
+		{
+			return TryGetDictionaryDiscriminatorValue(readOnlyDictionary);
+		}
+
+		if (value is IDictionary<string, object?> dictionary)
+		{
+			return TryGetDictionaryDiscriminatorValue(dictionary);
+		}
+
+		var property = value
+			.GetType()
+			.GetProperty(discriminator, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+
+		return property?.GetValue(value)?.ToString();
+	}
+
+	string? TryGetDictionaryDiscriminatorValue(IEnumerable<KeyValuePair<string, object?>> dictionary)
+	{
+		foreach (var (key, dictionaryValue) in dictionary)
+		{
+			if (string.Equals(key, discriminator, StringComparison.OrdinalIgnoreCase))
+			{
+				return dictionaryValue?.ToString();
+			}
+		}
+
+		return null;
 	}
 }

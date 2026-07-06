@@ -113,17 +113,20 @@ partial class ZodSchemaGenerator
 			$"    public static {TypeHelpers.ValidationResult.Global()}<{fullTypeName}> Validate({fullTypeName} value)"
 		);
 		sb.AppendLine("    {");
-		sb.AppendLine("        if (value == null)");
-		sb.AppendLine("        {");
-		sb.AppendLine($"            return {TypeHelpers.ValidationResult.Global()}<{fullTypeName}>.Failure(");
-		sb.AppendLine($"                new {TypeHelpers.ValidationError.Global()}(");
-		sb.AppendLine("                    \"invalid_type\",");
-		sb.AppendLine("                    \"Value cannot be null\",");
-		sb.AppendLine("                    EmptyPath");
-		sb.AppendLine("                )");
-		sb.AppendLine("            );");
-		sb.AppendLine("        }");
-		sb.AppendLine();
+		if (TypeHelpers.CanBeNull(classSymbol))
+		{
+			sb.AppendLine("        if (value == null)");
+			sb.AppendLine("        {");
+			sb.AppendLine($"            return {TypeHelpers.ValidationResult.Global()}<{fullTypeName}>.Failure(");
+			sb.AppendLine($"                new {TypeHelpers.ValidationError.Global()}(");
+			sb.AppendLine("                    \"invalid_type\",");
+			sb.AppendLine("                    \"Value cannot be null\",");
+			sb.AppendLine("                    EmptyPath");
+			sb.AppendLine("                )");
+			sb.AppendLine("            );");
+			sb.AppendLine("        }");
+			sb.AppendLine();
+		}
 
 		sb.AppendLine(
 			$"        var errors = new {typeof(List<>).Namespace.Global()}.List<{TypeHelpers.ValidationError.Global()}>();"

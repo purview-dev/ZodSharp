@@ -1,1 +1,9 @@
-﻿<Project Sdk="Microsoft.NET.Sdk" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<NoWarn>$(NoWarn);CA1308;CA1849;</NoWarn>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\src\ZodSharp.NewtonsoftJson\ZodSharp.NewtonsoftJson.csproj" />
+	</ItemGroup>
+</Project>

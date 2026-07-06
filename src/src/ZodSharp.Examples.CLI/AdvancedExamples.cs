@@ -1,4 +1,4 @@
-using ZodSharp.Core;
+﻿using ZodSharp.Core;
 using ZodSharp.Expressions;
 using ZodSharp.Schemas;
 
@@ -141,10 +141,7 @@ static class AdvancedExamples
 			.Field("permissions", Z.Array(Z.String()))
 			.Build();
 
-		var union = Z.DiscriminatedUnion("type")
-			.Option("user", (IZodSchema<object, object>)userSchema)
-			.Option("admin", (IZodSchema<object, object>)adminSchema)
-			.Build();
+		var union = Z.DiscriminatedUnion("type").Option("user", userSchema).Option("admin", adminSchema).Build();
 
 		var userData = new Dictionary<string, object?> { { "type", "user" }, { "name", "John" } };
 
@@ -234,10 +231,10 @@ static class AdvancedExamples
 
 		var json = """{"name": "John", "age": 30}""";
 
-		var result = schema.DeserializeAndValidate<Dictionary<string, object?>>(json);
+		var result = schema.DeserializeAndValidate(json);
 		Console.WriteLine($"JSON validation: {result.IsSuccess}");
 
-		var converter = schema.CreateValidatingConverter<Dictionary<string, object?>>();
+		var converter = schema.CreateValidatingConverter();
 		var settings = new Newtonsoft.Json.JsonSerializerSettings { Converters = { converter } };
 
 		try

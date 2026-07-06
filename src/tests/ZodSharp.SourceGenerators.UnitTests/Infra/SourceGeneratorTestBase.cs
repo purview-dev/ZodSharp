@@ -58,6 +58,7 @@ using ZodSharp;
 			MetadataReference.CreateFromFile(typeof(Attribute).Assembly.Location),
 			MetadataReference.CreateFromFile(System.Reflection.Assembly.Load("System.Runtime").Location),
 			MetadataReference.CreateFromFile(typeof(System.Text.Json.JsonSerializer).Assembly.Location),
+			MetadataReference.CreateFromFile(typeof(System.Text.RegularExpressions.Regex).Assembly.Location),
 			// Add netstandard reference
 			MetadataReference.CreateFromFile(
 				System
@@ -86,12 +87,12 @@ using ZodSharp;
 				{
 					var prefix = outputType switch
 					{
-						OutputType.Diagnostic => "DIA",
-						OutputType.Debug => "DBG",
-						OutputType.Info => "INF",
-						OutputType.Warning => "WRN",
+						OutputType.Diagnostic => "DIAG",
+						OutputType.Debug => "DBUG",
+						OutputType.Info => "INFO",
+						OutputType.Warning => "WARN",
 						OutputType.Error => "ERR",
-						_ => "???",
+						_ => "????",
 					};
 
 					TestContext.Current.OutputWriter.WriteLine($"{prefix}: {message}");

@@ -40,8 +40,8 @@ partial class ZodSchemaGenerator
 					maxExclusive
 				);
 
-				var minComparison = rangeAttr.MinimumIsExclusive ? "<" : "<=";
-				var maxComparison = rangeAttr.MaximumIsExclusive ? ">" : ">=";
+				var minComparison = rangeAttr.MinimumIsExclusive ? "<=" : "<";
+				var maxComparison = rangeAttr.MaximumIsExclusive ? ">=" : ">";
 
 				sb.AppendLine(
 					$"            if (value.{propertyName} {minComparison} {rangeAttr.Minimum} || value.{propertyName} {maxComparison} {rangeAttr.Maximum})"
