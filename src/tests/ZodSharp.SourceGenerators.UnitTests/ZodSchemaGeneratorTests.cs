@@ -7,25 +7,25 @@ public partial class ZodSchemaGeneratorTests : SourceGeneratorTestBase<ZodSchema
 {
 	static string GetSchemaGeneratedSource(GeneratorDriverRunResult result)
 	{
-		var aggregateTree = result.GeneratedTrees.FirstOrDefault(tree =>
+		var syntaxTree = result.GeneratedTrees.FirstOrDefault(tree =>
 		{
 			var source = tree.GetText().ToString();
 			return source.Contains(" static partial class ", StringComparison.Ordinal)
 				&& source.Contains("Schema", StringComparison.Ordinal);
 		});
 
-		return aggregateTree?.GetText().ToString() ?? string.Empty;
+		return syntaxTree?.GetText().ToString() ?? string.Empty;
 	}
 
 	static string GetSchemaGeneratedSource(GeneratorDriverRunResult result, string schemaName)
 	{
-		var aggregateTree = result.GeneratedTrees.FirstOrDefault(tree =>
+		var syntaxTree = result.GeneratedTrees.FirstOrDefault(tree =>
 		{
 			var source = tree.GetText().ToString();
 			return source.Contains($" static partial class {schemaName}", StringComparison.Ordinal);
 		});
 
-		return aggregateTree?.GetText().ToString() ?? string.Empty;
+		return syntaxTree?.GetText().ToString() ?? string.Empty;
 	}
 
 	static async Task AssertNoGeneratorExceptions(GeneratorDriverRunResult result)
