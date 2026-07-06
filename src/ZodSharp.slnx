@@ -4,7 +4,10 @@
 	</Folder>
 	<Folder Name="/tests/">
 		<Project Path="tests/ZodSharp.PerformanceTests/ZodSharp.PerformanceTests.csproj" />
-		<Project Path="tests/ZodSharp.UnitTests/ZodSharp.UnitTests.csproj" Id="d454bc28-6189-47a2-bf4b-013294c53b02" />
+		<Project
+			Path="tests/ZodSharp.UnitTests/ZodSharp.UnitTests.csproj"
+			Id="d454bc28-6189-47a2-bf4b-013294c53b02"
+		/>
 	</Folder>
 	<Folder Name="/Solution Items/">
 		<File Path="../.editorconfig" />
@@ -14,9 +17,15 @@
 		<File Path="Directory.Build.targets" />
 	</Folder>
 	<Folder Name="/src/">
-		<Project Path="src/ZodSharp.NewtonsoftJson/ZodSharp.NewtonsoftJson.csproj" Id="3833149e-c1a8-47fe-be0a-8d7576ba4a63" />
+		<Project
+			Path="src/ZodSharp.NewtonsoftJson/ZodSharp.NewtonsoftJson.csproj"
+			Id="3833149e-c1a8-47fe-be0a-8d7576ba4a63"
+		/>
 		<Project Path="src/ZodSharp.SourceGenerators/ZodSharp.SourceGenerators.csproj" />
-		<Project Path="src/ZodSharp.SystemTextJson/ZodSharp.SystemTextJson.csproj" Id="874d7ac4-f6b4-43de-8115-eb6d8b614512" />
+		<Project
+			Path="src/ZodSharp.SystemTextJson/ZodSharp.SystemTextJson.csproj"
+			Id="874d7ac4-f6b4-43de-8115-eb6d8b614512"
+		/>
 		<Project Path="src/ZodSharp/ZodSharp.csproj" />
 	</Folder>
 </Solution>

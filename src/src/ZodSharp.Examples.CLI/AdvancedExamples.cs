@@ -141,7 +141,10 @@ static class AdvancedExamples
 			.Field("permissions", Z.Array(Z.String()))
 			.Build();
 
-		var union = Z.DiscriminatedUnion("type").Option("user", userSchema).Option("admin", adminSchema).Build();
+		var union = Z.DiscriminatedUnion("type")
+			.Option("user", (IZodSchema<object, object>)userSchema)
+			.Option("admin", (IZodSchema<object, object>)adminSchema)
+			.Build();
 
 		var userData = new Dictionary<string, object?> { { "type", "user" }, { "name", "John" } };
 

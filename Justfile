@@ -39,10 +39,12 @@ pack solutionOrProject=solution configuration=build_configuration publish_folder
 # Check code formatting using CSharpier
 lint-check:
     dotnet csharpier check .
+    # dotnet format --verify-no-changes {{ solution }}
 
 # Fix code formatting issues using CSharpier
 lint-fix:
     dotnet csharpier format .
+    # dotnet format {{ solution }}
 
 # Open the solution in Visual Studio/ Registered application
 vs:

@@ -2,3 +2,7 @@ commit-msg:
   jobs:
     - name: conventional commits
       run: npx commitlint --edit {1}
+pre-commit:
+  jobs:
+    - name: check formatting
+      run: just lint-check
