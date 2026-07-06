@@ -5,6 +5,10 @@
 	<Folder Name="/tests/">
 		<Project Path="tests/ZodSharp.PerformanceTests/ZodSharp.PerformanceTests.csproj" />
 		<Project
+			Path="tests/ZodSharp.SourceGenerators.UnitTests/ZodSharp.SourceGenerators.UnitTests.csproj"
+			Id="1652aed0-629c-49a4-ab66-57bf8286a3c9"
+		/>
+		<Project
 			Path="tests/ZodSharp.UnitTests/ZodSharp.UnitTests.csproj"
 			Id="d454bc28-6189-47a2-bf4b-013294c53b02"
 		/>

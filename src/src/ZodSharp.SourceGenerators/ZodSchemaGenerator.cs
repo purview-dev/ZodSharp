@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -13,9 +14,10 @@ namespace ZodSharp.SourceGenerators;
 /// Uses IIncrementalGenerator for better performance and incremental compilation support.
 /// </summary>
 [Generator]
-public sealed partial class ZodSchemaGenerator : IIncrementalGenerator
+public sealed partial class ZodSchemaGenerator : IIncrementalGenerator, ILogSupport
 {
 	const int EstimatedCodeSize = 2048; // Initial capacity for StringBuilder
+	GenerationLogger? _logger;
 
 	public void Initialize(IncrementalGeneratorInitializationContext context)
 	{
@@ -32,30 +34,23 @@ public sealed partial class ZodSchemaGenerator : IIncrementalGenerator
 			);
 		});
 
-		var executionContextValueProvicer = context.CompilationProvider.Select(
-			static (compilation, cancellationToken) => ExecutionContext.Create(compilation, cancellationToken)
-		);
-		// Create a syntax provider that finds classes with [ZodSchema] attribute
-		var classDeclarations = context
-			.SyntaxProvider.ForAttributeWithMetadataName(
-				TypeHelpers.ZodSchemaAttribute,
-				predicate: static (s, _) => IsSyntaxTargetForGeneration(s),
-				transform: static (ctx, ct) => GetSemanticTargetForGeneration(ctx, ct)
-			)
-			.Where(static m => m is not null);
+		var generationValueProviders = GetGenerationValueProviders(context, _logger);
 
-		// Combine the target symbols with the execution context to pass both to the source output
-		var combined = classDeclarations.Combine(executionContextValueProvicer);
-
-		// Register source output
+		// Register source outputs
 		context.RegisterSourceOutput(
-			combined,
+			generationValueProviders,
 			static (spc, source) =>
 			{
-				if (source.Left is null)
+				if (source.Left.IsSourceGeneratorDisabled)
 					return;
 
-				Execute(source.Left, source.Right, spc);
+				if (source.Left.TargetDescriptor is null)
+					return;
+
+				if (!ValidateExecutionContext(source.ExecutionContext, spc))
+					return;
+
+				Execute(source.Left.TargetDescriptor, source.ExecutionContext, spc);
 			}
 		);
 	}
@@ -73,4 +68,35 @@ public sealed partial class ZodSchemaGenerator : IIncrementalGenerator
 			? null
 			: new(symbol, declaration);
 	}
+
+	static void ReportDiagnostics(
+		SourceProductionContext context,
+		Diagnostic diagnostic,
+		ExecutionContext executionContext
+	) => ReportDiagnostics(context, [diagnostic], executionContext.Logger);
+
+	static void ReportDiagnostics(
+		SourceProductionContext context,
+		IEnumerable<Diagnostic> diagnostics,
+		ExecutionContext executionContext
+	) => ReportDiagnostics(context, diagnostics, executionContext.Logger);
+
+	static void ReportDiagnostics(SourceProductionContext context, Diagnostic diagnostic, GenerationLogger? logger) =>
+		ReportDiagnostics(context, [diagnostic], logger);
+
+	static void ReportDiagnostics(
+		SourceProductionContext context,
+		IEnumerable<Diagnostic> diagnostics,
+		GenerationLogger? logger
+	)
+	{
+		foreach (var diagnostic in diagnostics)
+		{
+			context.ReportDiagnostic(diagnostic);
+
+			logger?.Diagnostic(diagnostic.GetMessage(CultureInfo.InvariantCulture));
+		}
+	}
+
+	void ILogSupport.SetLogOutput(Action<string, OutputType> action) => _logger = new GenerationLogger(action);
 }

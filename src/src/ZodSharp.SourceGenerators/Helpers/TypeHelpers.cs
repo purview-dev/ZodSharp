@@ -1,9 +1,12 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using System.Collections.Immutable;
+using Microsoft.CodeAnalysis;
 
 namespace ZodSharp.SourceGenerators.Helpers;
 
 static class TypeHelpers
 {
+	public const string DisableZodSharpSourceGeneratorProperty = "build_property.DisableZodSharpSourceGenerator";
+
 	// This matches the name of the class, just so we can use the `nameof` for later...
 	public const string ZodSchemaAttribute = "ZodSharp.ZodSchemaAttribute";
 
@@ -20,6 +23,9 @@ static class TypeHelpers
 	// Other ZodSharp types...
 	public const string ValidationResult = "ZodSharp.Core.ValidationResult";
 	public const string ValidationError = "ZodSharp.Core.ValidationError";
+
+	// System Types
+	public static readonly string ImmutableArrayMetadataName = typeof(ImmutableArray).FullName;
 
 	public static string GetLimitedAccessibilityKeyword(INamedTypeSymbol symbol)
 	{

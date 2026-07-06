@@ -8,14 +8,8 @@
 	<PropertyGroup>
 		<IsPackable>true</IsPackable>
 		<PackageId>ZodSharp.NewtonsoftJson</PackageId>
-		<PackageVersion>1.0.0</PackageVersion>
 		<Description>A high-performance C# port of Zod schema validation library. Features zero-allocation validation, struct-based rules, fluent API, and source generator support for maximum performance.</Description>
 		<PackageTags>zod;validation;schema;json</PackageTags>
-		<Authors>ZodSharp Contributors</Authors>
-		<PackageProjectUrl>https://github.com/guinhx/ZodSharp</PackageProjectUrl>
-		<RepositoryUrl>https://github.com/guinhx/ZodSharp</RepositoryUrl>
-		<PackageLicenseExpression>MIT</PackageLicenseExpression>
-		<PackageReadmeFile>README.md</PackageReadmeFile>
 	</PropertyGroup>
 
 	<ItemGroup>

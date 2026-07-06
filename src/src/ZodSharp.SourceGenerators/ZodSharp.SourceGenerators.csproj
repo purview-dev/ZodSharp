@@ -10,7 +10,16 @@
 		<IsRoslynComponent>true</IsRoslynComponent>
 	</PropertyGroup>
 
-	<ItemGroup>
+	<ItemGroup Label="Compiler Visible SDK Properties">
+		<None Include="Sdk/**/*" Pack="true" PackagePath="Sdk/" />
+	</ItemGroup>
+
+	<ItemGroup Label="Analyzer Release Files">
+		<AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
+		<AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
+	</ItemGroup>
+
+	<ItemGroup Label="Template/ Source Files">
 		<Compile Remove="Templates\Sources\**\*.cs" />
 		<EmbeddedResource Include="Templates\Sources\**\*.cs" />
 	</ItemGroup>

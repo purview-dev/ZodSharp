@@ -2,10 +2,10 @@
 	<PropertyGroup>
 		<TargetFrameworks>netstandard2.1;net10.0;</TargetFrameworks>
 		<NamespacePrefix>ZodSharp</NamespacePrefix>
+		<!-- Set project-by-project -->
 		<IsPackable>false</IsPackable>
 		<ExcludePurviewTelemetry>true</ExcludePurviewTelemetry>
 		<ExcludeMSTelemetryExtension>true</ExcludeMSTelemetryExtension>
-		<UsePackageJsonVersion>None</UsePackageJsonVersion>
 		<RepositoryUrl>https://github.com/guinhx/ZodSharp</RepositoryUrl>
 	</PropertyGroup>
 
@@ -14,7 +14,7 @@
 			- CA1510 is because of .NET Standard, we can't use APIs such as
 				ArgumentNullException.ThrowIfNull()
 		-->
-		<NoWarn>$(NoWarn);CA1510;</NoWarn>
+		<NoWarn>$(NoWarn);CA1031;CA1510;</NoWarn>
 	</PropertyGroup>
 
 	<Import Sdk="Purview.DotNetProjectSdk" Project="Sdk.props" />
@@ -23,5 +23,13 @@
 		<!-- Test projects aren't executable so we need to remove .NET Standard 2.1 -->
 		<TargetFrameworks></TargetFrameworks>
 		<TargetFramework>net10.0</TargetFramework>
+	</PropertyGroup>
+
+	<PropertyGroup Condition="'$(IsPackable)' == 'true'">
+		<Authors>ZodSharp Contributors</Authors>
+		<PackageProjectUrl>https://github.com/guinhx/ZodSharp</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/guinhx/ZodSharp</RepositoryUrl>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
 	</PropertyGroup>
 </Project>

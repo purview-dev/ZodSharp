@@ -12,35 +12,28 @@ namespace ZodSharp.SourceGenerators;
 partial class ZodSchemaGenerator
 {
 	static void Execute(
-		TargetSymbolDescriptor classInfo,
+		TargetSymbolDescriptor targetDescriptor,
 		ExecutionContext executionContext,
 		SourceProductionContext context
 	)
 	{
 		try
 		{
-			var source = GenerateSchemaClass(classInfo.Symbol, executionContext);
-			var fileName = $"{classInfo.Symbol.Name}Schema.g.cs";
+			var source = GenerateSchemaClass(targetDescriptor.Symbol, executionContext);
+			var fileName = $"{targetDescriptor.Symbol.Name}Schema.g.cs";
 			context.AddSource(fileName, SourceText.From(source, Encoding.UTF8));
 		}
 		catch (Exception ex)
 		{
 			// Report diagnostic if generation fails
 			var diagnostic = Diagnostic.Create(
-				new DiagnosticDescriptor(
-					"ZODSGEN001",
-					"Schema generation failed",
-					"Failed to generate schema for {0}: {1}",
-					"ZodSharp",
-					DiagnosticSeverity.Error,
-					isEnabledByDefault: true
-				),
-				classInfo.Declaration.GetLocation(),
-				classInfo.Symbol.Name,
+				GeneratorDiagnostics.UnhandledException,
+				targetDescriptor.Declaration.GetLocation(),
+				targetDescriptor.Symbol.Name,
 				ex.Message
 			);
 
-			context.ReportDiagnostic(diagnostic);
+			ReportDiagnostics(context, diagnostic, executionContext);
 		}
 	}
 
@@ -52,11 +45,17 @@ partial class ZodSchemaGenerator
 		var fullTypeName = classSymbol.ToDisplayString();
 		var modifier = TypeHelpers.GetLimitedAccessibilityKeyword(classSymbol);
 
+		executionContext.Logger?.Info(
+			$"Generating schema {schemaName} ({modifier}) for {className} in namespace {namespaceName}"
+		);
+
 		// Estimate capacity based on number of properties
 		var propertyCount = classSymbol
 			.GetMembers()
 			.OfType<IPropertySymbol>()
 			.Count(p => p.DeclaredAccessibility == Accessibility.Public && !p.IsStatic);
+
+		executionContext.Logger?.Info($"Property count for {className}: {propertyCount}", 1);
 
 		var estimatedCapacity = EstimatedCodeSize + (propertyCount * 200);
 
@@ -67,6 +66,7 @@ partial class ZodSchemaGenerator
 		sb.AppendLine("using System;");
 		sb.AppendLine("using System.Collections.Generic;");
 		sb.AppendLine("using System.Collections.Immutable;");
+
 		sb.AppendLine("using ZodSharp.Core;");
 		sb.AppendLine();
 
