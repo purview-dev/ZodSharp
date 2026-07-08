@@ -232,12 +232,15 @@ partial class ZodSchemaGenerator
 			GenerateNumericValidations(executionContext, sb, propertyName, propertyType, attributes);
 		}
 		else if (
-			propertyType is INamedTypeSymbol namedType
-			&& namedType.IsGenericType
-			&& namedType.OriginalDefinition.SpecialType == SpecialType.System_Collections_Generic_IEnumerable_T
+			propertyType is IArrayTypeSymbol
+			|| (
+				propertyType is INamedTypeSymbol namedType
+				&& namedType.IsGenericType
+				&& namedType.OriginalDefinition.SpecialType == SpecialType.System_Collections_Generic_IEnumerable_T
+			)
 		)
 		{
-			GenerateCollectionValidations(executionContext, sb, propertyName, attributes);
+			GenerateCollectionValidations(executionContext, sb, propertyType, propertyName, attributes);
 		}
 	}
 

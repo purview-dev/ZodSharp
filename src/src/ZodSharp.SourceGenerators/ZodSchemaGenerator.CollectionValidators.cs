@@ -13,10 +13,12 @@ partial class ZodSchemaGenerator
 	static void GenerateCollectionValidations(
 		ExecutionContext executionContext,
 		StringBuilder sb,
+		ITypeSymbol propertyType,
 		string propertyName,
 		ImmutableArray<AttributeData> attributes
 	)
 	{
+		var isArray = propertyType is IArrayTypeSymbol;
 		var minLengthAttr = MinLengthAttributeData.FromAttributeData(executionContext, attributes);
 		if (minLengthAttr.Exists)
 		{
@@ -27,9 +29,17 @@ partial class ZodSchemaGenerator
 				minLengthAttr.Length
 			);
 
-			sb.AppendLine(
-				$"            if (global::System.Linq.Enumerable.Count(value.{propertyName}) < {minLengthAttr.Length})"
-			);
+			if (isArray)
+			{
+				sb.AppendLine($"            if (value.{propertyName}.Length < {minLengthAttr.Length})");
+			}
+			else
+			{
+				sb.AppendLine(
+					$"            if (global::System.Linq.Enumerable.Count(value.{propertyName}) < {minLengthAttr.Length})"
+				);
+			}
+
 			sb.AppendLine("            {");
 			sb.AppendLine($"                errors.Add(new {TypeHelpers.ValidationError.Global()}(");
 			sb.AppendLine("                    \"too_small\",");
@@ -50,9 +60,17 @@ partial class ZodSchemaGenerator
 					maxLengthAttr.Length
 				);
 
-				sb.AppendLine(
-					$"            if (global::System.Linq.Enumerable.Count(value.{propertyName}) > {maxLengthAttr.Length})"
-				);
+				if (isArray)
+				{
+					sb.AppendLine($"            if (value.{propertyName}.Length > {maxLengthAttr.Length})");
+				}
+				else
+				{
+					sb.AppendLine(
+						$"            if (global::System.Linq.Enumerable.Count(value.{propertyName}) > {maxLengthAttr.Length})"
+					);
+				}
+
 				sb.AppendLine("            {");
 				sb.AppendLine($"                errors.Add(new {TypeHelpers.ValidationError.Global()}(");
 				sb.AppendLine("                    \"too_big\",");

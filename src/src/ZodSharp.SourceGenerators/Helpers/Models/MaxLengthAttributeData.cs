@@ -32,7 +32,6 @@ readonly record struct MaxLengthAttributeData(bool Exists, int Length, string? E
 	)
 	{
 		var attributeSymbol = executionContext.MaxLengthAttribute;
-
 		if (
 			attributeSymbol is null
 			|| !SymbolEqualityComparer.Default.Equals(attributeData.AttributeClass, attributeSymbol)

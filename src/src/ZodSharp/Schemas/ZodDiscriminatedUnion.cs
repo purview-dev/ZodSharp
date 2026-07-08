@@ -42,15 +42,19 @@ public class ZodDiscriminatedUnion(
 			);
 		}
 
-		return !options.TryGetValue(discriminatorValue, out var schema)
-			? ValidationResult<object>.Failure(
+		if (!options.TryGetValue(discriminatorValue, out var schema))
+		{
+			return ValidationResult<object>.Failure(
 				new ValidationError(
 					"invalid_discriminator",
 					$"Invalid discriminator value '{discriminatorValue}'. Expected one of: {string.Join(", ", options.Keys)}",
 					[]
 				)
-			)
-			: schema.Validate(value);
+			);
+		}
+
+		// Success!
+		return schema.Validate(value);
 	}
 
 	string? GetDiscriminatorValue(object value)

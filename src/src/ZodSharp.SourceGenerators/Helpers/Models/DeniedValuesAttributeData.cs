@@ -3,16 +3,16 @@ using Microsoft.CodeAnalysis;
 
 namespace ZodSharp.SourceGenerators.Helpers.Models;
 
-readonly record struct StringLengthAttribute(bool Exists, int MaximumLength, int MinimumLength, string? ErrorMessage)
+readonly record struct DeniedValuesAttributeData(bool Exists, object?[] Objects, string? ErrorMessage)
 {
-	public static readonly StringLengthAttribute Empty = new(false, int.MaxValue, 0, null);
+	public static readonly DeniedValuesAttributeData Empty = new(false, [], null);
 
-	public static StringLengthAttribute FromAttributeData(
+	public static DeniedValuesAttributeData FromAttributeData(
 		ExecutionContext executionContext,
 		ImmutableArray<AttributeData> attributes
 	)
 	{
-		if (executionContext.StringLengthAttribute is null)
+		if (executionContext.DeniedValuesAttribute is null)
 			return Empty;
 
 		for (var i = 0; i < attributes.Length; i++)
@@ -26,12 +26,12 @@ readonly record struct StringLengthAttribute(bool Exists, int MaximumLength, int
 		return Empty;
 	}
 
-	public static StringLengthAttribute FromAttributeData(
+	public static DeniedValuesAttributeData FromAttributeData(
 		ExecutionContext executionContext,
 		AttributeData attributeData
 	)
 	{
-		var attributeSymbol = executionContext.StringLengthAttribute;
+		var attributeSymbol = executionContext.DeniedValuesAttribute;
 		if (
 			attributeSymbol is null
 			|| !SymbolEqualityComparer.Default.Equals(attributeData.AttributeClass, attributeSymbol)
@@ -40,34 +40,20 @@ readonly record struct StringLengthAttribute(bool Exists, int MaximumLength, int
 			return Empty;
 		}
 
-		var maximumLength = int.MaxValue;
-		var minimumLength = 0;
 		string? errorMessage = null;
 
-		if (attributeData.ConstructorArguments.Length > 0 && attributeData.ConstructorArguments[0].Value is int maximum)
-		{
-			maximumLength = maximum;
-		}
+		var objects = (object?[])attributeData.ConstructorArguments[0].Value!;
 
 		foreach (var namedArgument in attributeData.NamedArguments)
 		{
 			switch (namedArgument.Key)
 			{
-				case nameof(MinimumLength) when namedArgument.Value.Value is int minimum:
-					minimumLength = minimum;
-					break;
-
 				case nameof(ErrorMessage) when namedArgument.Value.Value is string message:
 					errorMessage = message;
 					break;
 			}
 		}
 
-		return new(
-			Exists: true,
-			MaximumLength: maximumLength,
-			MinimumLength: minimumLength,
-			ErrorMessage: errorMessage
-		);
+		return new(Exists: true, Objects: objects, ErrorMessage: errorMessage);
 	}
 }

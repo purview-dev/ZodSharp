@@ -19,6 +19,13 @@ static class TypeHelpers
 	public const string MinLengthAttributeMetadataName = "System.ComponentModel.DataAnnotations.MinLengthAttribute";
 	public const string MaxLengthAttributeMetadataName = "System.ComponentModel.DataAnnotations.MaxLengthAttribute";
 	public const string RangeAttributeMetadataName = "System.ComponentModel.DataAnnotations.RangeAttribute";
+	public const string LengthAttributeMetadataName = "System.ComponentModel.DataAnnotations.LengthAttribute";
+	public const string RegularExpressionAttributeMetadataName =
+		"System.ComponentModel.DataAnnotations.RegularExpressionAttribute";
+	public const string AllowedValuesAttributeMetadataName =
+		"System.ComponentModel.DataAnnotations.AllowedValuesAttribute";
+	public const string DeniedValuesAttributeMetadataName =
+		"System.ComponentModel.DataAnnotations.DeniedValuesAttribute";
 
 	// Other ZodSharp types...
 	public const string ValidationResult = "ZodSharp.Core.ValidationResult";

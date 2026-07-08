@@ -30,12 +30,10 @@ readonly record struct EmailAddressAttributeData(bool Exists, string? ErrorMessa
 		AttributeData attributeData
 	)
 	{
+		var attributeSymbol = executionContext.EmailAddressAttribute;
 		var exists =
-			executionContext.EmailAddressAttribute is not null
-			&& SymbolEqualityComparer.Default.Equals(
-				attributeData?.AttributeClass,
-				executionContext.EmailAddressAttribute
-			);
+			attributeSymbol is not null
+			&& SymbolEqualityComparer.Default.Equals(attributeData?.AttributeClass, attributeSymbol);
 		var errorMessage = (string?)null;
 		if (exists)
 		{

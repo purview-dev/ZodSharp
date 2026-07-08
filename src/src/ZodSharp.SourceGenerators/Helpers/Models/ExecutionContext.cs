@@ -12,6 +12,10 @@ sealed record class ExecutionContext(
 	INamedTypeSymbol? MinLengthAttribute,
 	INamedTypeSymbol? MaxLengthAttribute,
 	INamedTypeSymbol? RangeAttribute,
+	INamedTypeSymbol? LengthAttribute,
+	INamedTypeSymbol? RegularExpressionAttribute,
+	INamedTypeSymbol? AllowedValuesAttribute,
+	INamedTypeSymbol? DeniedValuesAttribute,
 	// Required Framework Types
 	INamedTypeSymbol? ImmutableArray,
 	// Debugging support
@@ -35,6 +39,12 @@ sealed record class ExecutionContext(
 			MinLengthAttribute: compilation.GetTypeByMetadataName(TypeHelpers.MinLengthAttributeMetadataName),
 			MaxLengthAttribute: compilation.GetTypeByMetadataName(TypeHelpers.MaxLengthAttributeMetadataName),
 			RangeAttribute: compilation.GetTypeByMetadataName(TypeHelpers.RangeAttributeMetadataName),
+			LengthAttribute: compilation.GetTypeByMetadataName(TypeHelpers.LengthAttributeMetadataName),
+			RegularExpressionAttribute: compilation.GetTypeByMetadataName(
+				TypeHelpers.RegularExpressionAttributeMetadataName
+			),
+			AllowedValuesAttribute: compilation.GetTypeByMetadataName(TypeHelpers.AllowedValuesAttributeMetadataName),
+			DeniedValuesAttribute: compilation.GetTypeByMetadataName(TypeHelpers.DeniedValuesAttributeMetadataName),
 			// Required Framework Types
 			ImmutableArray: compilation.GetTypeByMetadataName(TypeHelpers.ImmutableArrayMetadataName),
 			// Debugging support

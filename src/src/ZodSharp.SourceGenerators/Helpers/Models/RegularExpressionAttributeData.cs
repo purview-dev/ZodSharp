@@ -3,16 +3,16 @@ using Microsoft.CodeAnalysis;
 
 namespace ZodSharp.SourceGenerators.Helpers.Models;
 
-readonly record struct RequiredAttributeData(bool Exists, bool AllowEmptyStrings, string? ErrorMessage)
+readonly record struct RegularExpressionAttributeData(bool Exists, string? ErrorMessage)
 {
-	public static readonly RequiredAttributeData Empty = new(false, false, null);
+	public static readonly RegularExpressionAttributeData Empty = new(false, null);
 
-	public static RequiredAttributeData FromAttributeData(
+	public static RegularExpressionAttributeData FromAttributeData(
 		ExecutionContext executionContext,
 		ImmutableArray<AttributeData> attributeData
 	)
 	{
-		if (executionContext.RequiredAttribute is not null)
+		if (executionContext.RegularExpressionAttribute is not null)
 		{
 			for (var i = 0; i < attributeData.Length; i++)
 			{
@@ -25,28 +25,25 @@ readonly record struct RequiredAttributeData(bool Exists, bool AllowEmptyStrings
 		return Empty;
 	}
 
-	public static RequiredAttributeData FromAttributeData(
+	public static RegularExpressionAttributeData FromAttributeData(
 		ExecutionContext executionContext,
 		AttributeData attributeData
 	)
 	{
-		var attributeSymbol = executionContext.RequiredAttribute;
+		var attributeSymbol = executionContext.RegularExpressionAttribute;
 		var exists =
 			attributeSymbol is not null
 			&& SymbolEqualityComparer.Default.Equals(attributeData?.AttributeClass, attributeSymbol);
-		var allowEmptyStrings = false;
 		var errorMessage = (string?)null;
 		if (exists)
 		{
 			foreach (var namedArg in attributeData!.NamedArguments)
 			{
-				if (namedArg.Key == nameof(AllowEmptyStrings) && namedArg.Value.Value is bool allowEmpty)
-					allowEmptyStrings = allowEmpty;
-				else if (namedArg.Key == nameof(ErrorMessage) && namedArg.Value.Value is string errorMsg)
+				if (namedArg.Key == nameof(ErrorMessage) && namedArg.Value.Value is string errorMsg)
 					errorMessage = errorMsg;
 			}
 		}
 
-		return new(exists, allowEmptyStrings, errorMessage);
+		return new(exists, errorMessage);
 	}
 }

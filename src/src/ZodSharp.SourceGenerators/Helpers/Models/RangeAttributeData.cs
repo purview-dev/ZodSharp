@@ -59,7 +59,6 @@ readonly record struct RangeAttributeData(
 	public static RangeAttributeData FromAttributeData(ExecutionContext executionContext, AttributeData attributeData)
 	{
 		var rangeAttributeSymbol = executionContext.RangeAttribute;
-
 		if (
 			rangeAttributeSymbol is null
 			|| !SymbolEqualityComparer.Default.Equals(attributeData.AttributeClass, rangeAttributeSymbol)

@@ -32,7 +32,6 @@ readonly record struct MinLengthAttributeData(bool Exists, int Length, string? E
 	)
 	{
 		var attributeSymbol = executionContext.MinLengthAttribute;
-
 		if (
 			attributeSymbol is null
 			|| !SymbolEqualityComparer.Default.Equals(attributeData.AttributeClass, attributeSymbol)
