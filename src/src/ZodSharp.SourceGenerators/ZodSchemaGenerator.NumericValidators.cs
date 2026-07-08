@@ -1,6 +1,5 @@
 ﻿using System.Collections.Immutable;
 using System.Globalization;
-using System.Text;
 using Microsoft.CodeAnalysis;
 using ZodSharp.SourceGenerators.Helpers;
 using ZodSharp.SourceGenerators.Helpers.Models;
@@ -10,14 +9,9 @@ namespace ZodSharp.SourceGenerators;
 
 partial class ZodSchemaGenerator
 {
-	/// <summary>
-	/// Generates numeric-specific validations.
-	/// </summary>
 	static void GenerateNumericValidations(
 		ExecutionContext executionContext,
-		StringBuilder sb,
 		string propertyName,
-		ITypeSymbol _, //propertyType,
 		ImmutableArray<AttributeData> attributes
 	)
 	{
@@ -43,16 +37,12 @@ partial class ZodSchemaGenerator
 				var minComparison = rangeAttr.MinimumIsExclusive ? "<=" : "<";
 				var maxComparison = rangeAttr.MaximumIsExclusive ? ">=" : ">";
 
-				sb.AppendLine(
-					$"            if (value.{propertyName} {minComparison} {rangeAttr.Minimum} || value.{propertyName} {maxComparison} {rangeAttr.Maximum})"
+				executionContext.Writer.WriteRule(
+					propertyName,
+					$"value.{propertyName} {minComparison} {rangeAttr.Minimum} || value.{propertyName} {maxComparison} {rangeAttr.Maximum}",
+					"invalid_number",
+					errorMessage
 				);
-				sb.AppendLine("            {");
-				sb.AppendLine($"                errors.Add(new {TypeHelpers.ValidationError.Global()}(");
-				sb.AppendLine("                    \"invalid_number\",");
-				sb.AppendLine($"                    \"{errorMessage}\",");
-				sb.AppendLine($"                    new[] {{ \"{propertyName}\" }}");
-				sb.AppendLine("                ));");
-				sb.AppendLine("            }");
 			}
 		}
 	}

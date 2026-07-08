@@ -59,6 +59,27 @@ static class CodeGenHelpers
 
 	public static string Global(this string type) => $"global::{type}";
 
+	public static CodeWriter WriteRule(
+		this CodeWriter writer,
+		string propertyName,
+		string comparison,
+		string errorCode,
+		string errorMessage
+	)
+	{
+		using (writer.Block($"if ({comparison})"))
+		{
+			writer.WriteLine($"errors.Add(new {TypeHelpers.ValidationError.Global()}(").Indent();
+			writer.WriteLine(errorCode).WriteLine(",");
+			writer.WriteLine(errorMessage).WriteLine(",");
+			writer.WriteLine($"new[] {{ \"{propertyName}\" }}").Unindent();
+			writer.WriteLine(")").Unindent();
+			writer.WriteLine(");");
+		}
+
+		return writer;
+	}
+
 	public static string GetGeneratedCodeAttribute(int tabs = 0) =>
 		GeneratedCodeAttributesByTabs.GetOrAdd(
 			tabs,

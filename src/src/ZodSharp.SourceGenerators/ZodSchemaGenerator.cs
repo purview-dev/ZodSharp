@@ -16,7 +16,6 @@ namespace ZodSharp.SourceGenerators;
 [Generator]
 public sealed partial class ZodSchemaGenerator : IIncrementalGenerator, ILogSupport
 {
-	const int EstimatedCodeSize = 2048; // Initial capacity for StringBuilder
 	GenerationLogger? _logger;
 
 	public void Initialize(IncrementalGeneratorInitializationContext context)

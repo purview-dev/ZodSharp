@@ -3,6 +3,7 @@
 namespace ZodSharp.SourceGenerators.Helpers.Models;
 
 sealed record class ExecutionContext(
+	CodeWriter Writer,
 	// ZodSharp symbols
 	INamedTypeSymbol? ZodSchemaAttribute,
 	// Attributes from System.ComponentModel.DataAnnotations
@@ -31,6 +32,7 @@ sealed record class ExecutionContext(
 		cancellationToken.ThrowIfCancellationRequested();
 
 		return new(
+			Writer: new(),
 			ZodSchemaAttribute: compilation.GetTypeByMetadataName(TypeHelpers.ZodSchemaAttribute),
 			// Attributes from System.ComponentModel.DataAnnotations
 			RequiredAttribute: compilation.GetTypeByMetadataName(TypeHelpers.RequiredAttributeMetadataName),

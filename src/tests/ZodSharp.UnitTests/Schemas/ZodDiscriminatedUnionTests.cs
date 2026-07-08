@@ -4,6 +4,8 @@ namespace ZodSharp.Schemas;
 
 public class ZodDiscriminatedUnionTests
 {
+	static readonly string[] ReadPermissions = ["read"];
+
 	[Test]
 	public async Task DiscriminatedUnion_GivenUserObject_RoutesToUserSchema()
 	{
@@ -50,7 +52,7 @@ public class ZodDiscriminatedUnionTests
 			{
 				["type"] = "admin",
 				["name"] = "Admin",
-				["permissions"] = new[] { "read" },
+				["permissions"] = ReadPermissions,
 			}
 		);
 
