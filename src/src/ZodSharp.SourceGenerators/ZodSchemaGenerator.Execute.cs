@@ -77,9 +77,8 @@ partial class ZodSchemaGenerator
 		);
 		executionContext.Writer.WriteLine("/// </summary>");
 		executionContext.Writer.WriteLine("{{CodeGen}}");
-		executionContext.Writer.WriteLine($"{modifier} static partial class {schemaName}");
 
-		using (executionContext.Writer.Block())
+		using (executionContext.Writer.Block($"{modifier} static partial class {schemaName}"))
 		{
 			executionContext.Writer.WriteLine(
 				"static readonly string[] EmptyPath = global::System.Array.Empty<string>();"
@@ -99,44 +98,43 @@ partial class ZodSchemaGenerator
 		string fullTypeName
 	)
 	{
-		executionContext.Writer.WriteLine("/// <summary>");
-		executionContext.Writer.WriteLine("/// Validates an instance of the target type.");
-		executionContext.Writer.WriteLine("/// </summary>");
-		executionContext.Writer.WriteLine(
+		var writer = executionContext.Writer;
+		writer.WriteLine("/// <summary>");
+		writer.WriteLine("/// Validates an instance of the target type.");
+		writer.WriteLine("/// </summary>");
+		writer.WriteLine(
 			$"public static {TypeHelpers.ValidationResult.Global()}<{fullTypeName}> Validate({fullTypeName} value)"
 		);
 
-		using (executionContext.Writer.Block())
+		using (writer.Block())
 		{
 			if (TypeHelpers.CanBeNull(classSymbol))
 			{
-				executionContext.Writer.WriteRule("EmptyPath", "value == null", "invalid_type", "Value cannot be null");
-
-				executionContext.Writer.WriteLine("if (value == null)");
-				using (executionContext.Writer.Block())
+				using (writer.Block("if (value == null)"))
 				{
-					executionContext
-						.Writer.WriteLine($"return {TypeHelpers.ValidationResult.Global()}<{fullTypeName}>.Failure(")
-						.Indent()
-						.WriteLine($"new {TypeHelpers.ValidationError.Global()}(")
-						.Indent()
-						.Quote("invalid_type")
-						.WriteLine(",")
-						.Quote("Value cannot be null")
-						.WriteLine(",")
-						.WriteLine("EmptyPath")
-						.Unindent()
-						.WriteLine(")")
-						.Unindent()
-						.WriteLine(");");
+					using (
+						writer.Block(
+							$"return {TypeHelpers.ValidationResult.Global()}<{fullTypeName}>.Failure",
+							seperator: "(",
+							closingSeperator: ");"
+						)
+					)
+					{
+						using (writer.Block($"new {TypeHelpers.ValidationError.Global()}", seperator: "("))
+						{
+							writer.WriteIndent().Quote("invalid_type").Write(",").NewLine();
+							writer.WriteIndent().Quote("Value cannot be null").Write(",").NewLine();
+							writer.WriteIndent().Write("EmptyPath").NewLine();
+						}
+					}
 				}
+
+				writer.NewLine();
 			}
 
-			executionContext
-				.Writer.WriteLine(
-					$"var errors = new {typeof(List<>).Namespace.Global()}.List<{TypeHelpers.ValidationError.Global()}>();"
-				)
-				.WriteLine();
+			writer.WriteLine(
+				$"var errors = new {typeof(List<>).Namespace.Global()}.List<{TypeHelpers.ValidationError.Global()}>();"
+			);
 
 			var properties = classSymbol
 				.GetMembers()
@@ -147,16 +145,13 @@ partial class ZodSchemaGenerator
 			foreach (var property in properties)
 				GeneratePropertyValidation(executionContext, property);
 
-			executionContext.Writer.WriteLine("if (errors.Count > 0)").WriteLine("{");
-			using (executionContext.Writer.Block())
+			using (writer.Block("if (errors.Count > 0)"))
 			{
-				executionContext.Writer.WriteLine(
-					$"return {TypeHelpers.ValidationResult.Global()}<{fullTypeName}>.Failure(errors);"
-				);
+				writer.WriteLine($"return {TypeHelpers.ValidationResult.Global()}<{fullTypeName}>.Failure(errors);");
 			}
 
-			executionContext
-				.Writer.WriteLine()
+			writer
+				.WriteLine()
 				.WriteLine($"return {TypeHelpers.ValidationResult.Global()}<{fullTypeName}>.Success(value);");
 		}
 	}
@@ -169,6 +164,8 @@ partial class ZodSchemaGenerator
 
 		var attributes = property.GetAttributes();
 		var requiredAttrib = RequiredAttributeData.FromAttributeData(executionContext, attributes);
+
+		IDisposable? block = null;
 		if (canBeNull && requiredAttrib.Exists)
 		{
 			var isStringAndAllowEmptyStrings =
@@ -190,17 +187,16 @@ partial class ZodSchemaGenerator
 
 			executionContext.Writer.WriteRule(propertyName, comparision, "missing_field", errorMessage);
 
-			executionContext.Writer.WriteLine("else").WriteLine("{");
+			block = executionContext.Writer.Block(("else"));
 		}
 		else if (canBeNull)
 		{
-			executionContext.Writer.WriteLine($"if (value.{propertyName} != null)").Indent().WriteLine("{");
+			block = executionContext.Writer.Block(($"if (value.{propertyName} != null)"));
 		}
 
 		GenerateTypeSpecificValidations(executionContext, propertyType, attributes, propertyName);
 
-		if (canBeNull)
-			executionContext.Writer.Unindent().WriteLine("}");
+		block?.Dispose();
 
 		executionContext.Writer.WriteLine();
 	}

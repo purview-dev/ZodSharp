@@ -20,7 +20,14 @@ sealed class CodeWriter
 	public CodeWriter Unindent()
 	{
 		if (_indentLevel == 0)
+		{
+#if (DEBUG)
+			return this;
+#else
+
 			throw new InvalidOperationException("Cannot unindent below zero.");
+#endif
+		}
 
 		_indentLevel--;
 
@@ -69,15 +76,24 @@ sealed class CodeWriter
 
 	public CodeWriter QuoteLine(string? value = null) => Quote(value).WriteLine();
 
-	public IDisposable Block(string? header = null)
+	public IDisposable Block(string? header = null, string seperator = "{", string? closingSeperator = null)
 	{
 		if (header != null)
 			WriteLine(header);
 
-		WriteLine("{");
+		WriteLine(seperator);
 		Indent();
 
-		return new BlockScope(this);
+		if (closingSeperator == null)
+		{
+			// When the closing seperator is null, it's effectively 'auto'.
+			if (seperator == "{")
+				closingSeperator = "}";
+			else if (seperator == "(")
+				closingSeperator = ")";
+		}
+
+		return new BlockScope(this, closingSeperator);
 	}
 
 	public override string ToString() => _builder.ToString();
@@ -85,7 +101,7 @@ sealed class CodeWriter
 	static ImmutableDictionary<int, string> CreateIndentCache() =>
 		Enumerable.Range(0, 7).Select(i => new KeyValuePair<int, string>(i, new('\t', i))).ToImmutableDictionary();
 
-	sealed class BlockScope(CodeWriter writer) : IDisposable
+	sealed class BlockScope(CodeWriter writer, string? closingSeperator) : IDisposable
 	{
 		bool _disposed;
 
@@ -95,7 +111,7 @@ sealed class CodeWriter
 				return;
 
 			writer.Unindent();
-			writer.WriteLine("}");
+			writer.WriteLine(closingSeperator);
 
 			_disposed = true;
 		}

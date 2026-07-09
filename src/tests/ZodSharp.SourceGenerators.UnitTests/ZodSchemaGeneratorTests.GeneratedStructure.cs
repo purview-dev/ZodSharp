@@ -53,6 +53,7 @@ namespace Testing
 		// Assert
 		await AssertNoGeneratorExceptions(result);
 		await AssertNoCompilationErrors(outputCompilation, cancellationToken);
+
 		await Assert.That(generatedSource).IsEmpty();
 	}
 
@@ -81,6 +82,7 @@ namespace Testing
 		// Assert
 		await AssertNoGeneratorExceptions(result);
 		await AssertNoCompilationErrors(outputCompilation, cancellationToken);
+
 		await Assert.That(GetSchemaGeneratedSource(result, "CustomerSchema")).IsNotEmpty();
 		await Assert.That(GetSchemaGeneratedSource(result, "AddressSchema")).IsNotEmpty();
 		await Assert.That(GetSchemaGeneratedSource(result, "OrderSchema")).IsNotEmpty();

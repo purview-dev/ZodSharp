@@ -69,15 +69,21 @@ static class CodeGenHelpers
 	{
 		using (writer.Block($"if ({comparison})"))
 		{
-			writer.WriteLine($"errors.Add(new {TypeHelpers.ValidationError.Global()}(").Indent();
-			writer.WriteLine(errorCode).WriteLine(",");
-			writer.WriteLine(errorMessage).WriteLine(",");
-			writer.WriteLine($"new[] {{ \"{propertyName}\" }}").Unindent();
-			writer.WriteLine(")").Unindent();
-			writer.WriteLine(");");
+			using (
+				writer.Block(
+					$"errors.Add(new {TypeHelpers.ValidationError.Global()}",
+					seperator: "(",
+					closingSeperator: "));"
+				)
+			)
+			{
+				writer.WriteIndent().Quote(errorCode).Write(",").NewLine();
+				writer.WriteIndent().Quote(errorMessage).Write(",").NewLine();
+				writer.WriteLine($"new[] {{ \"{propertyName}\" }}");
+			}
 		}
 
-		return writer;
+		return writer.NewLine();
 	}
 
 	public static string GetGeneratedCodeAttribute(int tabs = 0) =>
