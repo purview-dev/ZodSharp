@@ -32,7 +32,7 @@ public partial class ZodSchemaGeneratorTests : SourceGeneratorTestBase<ZodSchema
 	{
 		foreach (var genResult in result.Results)
 		{
-			await Assert.That(genResult.Exception).IsNull();
+			await Assert.That(genResult.Exception).IsNull().Because(genResult.Exception?.Message!);
 		}
 	}
 
@@ -43,7 +43,10 @@ public partial class ZodSchemaGeneratorTests : SourceGeneratorTestBase<ZodSchema
 			.Where(static d => d.Severity == DiagnosticSeverity.Error)
 			.ToArray();
 
-		await Assert.That(errors).IsEmpty();
+		await Assert
+			.That(errors)
+			.IsEmpty()
+			.Because("Errors:\n\t" + string.Join("\t", errors.Select(e => e.ToString() + Environment.NewLine)));
 	}
 
 	static Diagnostic[] GetGeneratorDiagnostics(GeneratorDriverRunResult result) =>

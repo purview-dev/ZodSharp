@@ -96,10 +96,33 @@ sealed class CodeWriter
 		return new BlockScope(this, closingSeperator);
 	}
 
+	void Reset()
+	{
+		_builder.Clear();
+		_indentLevel = 0;
+	}
+
+	public IDisposable Begin() => new ClearScope(this);
+
 	public override string ToString() => _builder.ToString();
 
 	static ImmutableDictionary<int, string> CreateIndentCache() =>
 		Enumerable.Range(0, 7).Select(i => new KeyValuePair<int, string>(i, new('\t', i))).ToImmutableDictionary();
+
+	sealed class ClearScope(CodeWriter writer) : IDisposable
+	{
+		bool _disposed;
+
+		public void Dispose()
+		{
+			if (_disposed)
+				return;
+
+			writer.Reset();
+
+			_disposed = true;
+		}
+	}
 
 	sealed class BlockScope(CodeWriter writer, string? closingSeperator) : IDisposable
 	{

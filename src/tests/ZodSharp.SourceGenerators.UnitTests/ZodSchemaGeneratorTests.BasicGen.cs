@@ -1,6 +1,4 @@
-﻿using Microsoft.CodeAnalysis;
-
-namespace ZodSharp.SourceGenerators;
+﻿namespace ZodSharp.SourceGenerators;
 
 partial class ZodSchemaGeneratorTests
 {
@@ -20,19 +18,9 @@ namespace Testing
 		// Act
 		var (result, outputCompilation) = await GenerateAsync(source, cancellationToken);
 
-		// Assert — no generator exceptions
-		foreach (var genResult in result.Results)
-		{
-			await Assert.That(genResult.Exception).IsNull();
-		}
-
-		// Assert — no compilation errors
-		var errors = outputCompilation
-			.GetDiagnostics(cancellationToken)
-			.Where(d => d.Severity == DiagnosticSeverity.Error)
-			.ToArray();
-
-		await Assert.That(errors).IsEmpty();
+		// Assert
+		await AssertNoGeneratorExceptions(result);
+		await AssertNoCompilationErrors(outputCompilation, cancellationToken);
 	}
 
 	[Test]

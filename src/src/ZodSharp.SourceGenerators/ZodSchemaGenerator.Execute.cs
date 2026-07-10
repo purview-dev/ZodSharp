@@ -19,9 +19,12 @@ partial class ZodSchemaGenerator
 	{
 		try
 		{
-			var source = GenerateSchemaClass(targetDescriptor.Symbol, executionContext);
-			var fileName = $"{targetDescriptor.Symbol.Name}Schema.g.cs";
-			context.AddSource(fileName, SourceText.From(source, Encoding.UTF8));
+			using (executionContext.Writer.Begin())
+			{
+				var source = GenerateSchemaClass(targetDescriptor.Symbol, executionContext);
+				var fileName = $"{targetDescriptor.Symbol.Name}Schema.g.cs";
+				context.AddSource(fileName, SourceText.From(source, Encoding.UTF8));
+			}
 		}
 		catch (Exception ex)
 		{
