@@ -34,6 +34,14 @@ static class TypeHelpers
 	// System Types
 	public static readonly string ImmutableArrayMetadataName = typeof(ImmutableArray).FullName;
 
+	public static LengthAccessKind GetLengthAccessKind(ITypeSymbol propertyType)
+	{
+		if (propertyType.SpecialType == SpecialType.System_String || propertyType is IArrayTypeSymbol)
+			return LengthAccessKind.Length;
+
+		return HasAccessibleCountProperty(propertyType) ? LengthAccessKind.Count : LengthAccessKind.Enumerable;
+	}
+
 	public static string GetLimitedAccessibilityKeyword(INamedTypeSymbol symbol)
 	{
 		return symbol.DeclaredAccessibility switch

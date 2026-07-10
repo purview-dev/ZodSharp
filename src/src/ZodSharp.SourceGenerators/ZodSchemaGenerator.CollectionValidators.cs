@@ -17,6 +17,38 @@ partial class ZodSchemaGenerator
 	)
 	{
 		var isArray = propertyType is IArrayTypeSymbol;
+
+		var lengthAttr = LengthAttributeData.FromAttributeData(executionContext, attributes);
+
+		if (lengthAttr.Exists)
+		{
+			var errorMessage = string.Format(
+				CultureInfo.InvariantCulture,
+				lengthAttr.ErrorMessage ?? "Field '{0}' must contain between {1} and {2} element(s).",
+				propertyName,
+				lengthAttr.MinimumLength,
+				lengthAttr.MaximumLength
+			);
+
+			var countExpression = isArray
+				? $"value.{propertyName}.Length"
+				: $"global::System.Linq.Enumerable.Count(value.{propertyName})";
+
+			executionContext.Writer.WriteRule(
+				propertyName,
+				$"{countExpression} < {lengthAttr.MinimumLength}",
+				"too_small",
+				errorMessage
+			);
+
+			executionContext.Writer.WriteRule(
+				propertyName,
+				$"{countExpression} > {lengthAttr.MaximumLength}",
+				"too_big",
+				errorMessage
+			);
+		}
+
 		var minLengthAttr = MinLengthAttributeData.FromAttributeData(executionContext, attributes);
 		if (minLengthAttr.Exists)
 		{

@@ -15,6 +15,35 @@ partial class ZodSchemaGenerator
 		ImmutableArray<AttributeData> attributes
 	)
 	{
+		var lengthAttr = LengthAttributeData.FromAttributeData(executionContext, attributes);
+		if (lengthAttr.Exists)
+		{
+			var errorMessage = string.Format(
+				CultureInfo.InvariantCulture,
+				lengthAttr.ErrorMessage ?? "Field '{0}' must have a value of more than {1} and less than {2}",
+				propertyName,
+				lengthAttr.MaximumLength,
+				lengthAttr.MinimumLength
+			);
+
+			if (lengthAttr.MinimumLength > 0)
+			{
+				executionContext.Writer.WriteRule(
+					propertyName,
+					$"value.{propertyName} <= {lengthAttr.MinimumLength}",
+					"too_small",
+					errorMessage
+				);
+			}
+
+			executionContext.Writer.WriteRule(
+				propertyName,
+				$"value.{propertyName} >= {lengthAttr.MaximumLength}",
+				"too_big",
+				errorMessage
+			);
+		}
+
 		var rangeAttr = RangeAttributeData.FromAttributeData(executionContext, attributes);
 		if (rangeAttr.Exists)
 		{

@@ -13,6 +13,7 @@ sealed record class ExecutionContext(
 	INamedTypeSymbol? MinLengthAttribute,
 	INamedTypeSymbol? MaxLengthAttribute,
 	INamedTypeSymbol? RangeAttribute,
+	// -- Pending DAA Implementations
 	INamedTypeSymbol? LengthAttribute,
 	INamedTypeSymbol? RegularExpressionAttribute,
 	INamedTypeSymbol? AllowedValuesAttribute,

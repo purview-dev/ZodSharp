@@ -15,6 +15,65 @@ partial class ZodSchemaGenerator
 		ImmutableArray<AttributeData> attributes
 	)
 	{
+		StringLengthValidators(executionContext, propertyName, attributes);
+
+		var emailAttribute = EmailAddressAttributeData.FromAttributeData(executionContext, attributes);
+		if (emailAttribute.Exists)
+		{
+			var errorMessage = string.Format(
+				CultureInfo.InvariantCulture,
+				(emailAttribute.ErrorMessage ?? "Field '{0}' must be a valid email address"),
+				propertyName
+			);
+
+			executionContext.Writer.WriteRule(
+				propertyName,
+				$"!global::ZodSharp.Rules.EmailRule.EmailRegex.IsMatch(value.{propertyName})",
+				"invalid_string",
+				errorMessage
+			);
+		}
+	}
+
+	static void StringLengthValidators(
+		ExecutionContext executionContext,
+		string propertyName,
+		ImmutableArray<AttributeData> attributes
+	)
+	{
+		var lengthAttr = LengthAttributeData.FromAttributeData(executionContext, attributes);
+		if (lengthAttr.Exists)
+		{
+			var errorMessage = string.Format(
+				CultureInfo.InvariantCulture,
+				lengthAttr.ErrorMessage ?? "Field '{0}' must be greater than {1} and less than {2} characters long",
+				propertyName,
+				lengthAttr.MaximumLength,
+				lengthAttr.MinimumLength
+			);
+
+			// `null` is valid, use Required if it's not...
+			using (executionContext.Writer.Block("if (value != null)"))
+			{
+				if (lengthAttr.MinimumLength > 0)
+				{
+					executionContext.Writer.WriteRule(
+						propertyName,
+						$"value.{propertyName}.Length <= {lengthAttr.MinimumLength}",
+						"too_small",
+						errorMessage
+					);
+				}
+
+				executionContext.Writer.WriteRule(
+					propertyName,
+					$"value.{propertyName}.Length >= {lengthAttr.MaximumLength}",
+					"too_big",
+					errorMessage
+				);
+			}
+		}
+
 		var stringLengthAttr = StringLengthAttribute.FromAttributeData(executionContext, attributes);
 		if (stringLengthAttr.Exists)
 		{
@@ -79,23 +138,6 @@ partial class ZodSchemaGenerator
 				propertyName,
 				$"value.{propertyName}.Length > {maxLengthAttr.Length}",
 				"too_big",
-				errorMessage
-			);
-		}
-
-		var emailAttribute = EmailAddressAttributeData.FromAttributeData(executionContext, attributes);
-		if (emailAttribute.Exists)
-		{
-			var errorMessage = string.Format(
-				CultureInfo.InvariantCulture,
-				(emailAttribute.ErrorMessage ?? "Field '{0}' must be a valid email address"),
-				propertyName
-			);
-
-			executionContext.Writer.WriteRule(
-				propertyName,
-				$"!global::ZodSharp.Rules.EmailRule.EmailRegex.IsMatch(value.{propertyName})",
-				"invalid_string",
 				errorMessage
 			);
 		}
