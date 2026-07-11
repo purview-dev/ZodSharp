@@ -26,6 +26,7 @@ static class TypeHelpers
 		"System.ComponentModel.DataAnnotations.AllowedValuesAttribute";
 	public const string DeniedValuesAttributeMetadataName =
 		"System.ComponentModel.DataAnnotations.DeniedValuesAttribute";
+	public const string DisplayAttributeMetadataName = "System.ComponentModel.DataAnnotations.DisplayAttribute";
 
 	// Other ZodSharp types...
 	public const string ValidationResult = "ZodSharp.Core.ValidationResult";
@@ -33,14 +34,28 @@ static class TypeHelpers
 
 	// System Types
 	public static readonly string ImmutableArrayMetadataName = typeof(ImmutableArray).FullName;
+	public const string ICollectionMetadataName = "System.Collections.ICollection";
+	public const string IEnumerableMetadataName = "System.Collections.IEnumerable";
+	public const string ICollectionTMetadataName = "System.Collections.Generic.ICollection`1";
+	public const string IEnumerableTMetadataName = "System.Collections.Generic.IEnumerable`1";
+	public const string IReadOnlyCollectionTMetadataName = "System.Collections.Generic.IReadOnlyCollection`1";
 
-	public static LengthAccessKind GetLengthAccessKind(ITypeSymbol propertyType)
-	{
-		if (propertyType.SpecialType == SpecialType.System_String || propertyType is IArrayTypeSymbol)
-			return LengthAccessKind.Length;
+	public static LengthAccessKind GetLengthAccessKind(ITypeSymbol propertyType) =>
+		propertyType.SpecialType == SpecialType.System_String || propertyType is IArrayTypeSymbol
+			? LengthAccessKind.Length
+		: HasAccessibleCountProperty(propertyType) ? LengthAccessKind.Count
+		: LengthAccessKind.Enumerable;
 
-		return HasAccessibleCountProperty(propertyType) ? LengthAccessKind.Count : LengthAccessKind.Enumerable;
-	}
+	public static bool HasAccessibleCountProperty(ITypeSymbol propertyType) =>
+		propertyType
+			.GetMembers("Count")
+			.OfType<IPropertySymbol>()
+			.Any(p =>
+				!p.IsStatic
+				&& p.DeclaredAccessibility == Accessibility.Public
+				&& p.Parameters.Length == 0
+				&& p.Type.SpecialType == SpecialType.System_Int32
+			);
 
 	public static string GetLimitedAccessibilityKeyword(INamedTypeSymbol symbol)
 	{
@@ -85,4 +100,47 @@ static class TypeHelpers
 				or SpecialType.System_Single
 				or SpecialType.System_Double
 				or SpecialType.System_Decimal;
+
+	public static ITypeSymbol UnwrapNullableType(ITypeSymbol type) =>
+		type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nullableType
+			? nullableType.TypeArguments[0]
+			: type;
+
+	public static bool IsSameType(ITypeSymbol left, ITypeSymbol? right, SymbolEqualityComparer? comparer = null)
+	{
+		if (right is null)
+			return false;
+
+		comparer ??= SymbolEqualityComparer.Default;
+		return comparer.Equals(UnwrapNullableType(left), UnwrapNullableType(right));
+	}
+
+	public static bool IsNamedType(ITypeSymbol type, string fullyQualifiedMetadataName)
+	{
+		type = UnwrapNullableType(type);
+		return type is INamedTypeSymbol namedType
+			&& string.Equals(namedType.ToDisplayString(), fullyQualifiedMetadataName, StringComparison.Ordinal);
+	}
+
+	public static bool ImplementsInterface(
+		ITypeSymbol type,
+		INamedTypeSymbol? interfaceSymbol,
+		SymbolEqualityComparer? comparer = null
+	)
+	{
+		if (interfaceSymbol is null)
+			return false;
+
+		comparer ??= SymbolEqualityComparer.Default;
+		if (type is INamedTypeSymbol namedType && comparer.Equals(namedType.OriginalDefinition, interfaceSymbol))
+			return true;
+
+		foreach (var implementedInterface in type.AllInterfaces)
+		{
+			if (comparer.Equals(implementedInterface.OriginalDefinition, interfaceSymbol))
+				return true;
+		}
+
+		return false;
+	}
 }

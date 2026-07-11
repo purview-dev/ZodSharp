@@ -69,6 +69,9 @@ static class CodeGenHelpers
 	{
 		using (writer.Block($"if ({comparison})"))
 		{
+			writer.WriteLine(
+				$"errors ??= new global::System.Collections.Generic.List<{TypeHelpers.ValidationError.Global()}>();"
+			);
 			using (
 				writer.Block(
 					$"errors.Add(new {TypeHelpers.ValidationError.Global()}",

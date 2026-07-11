@@ -21,7 +21,11 @@ partial class ZodSchemaGenerator
 		{
 			using (executionContext.Writer.Begin())
 			{
-				var source = GenerateSchemaClass(targetDescriptor.Symbol, executionContext);
+				List<Diagnostic> diagnostics = [];
+				var source = GenerateSchemaClass(targetDescriptor.Symbol, executionContext, diagnostics);
+				if (diagnostics.Count > 0)
+					ReportDiagnostics(context, diagnostics, executionContext);
+
 				var fileName = $"{targetDescriptor.Symbol.Name}Schema.g.cs";
 				context.AddSource(fileName, SourceText.From(source, Encoding.UTF8));
 			}
@@ -40,7 +44,11 @@ partial class ZodSchemaGenerator
 		}
 	}
 
-	static string GenerateSchemaClass(INamedTypeSymbol classSymbol, ExecutionContext executionContext)
+	static string GenerateSchemaClass(
+		INamedTypeSymbol classSymbol,
+		ExecutionContext executionContext,
+		List<Diagnostic> diagnostics
+	)
 	{
 		var namespaceName = classSymbol.ContainingNamespace.ToDisplayString();
 		var className = classSymbol.Name;
@@ -84,11 +92,14 @@ partial class ZodSchemaGenerator
 		using (executionContext.Writer.Block($"{modifier} static partial class {schemaName}"))
 		{
 			executionContext.Writer.WriteLine(
-				"static readonly string[] EmptyPath = global::System.Array.Empty<string>();"
+				$"static readonly {TypeHelpers.ImmutableArrayMetadataName.Global()}<string> EmptyPath = {TypeHelpers.ImmutableArrayMetadataName.Global()}<string>.Empty;"
 			);
 			executionContext.Writer.WriteLine();
+			GeneratePathFields(executionContext, classSymbol);
+			GenerateStaticAttributeFields(executionContext, classSymbol, diagnostics);
+			GenerateValidationHelpers(executionContext);
 
-			GenerateValidateMethod(executionContext, classSymbol, fullTypeName);
+			GenerateValidateMethod(executionContext, classSymbol, fullTypeName, diagnostics);
 			GenerateParseMethod(executionContext, fullTypeName);
 		}
 
@@ -98,7 +109,8 @@ partial class ZodSchemaGenerator
 	static void GenerateValidateMethod(
 		ExecutionContext executionContext,
 		INamedTypeSymbol classSymbol,
-		string fullTypeName
+		string fullTypeName,
+		List<Diagnostic> diagnostics
 	)
 	{
 		var writer = executionContext.Writer;
@@ -123,7 +135,7 @@ partial class ZodSchemaGenerator
 						)
 					)
 					{
-						using (writer.Block($"new {TypeHelpers.ValidationError.Global()}", seperator: "("))
+						using (writer.Block($"{TypeHelpers.ValidationError.Global()}.Create", seperator: "("))
 						{
 							writer.WriteIndent().Quote("invalid_type").Write(",").NewLine();
 							writer.WriteIndent().Quote("Value cannot be null").Write(",").NewLine();
@@ -136,7 +148,7 @@ partial class ZodSchemaGenerator
 			}
 
 			writer.WriteLine(
-				$"var errors = new {typeof(List<>).Namespace.Global()}.List<{TypeHelpers.ValidationError.Global()}>();"
+				$"{typeof(List<>).Namespace.Global()}.List<{TypeHelpers.ValidationError.Global()}>? errors = null;"
 			);
 
 			var properties = classSymbol
@@ -146,9 +158,9 @@ partial class ZodSchemaGenerator
 				.ToList();
 
 			foreach (var property in properties)
-				GeneratePropertyValidation(executionContext, property);
+				GeneratePropertyValidation(executionContext, property, diagnostics);
 
-			using (writer.Block("if (errors.Count > 0)"))
+			using (writer.Block("if (errors is not null)"))
 			{
 				writer.WriteLine($"return {TypeHelpers.ValidationResult.Global()}<{fullTypeName}>.Failure(errors);");
 			}
@@ -159,11 +171,18 @@ partial class ZodSchemaGenerator
 		}
 	}
 
-	static void GeneratePropertyValidation(ExecutionContext executionContext, IPropertySymbol property)
+	static void GeneratePropertyValidation(
+		ExecutionContext executionContext,
+		IPropertySymbol property,
+		List<Diagnostic> diagnostics
+	)
 	{
 		var propertyName = property.Name;
-		var propertyType = property.Type;
-		var canBeNull = TypeHelpers.CanBeNull(propertyType);
+		var propertyType = property.Type
+			is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nullableType
+			? nullableType.TypeArguments[0]
+			: property.Type;
+		var canBeNull = TypeHelpers.CanBeNull(property.Type);
 
 		var attributes = property.GetAttributes();
 		var requiredAttrib = RequiredAttributeData.FromAttributeData(executionContext, attributes);
@@ -191,13 +210,38 @@ partial class ZodSchemaGenerator
 			executionContext.Writer.WriteRule(propertyName, comparision, "missing_field", errorMessage);
 
 			block = executionContext.Writer.Block(("else"));
+			GenerateValueSetValidations(
+				executionContext,
+				property,
+				property.Type,
+				propertyName,
+				attributes,
+				diagnostics
+			);
 		}
-		else if (canBeNull)
+		else
 		{
-			block = executionContext.Writer.Block(($"if (value.{propertyName} != null)"));
+			GenerateValueSetValidations(
+				executionContext,
+				property,
+				property.Type,
+				propertyName,
+				attributes,
+				diagnostics
+			);
+
+			if (canBeNull)
+				block = executionContext.Writer.Block(($"if (value.{propertyName} != null)"));
 		}
 
-		GenerateTypeSpecificValidations(executionContext, propertyType, attributes, propertyName);
+		GenerateTypeSpecificValidations(
+			executionContext,
+			property,
+			propertyType,
+			attributes,
+			propertyName,
+			diagnostics
+		);
 
 		block?.Dispose();
 
@@ -206,31 +250,187 @@ partial class ZodSchemaGenerator
 
 	static void GenerateTypeSpecificValidations(
 		ExecutionContext executionContext,
+		IPropertySymbol property,
 		ITypeSymbol propertyType,
 		ImmutableArray<AttributeData> attributes,
-		string propertyName
+		string propertyName,
+		List<Diagnostic> diagnostics
 	)
 	{
-		if (propertyType.SpecialType == SpecialType.System_String)
-		{
-			GenerateStringValidations(executionContext, propertyName, attributes);
-		}
-		else if (TypeHelpers.IsNumericType(propertyType))
-		{
-			GenerateNumericValidations(executionContext, propertyName, attributes);
-		}
-		else if (
-			propertyType is IArrayTypeSymbol
-			|| (
-				propertyType is INamedTypeSymbol namedType
-				&& namedType.IsGenericType
-				&& namedType.OriginalDefinition.SpecialType == SpecialType.System_Collections_Generic_IEnumerable_T
+		var lengthAttributeData = FindAttribute(attributes, executionContext.LengthAttribute);
+		var supportsLengthAttribute =
+			propertyType.SpecialType == SpecialType.System_String
+			|| propertyType is IArrayTypeSymbol
+			|| TypeHelpers.ImplementsInterface(propertyType, executionContext.IEnumerable)
+			|| TypeHelpers.ImplementsInterface(propertyType, executionContext.IEnumerableOfT);
+
+		if (lengthAttributeData is not null && !supportsLengthAttribute)
+			AddUnsupportedLengthTargetDiagnostic(diagnostics, lengthAttributeData, propertyName, propertyType);
+
+		var rangeAttributeData = FindAttribute(attributes, executionContext.RangeAttribute);
+		if (
+			rangeAttributeData is not null
+			&& !TryBuildRangeBoundaryExpressions(
+				propertyType,
+				RangeAttributeData.FromAttributeData(executionContext, rangeAttributeData),
+				out _,
+				out _
 			)
 		)
 		{
-			GenerateCollectionValidations(executionContext, propertyType, propertyName, attributes);
+			AddUnsupportedDataAnnotationsDiagnostic(
+				diagnostics,
+				rangeAttributeData,
+				string.Format(
+					CultureInfo.InvariantCulture,
+					"RangeAttribute on '{0}' cannot be generated safely for '{1}'.",
+					propertyName,
+					propertyType.ToDisplayString()
+				)
+			);
+		}
+
+		if (propertyType.SpecialType == SpecialType.System_String)
+		{
+			GenerateStringValidations(executionContext, property, propertyName, attributes, diagnostics);
+		}
+		else if (TypeHelpers.IsNumericType(propertyType))
+		{
+			GenerateNumericValidations(executionContext, property, propertyType, propertyName, attributes, diagnostics);
+		}
+		else if (
+			propertyType is IArrayTypeSymbol
+			|| TypeHelpers.ImplementsInterface(propertyType, executionContext.IEnumerable)
+			|| TypeHelpers.ImplementsInterface(propertyType, executionContext.IEnumerableOfT)
+		)
+		{
+			GenerateCollectionValidations(
+				executionContext,
+				property,
+				propertyType,
+				propertyName,
+				attributes,
+				diagnostics
+			);
 		}
 	}
+
+	static void GeneratePathFields(ExecutionContext executionContext, INamedTypeSymbol classSymbol)
+	{
+		foreach (
+			var property in classSymbol
+				.GetMembers()
+				.OfType<IPropertySymbol>()
+				.Where(p => p.DeclaredAccessibility == Accessibility.Public && !p.IsStatic)
+		)
+		{
+			executionContext.Writer.WriteLine(
+				$"static readonly {TypeHelpers.ImmutableArrayMetadataName.Global()}<string> {GetPathFieldName(property.Name)} = {TypeHelpers.ImmutableArrayMetadataName.Global()}.Create({Quote(property.Name)});"
+			);
+		}
+
+		executionContext.Writer.WriteLine();
+	}
+
+	static void GenerateStaticAttributeFields(
+		ExecutionContext executionContext,
+		INamedTypeSymbol classSymbol,
+		List<Diagnostic> diagnostics
+	)
+	{
+		foreach (
+			var property in classSymbol
+				.GetMembers()
+				.OfType<IPropertySymbol>()
+				.Where(p => p.DeclaredAccessibility == Accessibility.Public && !p.IsStatic)
+		)
+		{
+			var attributes = property.GetAttributes();
+			var propertyType = TypeHelpers.UnwrapNullableType(property.Type);
+
+			var regexAttribute = RegularExpressionAttributeData.FromAttributeData(executionContext, attributes);
+			if (regexAttribute.Exists)
+			{
+				if (
+					propertyType.SpecialType != SpecialType.System_String
+					|| string.IsNullOrEmpty(regexAttribute.Pattern)
+				)
+				{
+					AddUnsupportedDataAnnotationsDiagnostic(
+						diagnostics,
+						FindAttribute(attributes, executionContext.RegularExpressionAttribute),
+						string.Format(
+							CultureInfo.InvariantCulture,
+							"RegularExpressionAttribute can only be applied to string properties, but '{0}' is '{1}'.",
+							property.Name,
+							propertyType.ToDisplayString()
+						)
+					);
+				}
+				else
+				{
+					executionContext.Writer.WriteLine(
+						$"static readonly global::System.Text.RegularExpressions.Regex {GetRegexFieldName(property.Name)} = new({Quote(regexAttribute.Pattern!)}, global::System.Text.RegularExpressions.RegexOptions.CultureInvariant);"
+					);
+				}
+			}
+
+			var rangeAttribute = RangeAttributeData.FromAttributeData(executionContext, attributes);
+			if (
+				rangeAttribute.Exists
+				&& TryBuildRangeBoundaryExpressions(
+					propertyType,
+					rangeAttribute,
+					out var minimumExpression,
+					out var maximumExpression
+				)
+			)
+			{
+				var fqTypeName = GetFullyQualifiedTypeName(propertyType);
+				executionContext.Writer.WriteLine(
+					$"static readonly {fqTypeName} {GetRangeMinimumFieldName(property.Name)} = {minimumExpression};"
+				);
+				executionContext.Writer.WriteLine(
+					$"static readonly {fqTypeName} {GetRangeMaximumFieldName(property.Name)} = {maximumExpression};"
+				);
+			}
+		}
+
+		executionContext.Writer.WriteLine();
+	}
+
+	static void GenerateValidationHelpers(ExecutionContext executionContext)
+	{
+		executionContext.Writer.WriteLine(
+			$"static void AddError(ref {typeof(List<>).Namespace.Global()}.List<{TypeHelpers.ValidationError.Global()}>? errors, {TypeHelpers.ValidationError.Global()} error)"
+		);
+		using (executionContext.Writer.Block())
+		{
+			executionContext.Writer.WriteLine(
+				$"(errors ??= new {typeof(List<>).Namespace.Global()}.List<{TypeHelpers.ValidationError.Global()}>()).Add(error);"
+			);
+		}
+
+		executionContext.Writer.WriteLine();
+		executionContext.Writer.WriteLine(
+			"static string FormatCount(int count, string singularNoun, string pluralNoun)"
+		);
+		using (executionContext.Writer.Block())
+		{
+			executionContext.Writer.WriteLine("return count == 1 ? $\"1 {singularNoun}\" : $\"{count} {pluralNoun}\";");
+		}
+
+		executionContext.Writer.WriteLine();
+	}
+
+	static string GetPathFieldName(string propertyName) => $"Path_{propertyName}";
+
+	static string GetLocalIdentifier(string propertyName, string suffix) =>
+		string.IsNullOrEmpty(propertyName)
+			? suffix
+			: char.ToLowerInvariant(propertyName[0]) + propertyName.Substring(1) + suffix;
+
+	static string Quote(string value) => $"\"{value.Replace("\\", "\\\\").Replace("\"", "\\\"")}\"";
 
 	static void GenerateParseMethod(ExecutionContext executionContext, string fullTypeName)
 	{
@@ -266,7 +466,7 @@ partial class ZodSchemaGenerator
 		sb.AppendLine("        if (!additionalValidation(value))");
 		sb.AppendLine("        {");
 		sb.AppendLine($"            return {TypeHelpers.ValidationResult.Global()}<{fullTypeName}>.Failure(");
-		sb.AppendLine($"                new {TypeHelpers.ValidationError.Global()}(");
+		sb.AppendLine($"                {TypeHelpers.ValidationError.Global()}.Create(");
 		sb.AppendLine("                    \"validation_failed\",");
 		sb.AppendLine($"                    message ?? \"Additional validation failed for {classSymbol.Name}\",");
 		sb.AppendLine("                    EmptyPath");
@@ -298,7 +498,7 @@ partial class ZodSchemaGenerator
 		sb.AppendLine("        }");
 		sb.AppendLine();
 		sb.AppendLine($"        return {TypeHelpers.ValidationResult.Global()}<{fullTypeName}>.Failure(");
-		sb.AppendLine($"            new {TypeHelpers.ValidationError.Global()}(");
+		sb.AppendLine($"            {TypeHelpers.ValidationError.Global()}.Create(");
 		sb.AppendLine("                \"validation_failed\",");
 		sb.AppendLine($"                message ?? \"Neither validation passed for {classSymbol.Name}\",");
 		sb.AppendLine("                EmptyPath");
@@ -324,7 +524,7 @@ partial class ZodSchemaGenerator
 		sb.AppendLine("        if (!refinement(value))");
 		sb.AppendLine("        {");
 		sb.AppendLine($"            return {TypeHelpers.ValidationResult.Global()}<{fullTypeName}>.Failure(");
-		sb.AppendLine($"            new {TypeHelpers.ValidationError.Global()}(");
+		sb.AppendLine($"            {TypeHelpers.ValidationError.Global()}.Create(");
 		sb.AppendLine("                \"validation_failed\",");
 		sb.AppendLine($"                message ?? \"Refinement validation failed for {classSymbol.Name}\",");
 		sb.AppendLine("                EmptyPath");

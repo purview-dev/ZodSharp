@@ -3,14 +3,6 @@ using Microsoft.CodeAnalysis;
 
 namespace ZodSharp.SourceGenerators.Helpers.Models;
 
-enum RangeAttributeKind
-{
-	None,
-	Int32,
-	Double,
-	Converted,
-}
-
 readonly record struct RangeAttributeData(
 	bool Exists,
 	RangeAttributeKind Kind,
@@ -21,7 +13,9 @@ readonly record struct RangeAttributeData(
 	bool MaximumIsExclusive,
 	bool ConvertValueInInvariantCulture,
 	bool ParseLimitsInInvariantCulture,
-	string? ErrorMessage
+	string? ErrorMessage,
+	string? ErrorMessageResourceName,
+	INamedTypeSymbol? ErrorMessageResourceType
 )
 {
 	public static readonly RangeAttributeData Empty = new(
@@ -34,6 +28,8 @@ readonly record struct RangeAttributeData(
 		false,
 		false,
 		false,
+		null,
+		null,
 		null
 	);
 
@@ -94,6 +90,8 @@ readonly record struct RangeAttributeData(
 		var convertValueInInvariantCulture = false;
 		var parseLimitsInInvariantCulture = false;
 		string? errorMessage = null;
+		string? errorMessageResourceName = null;
+		INamedTypeSymbol? errorMessageResourceType = null;
 
 		foreach (var namedArgument in attributeData.NamedArguments)
 		{
@@ -118,6 +116,14 @@ readonly record struct RangeAttributeData(
 				case nameof(ErrorMessage) when namedArgument.Value.Value is string value:
 					errorMessage = value;
 					break;
+
+				case nameof(ErrorMessageResourceName) when namedArgument.Value.Value is string value:
+					errorMessageResourceName = value;
+					break;
+
+				case nameof(ErrorMessageResourceType) when namedArgument.Value.Value is INamedTypeSymbol value:
+					errorMessageResourceType = value;
+					break;
 			}
 		}
 
@@ -141,7 +147,9 @@ readonly record struct RangeAttributeData(
 			MaximumIsExclusive: maximumIsExclusive,
 			ConvertValueInInvariantCulture: convertValueInInvariantCulture,
 			ParseLimitsInInvariantCulture: parseLimitsInInvariantCulture,
-			ErrorMessage: errorMessage
+			ErrorMessage: errorMessage,
+			ErrorMessageResourceName: errorMessageResourceName,
+			ErrorMessageResourceType: errorMessageResourceType
 		);
 	}
 

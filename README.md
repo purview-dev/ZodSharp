@@ -13,7 +13,7 @@
 - **High performance** - Sub-microsecond validation times, 10x faster than reflection-based validation
 - **Cross-platform** - Works on .NET 9.0 and .NET Standard 2.1
 - **Source Generators** - Compile-time validator generation with `[ZodSchema]` attribute
-- **DataAnnotations Support** - Automatic validation from `[Required]`, `[StringLength]`, `[Range]`, etc.  
+- **DataAnnotations Support** - Automatic validation from `[Required]`, `[StringLength]`, `[Length]`, `[MinLength]`, `[MaxLength]`, `[Range]`, `[RegularExpression]`, `[AllowedValues]`, `[DeniedValues]`, `[EmailAddress]`, etc.  
 
 ## Installation
 
@@ -448,6 +448,72 @@ var combined = UserSchema.And(user, u => u.Name.Length > 5, "Name too short");
 - Zero-reflection, zero-allocation validators
 - Composition methods (`.And()`, `.Or()`, `.Refine()`)
 - Supports classes, structs, and records
+
+#### Supported DataAnnotations size validators
+
+`[Length]`, `[StringLength]`, `[MinLength]`, and `[MaxLength]` generate direct `Length` or `Count` access when possible:
+
+- `string` -> `.Length`
+- arrays, including rectangular arrays -> `.Length`
+- jagged arrays -> outer-array `.Length`
+- countable collections -> `.Count`
+- `IEnumerable` / `IEnumerable<T>` -> a single counted pass with a non-enumerating fast path
+
+`[Length]` follows DataAnnotations null semantics: `null` is valid unless `[Required]` is also present.
+
+Other supported DataAnnotations validators:
+
+- `[Range]` on numeric types plus parsed `decimal`, `DateTime`, `DateOnly`, and `TimeOnly` bounds
+- `[RegularExpression]` on strings, with DataAnnotations-compatible `null` and empty-string behaviour
+- `[AllowedValues]` and `[DeniedValues]` using generated typed equality checks instead of runtime attribute execution
+- `[EmailAddress]` on strings
+
+Structured size failures expose:
+
+- `Code`: `too_small` or `too_big`
+- `Origin`: `string`, `array`, or `collection`
+- `Minimum` / `Maximum`
+- `Inclusive`
+- `Path`
+
+Example:
+
+```csharp
+using System.ComponentModel.DataAnnotations;
+
+[ZodSchema]
+public sealed class Basket
+{
+    [Required]
+    [Length(2, 5)]
+    public List<string>? Items { get; set; }
+}
+
+var result = BasketSchema.Validate(new Basket { Items = ["apple"] });
+// result.Errors[0].Code == "too_small"
+// result.Errors[0].Minimum == 2
+```
+
+### ASP.NET Core ProblemDetails
+
+Install `ZodSharp.AspNetCore` to convert failed validation results into standard ASP.NET Core payloads while preserving structured issues:
+
+```csharp
+using ZodSharp.AspNetCore;
+
+var result = BasketSchema.Validate(basket);
+
+if (!result.IsSuccess)
+{
+    var problem = result.ToHttpValidationProblemDetails();
+    return Results.ValidationProblem(
+        problem.Errors,
+        extensions: new Dictionary<string, object?>
+        {
+            ["issues"] = problem.Extensions["issues"]
+        });
+}
+```
 
 ### Span<T> Validation
 Zero-allocation string validation using spans:

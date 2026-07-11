@@ -3,9 +3,15 @@ using Microsoft.CodeAnalysis;
 
 namespace ZodSharp.SourceGenerators.Helpers.Models;
 
-readonly record struct MaxLengthAttributeData(bool Exists, int Length, string? ErrorMessage)
+readonly record struct MaxLengthAttributeData(
+	bool Exists,
+	int Length,
+	string? ErrorMessage,
+	string? ErrorMessageResourceName,
+	INamedTypeSymbol? ErrorMessageResourceType
+)
 {
-	public static readonly MaxLengthAttributeData Empty = new(false, 0, null);
+	public static readonly MaxLengthAttributeData Empty = new(false, 0, null, null, null);
 
 	public static MaxLengthAttributeData FromAttributeData(
 		ExecutionContext executionContext,
@@ -44,6 +50,8 @@ readonly record struct MaxLengthAttributeData(bool Exists, int Length, string? E
 		// database-provider maximum.
 		var length = -1;
 		string? errorMessage = null;
+		string? errorMessageResourceName = null;
+		INamedTypeSymbol? errorMessageResourceType = null;
 
 		if (attributeData.ConstructorArguments.Length == 1 && attributeData.ConstructorArguments[0].Value is int value)
 		{
@@ -56,8 +64,28 @@ readonly record struct MaxLengthAttributeData(bool Exists, int Length, string? E
 			{
 				errorMessage = message;
 			}
+			else if (
+				namedArgument.Key == nameof(ErrorMessageResourceName)
+				&& namedArgument.Value.Value is string resourceName
+			)
+			{
+				errorMessageResourceName = resourceName;
+			}
+			else if (
+				namedArgument.Key == nameof(ErrorMessageResourceType)
+				&& namedArgument.Value.Value is INamedTypeSymbol resourceType
+			)
+			{
+				errorMessageResourceType = resourceType;
+			}
 		}
 
-		return new(Exists: true, Length: length, ErrorMessage: errorMessage);
+		return new(
+			Exists: true,
+			Length: length,
+			ErrorMessage: errorMessage,
+			ErrorMessageResourceName: errorMessageResourceName,
+			ErrorMessageResourceType: errorMessageResourceType
+		);
 	}
 }

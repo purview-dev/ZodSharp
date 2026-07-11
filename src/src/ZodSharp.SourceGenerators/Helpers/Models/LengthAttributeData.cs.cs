@@ -3,9 +3,16 @@ using Microsoft.CodeAnalysis;
 
 namespace ZodSharp.SourceGenerators.Helpers.Models;
 
-readonly record struct LengthAttributeData(bool Exists, int MinimumLength, int MaximumLength, string? ErrorMessage)
+readonly record struct LengthAttributeData(
+	bool Exists,
+	int MinimumLength,
+	int MaximumLength,
+	string? ErrorMessage,
+	string? ErrorMessageResourceName,
+	INamedTypeSymbol? ErrorMessageResourceType
+)
 {
-	public static readonly LengthAttributeData Empty = new(false, 0, int.MaxValue, null);
+	public static readonly LengthAttributeData Empty = new(false, 0, int.MaxValue, null, null, null);
 
 	public static LengthAttributeData FromAttributeData(
 		ExecutionContext executionContext,
@@ -39,6 +46,8 @@ readonly record struct LengthAttributeData(bool Exists, int MinimumLength, int M
 		}
 
 		string? errorMessage = null;
+		string? errorMessageResourceName = null;
+		INamedTypeSymbol? errorMessageResourceType = null;
 
 		var minimumLength = (int)attributeData.ConstructorArguments[0].Value!;
 		var maximumLength = (int)attributeData.ConstructorArguments[1].Value!;
@@ -50,6 +59,14 @@ readonly record struct LengthAttributeData(bool Exists, int MinimumLength, int M
 				case nameof(ErrorMessage) when namedArgument.Value.Value is string message:
 					errorMessage = message;
 					break;
+
+				case nameof(ErrorMessageResourceName) when namedArgument.Value.Value is string resourceName:
+					errorMessageResourceName = resourceName;
+					break;
+
+				case nameof(ErrorMessageResourceType) when namedArgument.Value.Value is INamedTypeSymbol resourceType:
+					errorMessageResourceType = resourceType;
+					break;
 			}
 		}
 
@@ -57,7 +74,9 @@ readonly record struct LengthAttributeData(bool Exists, int MinimumLength, int M
 			Exists: true,
 			MinimumLength: minimumLength,
 			MaximumLength: maximumLength,
-			ErrorMessage: errorMessage
+			ErrorMessage: errorMessage,
+			ErrorMessageResourceName: errorMessageResourceName,
+			ErrorMessageResourceType: errorMessageResourceType
 		);
 	}
 }

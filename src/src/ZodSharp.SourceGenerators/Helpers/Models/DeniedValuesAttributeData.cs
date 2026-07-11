@@ -3,9 +3,15 @@ using Microsoft.CodeAnalysis;
 
 namespace ZodSharp.SourceGenerators.Helpers.Models;
 
-readonly record struct DeniedValuesAttributeData(bool Exists, object?[] Objects, string? ErrorMessage)
+readonly record struct DeniedValuesAttributeData(
+	bool Exists,
+	ImmutableArray<TypedConstant> Values,
+	string? ErrorMessage,
+	string? ErrorMessageResourceName,
+	INamedTypeSymbol? ErrorMessageResourceType
+)
 {
-	public static readonly DeniedValuesAttributeData Empty = new(false, [], null);
+	public static readonly DeniedValuesAttributeData Empty = new(false, [], null, null, null);
 
 	public static DeniedValuesAttributeData FromAttributeData(
 		ExecutionContext executionContext,
@@ -41,8 +47,9 @@ readonly record struct DeniedValuesAttributeData(bool Exists, object?[] Objects,
 		}
 
 		string? errorMessage = null;
-
-		var objects = (object?[])attributeData.ConstructorArguments[0].Value!;
+		string? errorMessageResourceName = null;
+		INamedTypeSymbol? errorMessageResourceType = null;
+		var values = attributeData.ConstructorArguments[0].Values;
 
 		foreach (var namedArgument in attributeData.NamedArguments)
 		{
@@ -51,9 +58,21 @@ readonly record struct DeniedValuesAttributeData(bool Exists, object?[] Objects,
 				case nameof(ErrorMessage) when namedArgument.Value.Value is string message:
 					errorMessage = message;
 					break;
+				case nameof(ErrorMessageResourceName) when namedArgument.Value.Value is string resourceName:
+					errorMessageResourceName = resourceName;
+					break;
+				case nameof(ErrorMessageResourceType) when namedArgument.Value.Value is INamedTypeSymbol resourceType:
+					errorMessageResourceType = resourceType;
+					break;
 			}
 		}
 
-		return new(Exists: true, Objects: objects, ErrorMessage: errorMessage);
+		return new(
+			Exists: true,
+			Values: values,
+			ErrorMessage: errorMessage,
+			ErrorMessageResourceName: errorMessageResourceName,
+			ErrorMessageResourceType: errorMessageResourceType
+		);
 	}
 }

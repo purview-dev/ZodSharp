@@ -13,13 +13,18 @@ sealed record class ExecutionContext(
 	INamedTypeSymbol? MinLengthAttribute,
 	INamedTypeSymbol? MaxLengthAttribute,
 	INamedTypeSymbol? RangeAttribute,
-	// -- Pending DAA Implementations
 	INamedTypeSymbol? LengthAttribute,
 	INamedTypeSymbol? RegularExpressionAttribute,
 	INamedTypeSymbol? AllowedValuesAttribute,
 	INamedTypeSymbol? DeniedValuesAttribute,
+	INamedTypeSymbol? DisplayAttribute,
 	// Required Framework Types
 	INamedTypeSymbol? ImmutableArray,
+	INamedTypeSymbol? ICollection,
+	INamedTypeSymbol? IEnumerable,
+	INamedTypeSymbol? ICollectionOfT,
+	INamedTypeSymbol? IEnumerableOfT,
+	INamedTypeSymbol? IReadOnlyCollectionOfT,
 	// Debugging support
 	GenerationLogger? Logger
 )
@@ -48,8 +53,14 @@ sealed record class ExecutionContext(
 			),
 			AllowedValuesAttribute: compilation.GetTypeByMetadataName(TypeHelpers.AllowedValuesAttributeMetadataName),
 			DeniedValuesAttribute: compilation.GetTypeByMetadataName(TypeHelpers.DeniedValuesAttributeMetadataName),
+			DisplayAttribute: compilation.GetTypeByMetadataName(TypeHelpers.DisplayAttributeMetadataName),
 			// Required Framework Types
 			ImmutableArray: compilation.GetTypeByMetadataName(TypeHelpers.ImmutableArrayMetadataName),
+			ICollection: compilation.GetTypeByMetadataName(TypeHelpers.ICollectionMetadataName),
+			IEnumerable: compilation.GetTypeByMetadataName(TypeHelpers.IEnumerableMetadataName),
+			ICollectionOfT: compilation.GetTypeByMetadataName(TypeHelpers.ICollectionTMetadataName),
+			IEnumerableOfT: compilation.GetTypeByMetadataName(TypeHelpers.IEnumerableTMetadataName),
+			IReadOnlyCollectionOfT: compilation.GetTypeByMetadataName(TypeHelpers.IReadOnlyCollectionTMetadataName),
 			// Debugging support
 			Logger: logging
 		);

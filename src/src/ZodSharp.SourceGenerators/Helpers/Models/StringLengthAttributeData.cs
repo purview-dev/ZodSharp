@@ -3,9 +3,16 @@ using Microsoft.CodeAnalysis;
 
 namespace ZodSharp.SourceGenerators.Helpers.Models;
 
-readonly record struct StringLengthAttribute(bool Exists, int MaximumLength, int MinimumLength, string? ErrorMessage)
+readonly record struct StringLengthAttribute(
+	bool Exists,
+	int MaximumLength,
+	int MinimumLength,
+	string? ErrorMessage,
+	string? ErrorMessageResourceName,
+	INamedTypeSymbol? ErrorMessageResourceType
+)
 {
-	public static readonly StringLengthAttribute Empty = new(false, int.MaxValue, 0, null);
+	public static readonly StringLengthAttribute Empty = new(false, int.MaxValue, 0, null, null, null);
 
 	public static StringLengthAttribute FromAttributeData(
 		ExecutionContext executionContext,
@@ -43,6 +50,8 @@ readonly record struct StringLengthAttribute(bool Exists, int MaximumLength, int
 		var maximumLength = int.MaxValue;
 		var minimumLength = 0;
 		string? errorMessage = null;
+		string? errorMessageResourceName = null;
+		INamedTypeSymbol? errorMessageResourceType = null;
 
 		if (attributeData.ConstructorArguments.Length > 0 && attributeData.ConstructorArguments[0].Value is int maximum)
 		{
@@ -60,6 +69,14 @@ readonly record struct StringLengthAttribute(bool Exists, int MaximumLength, int
 				case nameof(ErrorMessage) when namedArgument.Value.Value is string message:
 					errorMessage = message;
 					break;
+
+				case nameof(ErrorMessageResourceName) when namedArgument.Value.Value is string resourceName:
+					errorMessageResourceName = resourceName;
+					break;
+
+				case nameof(ErrorMessageResourceType) when namedArgument.Value.Value is INamedTypeSymbol resourceType:
+					errorMessageResourceType = resourceType;
+					break;
 			}
 		}
 
@@ -67,7 +84,9 @@ readonly record struct StringLengthAttribute(bool Exists, int MaximumLength, int
 			Exists: true,
 			MaximumLength: maximumLength,
 			MinimumLength: minimumLength,
-			ErrorMessage: errorMessage
+			ErrorMessage: errorMessage,
+			ErrorMessageResourceName: errorMessageResourceName,
+			ErrorMessageResourceType: errorMessageResourceType
 		);
 	}
 }
