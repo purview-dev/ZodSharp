@@ -14,10 +14,10 @@ namespace ZodSharp.Schemas;
 /// <param name="schemaGetter">The function that gets the schema</param>
 public class ZodLazy<T>(Func<IZodSchema<T, T>> schemaGetter) : ZodType<T>
 {
-#if NETSTANDARD2_1_OR_GREATER
-	readonly object _lock = new();
-#else
+#if NET9_0_OR_GREATER
 	readonly Lock _lock = new();
+#else
+	readonly object _lock = new();
 #endif
 
 	/// <summary>
