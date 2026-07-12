@@ -15,15 +15,16 @@
 **Objective:** Establish the foundational types that will represent the composition of schemas.
 
 **Files:**
-- Create: `src/ZodSharp.NET.Schema/Types/Composition/ICompositionSchema.cs`
-- Create: `src/ZodSharp.NET.Schema/Types/Composition/CompositionSchemaBase.cs`
-- Modify: `src/ZodSharp.NET.Schema/IZodSchema.cs` (to potentially mark schemas that can be composed)
+
+- Create: `src/src/ZodSharp.NET.Schema/Types/Composition/ICompositionSchema.cs`
+- Create: `src/src/ZodSharp.NET.Schema/Types/Composition/CompositionSchemaBase.cs`
+- Modify: `src/src/ZodSharp.NET.Schema/IZodSchema.cs` (to potentially mark schemas that can be composed)
 
 **Step 1: Define `ICompositionSchema` interface**
 This interface will mark schemas that can participate in composition operations.
 
 ```csharp
-// src/ZodSharp.NET.Schema/Types/Composition/ICompositionSchema.cs
+// src/src/ZodSharp.NET.Schema/Types/Composition/ICompositionSchema.cs
 namespace ZodSharp.NET.Schema.Types.Composition
 {
     /// <summary>
@@ -41,7 +42,7 @@ namespace ZodSharp.NET.Schema.Types.Composition
 This abstract class can provide common functionality for composed schemas.
 
 ```csharp
-// src/ZodSharp.NET.Schema/Types/Composition/CompositionSchemaBase.cs
+// src/src/ZodSharp.NET.Schema/Types/Composition/CompositionSchemaBase.cs
 using ZodSharp.NET.Schema.Types;
 
 namespace ZodSharp.NET.Schema.Types.Composition
@@ -72,10 +73,11 @@ Create tests to ensure the interface and abstract class are correctly defined.
 ```
 
 **Step 5: Commit**
+
 ```bash
-git add src/ZodSharp.NET.Schema/Types/Composition/ICompositionSchema.cs
-git add src/ZodSharp.NET.Schema/Types/Composition/CompositionSchemaBase.cs
-# git add src/ZodSharp.NET.Schema/IZodSchema.cs (if modified)
+git add src/src/ZodSharp.NET.Schema/Types/Composition/ICompositionSchema.cs
+git add src/src/ZodSharp.NET.Schema/Types/Composition/CompositionSchemaBase.cs
+# git add src/src/ZodSharp.NET.Schema/IZodSchema.cs (if modified)
 git commit -m "feat: introduce ICompositionSchema and CompositionSchemaBase"
 ```
 
@@ -84,14 +86,15 @@ git commit -m "feat: introduce ICompositionSchema and CompositionSchemaBase"
 **Objective:** Allow extending an existing object schema with new properties.
 
 **Files:**
-- Create: `src/ZodSharp.NET.Schema/Types/Composition/ObjectExtensionSchema.cs`
-- Modify: `src/ZodSharp.NET.Schema/Types/ObjectSchema.cs` (to add the `Extend` method)
+
+- Create: `src/src/ZodSharp.NET.Schema/Types/Composition/ObjectExtensionSchema.cs`
+- Modify: `src/src/ZodSharp.NET.Schema/Types/ObjectSchema.cs` (to add the `Extend` method)
 
 **Step 1: Define `ObjectExtensionSchema<TOriginal, TExtension>`**
 This schema will combine an original object schema with an extension object schema.
 
 ```csharp
-// src/ZodSharp.NET.Schema/Types/Composition/ObjectExtensionSchema.cs
+// src/src/ZodSharp.NET.Schema/Types/Composition/ObjectExtensionSchema.cs
 using ZodSharp.NET.Schema.Types;
 using System.Collections.Generic;
 using System.Linq;
@@ -141,7 +144,7 @@ namespace ZodSharp.NET.Schema.Types.Composition
 This method will create and return an `ObjectExtensionSchema`.
 
 ```csharp
-// src/ZodSharp.NET.Schema/Types/ObjectSchema.cs (within ObjectSchema<T> class)
+// src/src/ZodSharp.NET.Schema/Types/ObjectSchema.cs (within ObjectSchema<T> class)
 // ... other usings
 
 using ZodSharp.NET.Schema.Types.Composition;
@@ -173,6 +176,7 @@ public class ObjectSchema<T> : SchemaBase<T>, IZodSchema<T> // Assuming SchemaBa
     // Consider overloads for different scenarios, e.g., extending with an anonymous object definition.
 }
 ```
+
 *Note: The implementation of `ObjectExtensionSchema.Parse` and `ObjectSchema.Extend` is highly complex due to C#'s type system and the need to merge object structures dynamically or at compile time. This plan outlines the structure; full implementation will require careful consideration of generics, `System.Text.Json.JsonElement`, or potentially runtime code generation.*
 
 **Step 3: Write tests for `Extend` functionality**
@@ -184,9 +188,10 @@ Test that extending an object schema works as expected, including merging proper
 ```
 
 **Step 4: Commit**
+
 ```bash
-git add src/ZodSharp.NET.Schema/Types/Composition/ObjectExtensionSchema.cs
-git add src/ZodSharp.NET.Schema/Types/ObjectSchema.cs
+git add src/src/ZodSharp.NET.Schema/Types/Composition/ObjectExtensionSchema.cs
+git add src/src/ZodSharp.NET.Schema/Types/ObjectSchema.cs
 git commit -m "feat: implement object schema extension with Extend method"
 ```
 
@@ -195,14 +200,15 @@ git commit -m "feat: implement object schema extension with Extend method"
 **Objective:** Create a schema that accepts values conforming to any of several sub-schemas.
 
 **Files:**
-- Create: `src/ZodSharp.NET.Schema/Types/Composition/UnionSchema.cs`
+
+- Create: `src/src/ZodSharp.NET.Schema/Types/Composition/UnionSchema.cs`
 - Modify: `ZodSharp.NET.Schema/NamespaceImports.cs` (or similar file for Zod factory methods) to add `Zod.Union`
 
 **Step 1: Define `UnionSchema<T>`**
 This schema will accept a list of schemas and attempt to parse the input against each one in order.
 
 ```csharp
-// src/ZodSharp.NET.Schema/Types/Composition/UnionSchema.cs
+// src/src/ZodSharp.NET.Schema/Types/Composition/UnionSchema.cs
 using ZodSharp.NET.Schema.Types;
 using System.Collections.Generic;
 using System.Linq;
@@ -282,7 +288,7 @@ namespace ZodSharp.NET.Schema.Types.Composition
 This method will be part of the main `Zod` class, acting as the entry point for creating union schemas.
 
 ```csharp
-// src/ZodSharp.NET.Schema/NamespaceImports.cs (or Zod.cs)
+// src/src/ZodSharp.NET.Schema/NamespaceImports.cs (or Zod.cs)
 // ... other using statements
 
 public static class Zod
@@ -303,6 +309,7 @@ public static class Zod
     // Consider overloads for different numbers of schemas or specific types.
 }
 ```
+
 *Note: The generic parameter `T` for `UnionSchema` is tricky. If the schemas are of different types (e.g., `string` and `number`), `T` would likely need to be `object` or a custom union type struct/class. Handling type safety and `T` inference requires careful design.*
 
 **Step 3: Write tests for `UnionSchema`**
@@ -314,9 +321,10 @@ Test that it correctly parses inputs matching each schema and fails when no sche
 ```
 
 **Step 4: Commit**
+
 ```bash
-git add src/ZodSharp.NET.Schema/Types/Composition/UnionSchema.cs
-git add src/ZodSharp.NET.Schema/NamespaceImports.cs # or wherever Zod properties are defined
+git add src/src/ZodSharp.NET.Schema/Types/Composition/UnionSchema.cs
+git add src/src/ZodSharp.NET.Schema/NamespaceImports.cs # or wherever Zod properties are defined
 git commit -m "feat: implement Zod.union schema composition"
 ```
 
@@ -325,14 +333,15 @@ git commit -m "feat: implement Zod.union schema composition"
 **Objective:** Create a schema that requires values to conform to all of several sub-schemas.
 
 **Files:**
-- Create: `src/ZodSharp.NET.Schema/Types/Composition/IntersectionSchema.cs`
+
+- Create: `src/src/ZodSharp.NET.Schema/Types/Composition/IntersectionSchema.cs`
 - Modify: `ZodSharp.NET.Schema/NamespaceImports.cs` (or similar file for Zod factory methods) to add `Zod.Intersection`
 
 **Step 1: Define `IntersectionSchema<T>`**
 This schema will attempt to parse the input against all provided schemas sequentially. The output type `T` will likely be `object` or a merged representation.
 
 ```csharp
-// src/ZodSharp.NET.Schema/Types/Composition/IntersectionSchema.cs
+// src/src/ZodSharp.NET.Schema/Types/Composition/IntersectionSchema.cs
 using ZodSharp.NET.Schema.Types;
 using System.Collections.Generic;
 using System.Linq;
@@ -417,7 +426,7 @@ namespace ZodSharp.NET.Schema.Types.Composition
 This method will create `IntersectionSchema` instances.
 
 ```csharp
-// src/ZodSharp.NET.Schema/NamespaceImports.cs (or Zod.cs)
+// src/src/ZodSharp.NET.Schema/NamespaceImports.cs (or Zod.cs)
 // ... other using statements
 
 public static class Zod
@@ -439,6 +448,7 @@ public static class Zod
     // For object intersection, a specialized method returning a schema for a merged object type would be ideal.
 }
 ```
+
 *Note: The complexity of `IntersectionSchema` lies in merging the results. For object schemas, this means merging properties. For primitive types, it's less relevant unless dealing with unions of primitives where intersection might yield a single type. The current implementation is a simplification focusing on validation.*
 
 **Step 3: Write tests for `IntersectionSchema`**
@@ -450,9 +460,10 @@ Test that inputs conforming to all schemas pass, and inputs failing any schema f
 ```
 
 **Step 4: Commit**
+
 ```bash
-git add src/ZodSharp.NET.Schema/Types/Composition/IntersectionSchema.cs
-git add src/ZodSharp.NET.Schema/NamespaceImports.cs # or wherever Zod properties are defined
+git add src/src/ZodSharp.NET.Schema/Types/Composition/IntersectionSchema.cs
+git add src/src/ZodSharp.NET.Schema/NamespaceImports.cs # or wherever Zod properties are defined
 git commit -m "feat: implement Zod.intersection schema composition"
 ```
 
@@ -461,16 +472,19 @@ git commit -m "feat: implement Zod.intersection schema composition"
 **Objective:** Ensure `ObjectSchema` can seamlessly integrate with the new composition types, especially `Extend` and potential future composable schemas.
 
 **Files:**
-- Modify: `src/ZodSharp.NET.Schema/Types/ObjectSchema.cs`
+
+- Modify: `src/src/ZodSharp.NET.Schema/Types/ObjectSchema.cs`
 
 **Step 1: Review `ObjectSchema<T>` for composition integration**
 Ensure the `ObjectSchema` class correctly handles scenarios where it might be extended or intersected. This may involve:
+
 - Refining the `Extend` method's generic constraints and return type.
 - Potentially introducing internal representation of object schemas that better supports merging.
 - Considering how `ObjectSchema` instances will be represented within `UNION` or `INTERSECTION` schemas.
 
 **Step 2: Refine `Extend` method's return type and generics**
 The current `ObjectSchema<TCombined>` return type with `TCombined : new()` is a placeholder. A more robust solution might involve:
+
 - Using `System.Text.Json.JsonElement` for dynamic object merging.
 - Leveraging C#'s experimental `record` types or similar for compile-time merging (if applicable).
 - Providing a mechanism to define the `TCombined` type explicitly.
@@ -486,8 +500,9 @@ Test the interaction of `ObjectSchema` with `Extend`.
 ```
 
 **Step 4: Commit**
+
 ```bash
-git add src/ZodSharp.NET.Schema/Types/ObjectSchema.cs
+git add src/src/ZodSharp.NET.Schema/Types/ObjectSchema.cs
 git commit -m "refactor: enhance ObjectSchema for composition patterns"
 ```
 
@@ -496,11 +511,13 @@ git commit -m "refactor: enhance ObjectSchema for composition patterns"
 **Objective:** Document the new composition features and provide clear examples.
 
 **Files:**
+
 - Create: `docs/features/composition.md`
 - Update: `README.md` or other primary documentation entry points.
 
 **Step 1: Create `composition.md`**
 Document `z.object().extend()`, `z.union()`, and `z.intersection()`. Include:
+
 - Purpose of each composition type.
 - Syntax and C# examples.
 - Considerations for type inference and potential issues.
@@ -512,6 +529,7 @@ Add a section summarizing the new composition capabilities and link to the detai
 Include comprehensive examples demonstrating the use of composition in practice.
 
 **Step 4: Commit**
+
 ```bash
 git add docs/features/composition.md
 git add README.md
@@ -524,6 +542,7 @@ git commit -m "docs: document ZodSharp composition features (extend, union, inte
 
 **Step 1: Run all unit tests**
 Ensure all tests pass, including those for the new composition features.
+
 ```bash
 dotnet test
 ```
@@ -535,9 +554,11 @@ Write or adapt integration tests that use multiple composition patterns together
 Conduct a thorough code review of all changes.
 
 **Step 4: Commit**
+
 ```bash
 git commit -m "feat: finalize composition features with comprehensive testing and review"
 ```
+
 Link to relevant issues if applicable.
 @kieronlanning
 The plan is complete and saved to `.hermes/plans/2024-07-12_145000-zodsharp-composition-plan.md`.
