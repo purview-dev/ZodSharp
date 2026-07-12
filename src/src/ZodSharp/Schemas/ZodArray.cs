@@ -36,7 +36,7 @@ public class ZodArray<T>(IZodSchema<T, T> elementSchema) : ZodType<T[], T[]>
 		List<ValidationError> errors = [with(value.Length)];
 		List<T> validatedItems = [with(value.Length)];
 
-		for (int i = 0; i < value.Length; i++)
+		for (var i = 0; i < value.Length; i++)
 		{
 			var itemResult = elementSchema.Validate(value[i]);
 			if (!itemResult.IsSuccess)

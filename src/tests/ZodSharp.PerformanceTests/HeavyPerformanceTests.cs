@@ -32,7 +32,7 @@ public class HeavyPerformanceTests
 		_deepNestedSchema = Z.Object().Field("root", nestedLevel3).Build();
 
 		var wideObjectBuilder = Z.Object();
-		for (int i = 0; i < 50; i++)
+		for (var i = 0; i < 50; i++)
 		{
 			wideObjectBuilder.Field($"field{i}", Z.String().Min(1).Max(100));
 		}
@@ -64,7 +64,7 @@ public class HeavyPerformanceTests
 		};
 
 		_wideObject = [];
-		for (int i = 0; i < 50; i++)
+		for (var i = 0; i < 50; i++)
 		{
 			_wideObject[$"field{i}"] = $"value{i}";
 		}

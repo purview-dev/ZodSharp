@@ -42,7 +42,7 @@ public class MemoryPerformanceTests
 	[Benchmark]
 	public void ValidateString_ManyIterations()
 	{
-		for (int i = 0; i < 1000; i++)
+		for (var i = 0; i < 1000; i++)
 		{
 			_stringSchema.Validate("user@example.com");
 		}
@@ -52,7 +52,7 @@ public class MemoryPerformanceTests
 	public void ValidateArray_ManyIterations()
 	{
 		var data = Enumerable.Range(1, 100).Select(i => (double)i).ToArray();
-		for (int i = 0; i < 100; i++)
+		for (var i = 0; i < 100; i++)
 		{
 			_arraySchema.Validate(data);
 		}
@@ -62,7 +62,7 @@ public class MemoryPerformanceTests
 	public void ValidateObject_ManyIterations()
 	{
 		var data = new Dictionary<string, object?> { { "name", "John" }, { "age", 30.0 } };
-		for (int i = 0; i < 1000; i++)
+		for (var i = 0; i < 1000; i++)
 		{
 			_objectSchema.Validate(data);
 		}

@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<RootNamespace>ZodSharp</RootNamespace>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<DisableGenerateAssemblyInfoClass>true</DisableGenerateAssemblyInfoClass>
+		<AutoIncludeUsings>false</AutoIncludeUsings>
 	</PropertyGroup>
 
 	<PropertyGroup>

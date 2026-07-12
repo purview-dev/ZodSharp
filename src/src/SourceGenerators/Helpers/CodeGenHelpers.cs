@@ -96,7 +96,7 @@ static class CodeGenHelpers
 			{
 				var t = string.Concat(Enumerable.Range(0, tabs).Select(_ => '\t'));
 
-				string result = string.Empty;
+				var result = string.Empty;
 				foreach (var attr in GenAttributes.Value)
 					result += $"{t}{GlobalAttribute(attr)}{NewLine}";
 
@@ -111,7 +111,7 @@ static class CodeGenHelpers
 			{
 				var t = string.Concat(Enumerable.Range(0, tabs).Select(_ => '\t'));
 
-				string result = string.Empty;
+				var result = string.Empty;
 				foreach (var attr in GenAttribAttributes.Value)
 					result += $"{t}{GlobalAttribute(attr)}{NewLine}";
 
@@ -126,7 +126,7 @@ static class CodeGenHelpers
 			{
 				var t = string.Concat(Enumerable.Range(0, tabs).Select(_ => '\t'));
 
-				string result = string.Empty;
+				var result = string.Empty;
 				foreach (var attr in NonClassGenAttributes.Value)
 					result += $"{t}{GlobalAttribute(attr)}{NewLine}";
 

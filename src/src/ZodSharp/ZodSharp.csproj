@@ -13,15 +13,15 @@
 
 	<ItemGroup>
 		<ProjectReference
-			Include="../ZodSharp.SourceGenerators/ZodSharp.SourceGenerators.csproj"
+			Include="..\SourceGenerators\SourceGenerators.csproj"
 			PrivateAssets="all"
 			ReferenceOutputAssembly="false"
 			OutputItemType="Analyzer"
 		/>
 
 		<None
-			Include="../ZodSharp.SourceGenerators/bin/$(Configuration)/netstandard2.0/ZodSharp.SourceGenerators.dll"
-			Condition="Exists('../ZodSharp.SourceGenerators/bin/$(Configuration)/netstandard2.0/ZodSharp.SourceGenerators.dll')"
+			Include="../SourceGenerators/bin/$(Configuration)/netstandard2.0/ZodSharp.SourceGenerators.dll"
+			Condition="Exists('../SourceGenerators/bin/$(Configuration)/netstandard2.0/ZodSharp.SourceGenerators.dll')"
 			Pack="true"
 			PackagePath="analyzers/dotnet/cs"
 		/>

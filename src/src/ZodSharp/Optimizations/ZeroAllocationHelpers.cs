@@ -29,8 +29,8 @@ static class ZeroAllocationHelpers
 	/// </summary>
 	public static int CountWhere<T>(IReadOnlyList<T> items, Func<T, bool> predicate)
 	{
-		int count = 0;
-		for (int i = 0; i < items.Count; i++)
+		var count = 0;
+		for (var i = 0; i < items.Count; i++)
 		{
 			if (predicate(items[i]))
 				count++;

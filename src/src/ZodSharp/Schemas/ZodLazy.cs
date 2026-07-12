@@ -27,15 +27,8 @@ public class ZodLazy<T>(Func<IZodSchema<T, T>> schemaGetter) : ZodType<T>
 	{
 		get
 		{
-			if (field == null)
-			{
-				lock (_lock)
-				{
-					#pragma warning disable CA1508 // Avoid dead conditional code
-					field ??= schemaGetter();
-#pragma warning restore CA1508 // Avoid dead conditional code
-				}
-			}
+			lock (_lock)
+				field ??= schemaGetter();
 
 			return field;
 		}

@@ -21,7 +21,7 @@ sealed class CodeWriter
 	{
 		if (_indentLevel == 0)
 		{
-#if (DEBUG)
+#if DEBUG
 			return this;
 #else
 

@@ -2,16 +2,15 @@
 	<PropertyGroup>
 		<TargetFrameworks></TargetFrameworks>
 		<TargetFramework>net10.0</TargetFramework>
-		<RootNamespace>ZodSharp</RootNamespace>
 		<NoWarn>$(NoWarn);CA1303;CA1308;</NoWarn>
 		<NoWarn>$(NoWarn);CS0471;</NoWarn>
 	</PropertyGroup>
 
 	<ItemGroup>
-		<ProjectReference Include="..\ZodSharp.NewtonsoftJson\ZodSharp.NewtonsoftJson.csproj" />
+		<ProjectReference Include="..\NewtonsoftJson\NewtonsoftJson.csproj" />
 		<!-- Direct reference required when we're using a local project ref -->
 		<ProjectReference
-			Include="..\ZodSharp.SourceGenerators\ZodSharp.SourceGenerators.csproj"
+			Include="..\SourceGenerators\SourceGenerators.csproj"
 			OutputItemType="Analyzer"
 			ReferenceOutputAssembly="false"
 			PrivateAssets="all"

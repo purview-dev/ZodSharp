@@ -2,7 +2,7 @@
 using ZodSharp.Expressions;
 using ZodSharp.Schemas;
 
-namespace ZodSharp;
+namespace ZodSharp.Examples.CLI;
 
 static class AdvancedExamples
 {
@@ -192,7 +192,7 @@ static class AdvancedExamples
 		var spanResult = schema.ValidateSpan(span);
 		Console.WriteLine($"Span validation: {spanResult.IsSuccess}");
 
-		ReadOnlySpan<char> largeString = "verylongemail@example.com".AsSpan();
+		var largeString = "verylongemail@example.com".AsSpan();
 		var largeResult = schema.ValidateSpan(largeString);
 		Console.WriteLine($"Large span validation: {largeResult.IsSuccess}");
 

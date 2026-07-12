@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using ZodSharp.AspNetCore;
+using ZodSharp.Core;
 
-namespace ZodSharp.Core;
+namespace ZodSharp.AspNetCore;
 
 public class ProblemDetailsExtensionsTests
 {

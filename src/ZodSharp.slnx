@@ -7,18 +7,23 @@
 		<File Path="Directory.Build.targets" />
 	</Folder>
 	<Folder Name="/src/examples/">
-		<Project Path="src/ZodSharp.Examples.CLI/ZodSharp.Examples.CLI.csproj" />
+		<Project Path="src/Examples.CLI/Examples.CLI.csproj" />
 	</Folder>
 	<Folder Name="/tests/">
+		<Project
+			Path="tests/AspNetCore.UnitTests/AspNetCore.UnitTests.csproj"
+			Id="91349f48-174f-4a6d-b07b-f333eb07dfc3"
+		/>
+		<Project Path="tests/NewtonsoftJson.UnitTests/NewtonsoftJson.UnitTests.csproj" />
+		<Project Path="tests/SourceGenerators.UnitTests/SourceGenerators.UnitTests.csproj" />
 		<Project Path="tests/ZodSharp.PerformanceTests/ZodSharp.PerformanceTests.csproj" />
-		<Project Path="tests/ZodSharp.SourceGenerators.UnitTests/ZodSharp.SourceGenerators.UnitTests.csproj" />
 		<Project Path="tests/ZodSharp.UnitTests/ZodSharp.UnitTests.csproj" />
 	</Folder>
 	<Folder Name="/src/">
-		<Project Path="src/ZodSharp.NewtonsoftJson/ZodSharp.NewtonsoftJson.csproj" />
-		<Project Path="src/ZodSharp.SourceGenerators/ZodSharp.SourceGenerators.csproj" />
-		<Project Path="src/ZodSharp.SystemTextJson/ZodSharp.SystemTextJson.csproj" />
-		<Project Path="src/ZodSharp.AspNetCore/ZodSharp.AspNetCore.csproj" />
+		<Project Path="src/AspNetCore/AspNetCore.csproj" />
+		<Project Path="src/NewtonsoftJson/NewtonsoftJson.csproj" />
+		<Project Path="src/SourceGenerators/SourceGenerators.csproj" />
+		<Project Path="src/SystemTextJson/SystemTextJson.csproj" />
 		<Project Path="src/ZodSharp/ZodSharp.csproj" />
 	</Folder>
 </Solution>

@@ -192,14 +192,13 @@ partial class ZodSchemaGenerator
 		{
 			var isStringAndAllowEmptyStrings =
 				propertyType.SpecialType == SpecialType.System_String && requiredAttrib.AllowEmptyStrings;
-			var localErrorMessage =
-				(isStringAndAllowEmptyStrings)
-					? "Field '{0}' is required and cannot be null or empty"
-					: "Required field '{0}' is null";
+			var localErrorMessage = isStringAndAllowEmptyStrings
+				? "Field '{0}' is required and cannot be null or empty"
+				: "Required field '{0}' is null";
 
 			var errorMessage = string.Format(
 				CultureInfo.InvariantCulture,
-				(requiredAttrib.ErrorMessage ?? localErrorMessage),
+				requiredAttrib.ErrorMessage ?? localErrorMessage,
 				propertyName
 			);
 
@@ -209,7 +208,7 @@ partial class ZodSchemaGenerator
 
 			executionContext.Writer.WriteRule(propertyName, comparision, "missing_field", errorMessage);
 
-			block = executionContext.Writer.Block(("else"));
+			block = executionContext.Writer.Block("else");
 			GenerateValueSetValidations(
 				executionContext,
 				property,
@@ -231,7 +230,7 @@ partial class ZodSchemaGenerator
 			);
 
 			if (canBeNull)
-				block = executionContext.Writer.Block(($"if (value.{propertyName} != null)"));
+				block = executionContext.Writer.Block($"if (value.{propertyName} != null)");
 		}
 
 		GenerateTypeSpecificValidations(

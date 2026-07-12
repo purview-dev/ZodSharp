@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace ZodSharp;
+namespace ZodSharp.Examples.CLI;
 
 [ZodSchema]
 sealed class User

@@ -34,8 +34,10 @@ public readonly record struct UrlRule : Core.IValidationRule<string>
 		!string.IsNullOrWhiteSpace(value)
 		&& (
 			UrlRegex.IsMatch(value)
-			|| Uri.TryCreate(value, UriKind.Absolute, out var uri)
+			|| (
+				Uri.TryCreate(value, UriKind.Absolute, out var uri)
 				&& (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps)
+			)
 		);
 
 	/// <summary>

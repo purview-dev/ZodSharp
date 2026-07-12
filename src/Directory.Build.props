@@ -15,6 +15,9 @@
 				ArgumentNullException.ThrowIfNull()
 		-->
 		<NoWarn>$(NoWarn);CA1031;CA1510;</NoWarn>
+
+		<!-- Disabled for now, looks like the .NET 11 Preview SDK is having a moment -->
+		<NoWarn>$(NoWarn);IDE0010;IDE0011;IDE0022;IDE0058;IDE0072;IDE0370;</NoWarn>
 	</PropertyGroup>
 
 	<Import Sdk="Purview.DotNetProjectSdk" Project="Sdk.props" />
