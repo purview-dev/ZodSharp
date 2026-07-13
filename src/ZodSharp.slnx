@@ -10,11 +10,9 @@
 		<Project Path="src/Examples.CLI/Examples.CLI.csproj" />
 	</Folder>
 	<Folder Name="/tests/">
-		<Project
-			Path="tests/AspNetCore.UnitTests/AspNetCore.UnitTests.csproj"
-			Id="91349f48-174f-4a6d-b07b-f333eb07dfc3"
-		/>
+		<Project Path="tests/AspNetCore.UnitTests/AspNetCore.UnitTests.csproj" />
 		<Project Path="tests/NewtonsoftJson.UnitTests/NewtonsoftJson.UnitTests.csproj" />
+		<Project Path="tests/SystemTextJson.UnitTests/SystemTextJson.UnitTests.csproj" />
 		<Project Path="tests/SourceGenerators.UnitTests/SourceGenerators.UnitTests.csproj" />
 		<Project Path="tests/ZodSharp.PerformanceTests/ZodSharp.PerformanceTests.csproj" />
 		<Project Path="tests/ZodSharp.UnitTests/ZodSharp.UnitTests.csproj" />
