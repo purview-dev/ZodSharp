@@ -9,10 +9,6 @@ namespace ZodSharp.Expressions;
 /// </summary>
 public static class CompiledValidator
 {
-	//static readonly MethodInfo FailureMethod = typeof(ValidationResult<>)
-	//	.MakeGenericType(typeof(object))
-	//	.GetMethod("Failure", [typeof(IEnumerable<ValidationError>)])!;
-
 	/// <summary>
 	/// Compiles a validator function from a schema using Expression Trees.
 	/// This creates a highly optimized delegate that can be cached and reused.

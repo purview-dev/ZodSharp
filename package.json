@@ -1,4 +1,15 @@
 {
   "name": "zodsharp",
-  "version": "2.0.0-prerelease.0"
+  "version": "2.0.0-prerelease.0",
+  "private": true,
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "generate-fixtures": "tsx src/ts/generate-fixtures.ts"
+  },
+  "devDependencies": {
+    "vitest": "^3.2.0",
+    "tsx": "^4.19.0",
+    "zod": "^3.25.0"
+  }
 }

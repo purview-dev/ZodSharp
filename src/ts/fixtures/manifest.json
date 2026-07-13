@@ -1,0 +1,26 @@
+{
+  "valid": {
+    "valid": true
+  },
+  "validMinimal": {
+    "valid": true
+  },
+  "validMaxAge": {
+    "valid": true
+  },
+  "invalidEmptyName": {
+    "valid": false
+  },
+  "invalidNegativeAge": {
+    "valid": false
+  },
+  "invalidOverMaxAge": {
+    "valid": false
+  },
+  "invalidBadEmail": {
+    "valid": false
+  },
+  "invalidMissingName": {
+    "valid": false
+  }
+}

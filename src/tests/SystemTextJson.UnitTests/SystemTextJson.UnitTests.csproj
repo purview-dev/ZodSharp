@@ -1,5 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<RootNamespace>ZodSharp</RootNamespace>
+		<NoWarn>$(NoWarn);CA1849;CA1002;CA2227;</NoWarn>
 	</PropertyGroup>
 </Project>

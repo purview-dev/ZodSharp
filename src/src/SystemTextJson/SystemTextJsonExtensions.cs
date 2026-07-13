@@ -1,18 +1,18 @@
 using System.Text;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using ZodSharp.Core;
 using ZodSharp.Json;
 
 namespace ZodSharp;
 
 /// <summary>
-/// Extensions for integrating ZodSharp with Newtonsoft.Json.
+/// Extensions for integrating ZodSharp with System.Text.Json.
 /// </summary>
 #if !NETSTANDARD2_1_OR_GREATER
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 #endif
-public static class NewtonsoftJsonExtensions
+public static class SystemTextJsonExtensions
 {
 	static readonly string[] EmptyPath = [];
 
@@ -22,15 +22,17 @@ public static class NewtonsoftJsonExtensions
 	public static ValidationResult<T> DeserializeAndValidate<T>(
 		this IZodSchema<T, T> schema,
 		string json,
-		JsonSerializerSettings? settings = null
+		JsonSerializerOptions? options = null
 	)
 	{
 		if (schema == null)
 			throw new ArgumentNullException(nameof(schema));
+		if (json == null)
+			throw new ArgumentNullException(nameof(json));
 
 		try
 		{
-			var deserialized = JsonConvert.DeserializeObject<T>(json, settings);
+			var deserialized = JsonSerializer.Deserialize<T>(json, options);
 			return deserialized == null
 				? ValidationResult<T>.Failure(
 					new ValidationError("deserialization_failed", "Failed to deserialize JSON", EmptyPath)
@@ -46,57 +48,36 @@ public static class NewtonsoftJsonExtensions
 	}
 
 	/// <summary>
-	/// Deserializes JSON and validates it using a Zod schema (async).
+	/// Deserializes JSON from a stream and validates it using a Zod schema (async).
 	/// </summary>
-	public static async Task<ValidationResult<T>> DeserializeAndValidateAsync<T>(
+	public static async ValueTask<ValidationResult<T>> DeserializeAndValidateAsync<T>(
 		this IZodSchema<T, T> schema,
 		Stream jsonStream,
-		JsonSerializerSettings? settings = null,
+		JsonSerializerOptions? options = null,
 		CancellationToken cancellationToken = default
 	)
 	{
-		try
-		{
-#if NETSTANDARD2_1_OR_GREATER
-			using StreamReader reader = new(jsonStream, Encoding.UTF8, true, 1024, true);
-			var json = await reader.ReadToEndAsync();
-#else
-			using StreamReader reader = new(jsonStream, Encoding.UTF8, leaveOpen: true);
-			var json = await reader.ReadToEndAsync(cancellationToken);
-#endif
-
-			return schema.DeserializeAndValidate<T>(json, settings);
-		}
-		catch (JsonException ex)
-		{
-			return ValidationResult<T>.Failure(
-				new ValidationError("json_error", $"JSON parsing error: {ex.Message}", EmptyPath)
-			);
-		}
-	}
-
-	/// <summary>
-	/// Deserializes JSON from a JToken and validates it using a Zod schema.
-	/// </summary>
-	public static ValidationResult<T> DeserializeAndValidate<T>(
-		this IZodSchema<T, T> schema,
-		JToken token,
-		JsonSerializer? serializer = null
-	)
-	{
 		if (schema == null)
 			throw new ArgumentNullException(nameof(schema));
-		if (token == null)
-			throw new ArgumentNullException(nameof(token));
+		if (jsonStream == null)
+			throw new ArgumentNullException(nameof(jsonStream));
 
 		try
 		{
-			var deserialized = token.ToObject<T>(serializer ?? JsonSerializer.CreateDefault());
+			T? deserialized;
+#if NETSTANDARD2_1_OR_GREATER
+			// System.Text.Json on netstandard2.1 lacks the CancellationToken overload of DeserializeAsync.
+			using StreamReader reader = new(jsonStream, Encoding.UTF8, true, 1024, true);
+			var json = await reader.ReadToEndAsync();
+			deserialized = JsonSerializer.Deserialize<T>(json, options);
+#else
+			deserialized = await JsonSerializer.DeserializeAsync<T>(jsonStream, options, cancellationToken);
+#endif
 			return deserialized == null
 				? ValidationResult<T>.Failure(
 					new ValidationError("deserialization_failed", "Failed to deserialize JSON", EmptyPath)
 				)
-				: schema.Validate(deserialized);
+				: await schema.ValidateAsync(deserialized);
 		}
 		catch (JsonException ex)
 		{
@@ -105,12 +86,6 @@ public static class NewtonsoftJsonExtensions
 			);
 		}
 	}
-
-	/// <summary>
-	/// Creates a custom JsonConverter that validates using a Zod schema.
-	/// </summary>
-	public static JsonConverter CreateValidatingConverter<T>(this IZodSchema<T, T> schema) =>
-		schema == null ? throw new ArgumentNullException(nameof(schema)) : new ZodJsonConverter<T>(schema);
 
 	/// <summary>
 	/// Validates a value and serializes it to a JSON string.
@@ -118,8 +93,7 @@ public static class NewtonsoftJsonExtensions
 	public static ValidationResult<string> ValidateAndSerialize<T>(
 		this IZodSchema<T, T> schema,
 		T value,
-		JsonSerializerSettings? settings = null,
-		Formatting formatting = Formatting.None
+		JsonSerializerOptions? options = null
 	)
 	{
 		if (schema == null)
@@ -129,19 +103,18 @@ public static class NewtonsoftJsonExtensions
 		if (!result.IsSuccess)
 			return ValidationResult<string>.Failure(result.Errors);
 
-		var json = JsonConvert.SerializeObject(result.Value, formatting, settings);
+		var json = JsonSerializer.Serialize(result.Value, options);
 		return ValidationResult<string>.Success(json);
 	}
 
 	/// <summary>
 	/// Validates a value and serializes it to a stream (async).
 	/// </summary>
-	public static async Task<ValidationResult<string>> ValidateAndSerializeAsync<T>(
+	public static async ValueTask<ValidationResult<string>> ValidateAndSerializeAsync<T>(
 		this IZodSchema<T, T> schema,
 		T value,
 		Stream output,
-		JsonSerializerSettings? settings = null,
-		Formatting formatting = Formatting.Indented,
+		JsonSerializerOptions? options = null,
 		CancellationToken cancellationToken = default
 	)
 	{
@@ -154,17 +127,13 @@ public static class NewtonsoftJsonExtensions
 		if (!result.IsSuccess)
 			return ValidationResult<string>.Failure(result.Errors);
 
-		var serializer = JsonSerializer.CreateDefault(settings);
-		serializer.Formatting = formatting;
-#if NETSTANDARD2_1_OR_GREATER
-		using StreamWriter writer = new(output, new UTF8Encoding(false), 1024, leaveOpen: true);
-#else
-		await using StreamWriter writer = new(output, new UTF8Encoding(false), 1024, leaveOpen: true);
-#endif
-		using JsonWriter jsonWriter = new JsonTextWriter(writer) { CloseOutput = false };
-		serializer.Serialize(jsonWriter, result.Value);
-		await jsonWriter.FlushAsync(cancellationToken);
-
+		await JsonSerializer.SerializeAsync(output, result.Value, options, cancellationToken);
 		return ValidationResult<string>.Success(string.Empty);
 	}
+
+	/// <summary>
+	/// Creates a custom JsonConverter that validates using a Zod schema.
+	/// </summary>
+	public static JsonConverter<T> CreateValidatingConverter<T>(this IZodSchema<T, T> schema) =>
+		schema == null ? throw new ArgumentNullException(nameof(schema)) : new ZodJsonConverter<T>(schema);
 }
