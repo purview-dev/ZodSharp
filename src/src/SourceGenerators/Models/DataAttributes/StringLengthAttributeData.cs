@@ -1,30 +1,30 @@
 ﻿using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 
-namespace ZodSharp.SourceGenerators.Helpers.Models;
+namespace ZodSharp.SourceGenerators.Models.DataAttributes;
 
-readonly record struct LengthAttributeData(
+readonly record struct StringLengthAttribute(
 	bool Exists,
-	int MinimumLength,
 	int MaximumLength,
+	int MinimumLength,
 	string? ErrorMessage,
 	string? ErrorMessageResourceName,
 	INamedTypeSymbol? ErrorMessageResourceType
 )
 {
-	public static readonly LengthAttributeData Empty = new(false, 0, int.MaxValue, null, null, null);
+	public static readonly StringLengthAttribute Empty = new(false, int.MaxValue, 0, null, null, null);
 
-	public static LengthAttributeData FromAttributeData(
-		ExecutionContext executionContext,
+	public static StringLengthAttribute FromAttributeData(
+		GenerationContext generationContext,
 		ImmutableArray<AttributeData> attributes
 	)
 	{
-		if (executionContext.LengthAttribute is null)
+		if (generationContext.StringLengthAttribute is null)
 			return Empty;
 
 		for (var i = 0; i < attributes.Length; i++)
 		{
-			var result = FromAttributeData(executionContext, attributes[i]);
+			var result = FromAttributeData(generationContext, attributes[i]);
 
 			if (result.Exists)
 				return result;
@@ -33,10 +33,12 @@ readonly record struct LengthAttributeData(
 		return Empty;
 	}
 
-	public static LengthAttributeData FromAttributeData(ExecutionContext executionContext, AttributeData attributeData)
+	public static StringLengthAttribute FromAttributeData(
+		GenerationContext generationContext,
+		AttributeData attributeData
+	)
 	{
-		var attributeSymbol = executionContext.LengthAttribute;
-
+		var attributeSymbol = generationContext.StringLengthAttribute;
 		if (
 			attributeSymbol is null
 			|| !SymbolEqualityComparer.Default.Equals(attributeData.AttributeClass, attributeSymbol)
@@ -45,17 +47,25 @@ readonly record struct LengthAttributeData(
 			return Empty;
 		}
 
+		var maximumLength = int.MaxValue;
+		var minimumLength = 0;
 		string? errorMessage = null;
 		string? errorMessageResourceName = null;
 		INamedTypeSymbol? errorMessageResourceType = null;
 
-		var minimumLength = (int)attributeData.ConstructorArguments[0].Value!;
-		var maximumLength = (int)attributeData.ConstructorArguments[1].Value!;
+		if (attributeData.ConstructorArguments.Length > 0 && attributeData.ConstructorArguments[0].Value is int maximum)
+		{
+			maximumLength = maximum;
+		}
 
 		foreach (var namedArgument in attributeData.NamedArguments)
 		{
 			switch (namedArgument.Key)
 			{
+				case nameof(MinimumLength) when namedArgument.Value.Value is int minimum:
+					minimumLength = minimum;
+					break;
+
 				case nameof(ErrorMessage) when namedArgument.Value.Value is string message:
 					errorMessage = message;
 					break;
@@ -72,8 +82,8 @@ readonly record struct LengthAttributeData(
 
 		return new(
 			Exists: true,
-			MinimumLength: minimumLength,
 			MaximumLength: maximumLength,
+			MinimumLength: minimumLength,
 			ErrorMessage: errorMessage,
 			ErrorMessageResourceName: errorMessageResourceName,
 			ErrorMessageResourceType: errorMessageResourceType

@@ -1,36 +1,36 @@
 using System.Collections.Immutable;
 using System.Globalization;
 using Microsoft.CodeAnalysis;
-using ZodSharp.SourceGenerators.Helpers.Models;
-using ExecutionContext = ZodSharp.SourceGenerators.Helpers.Models.ExecutionContext;
+using ZodSharp.SourceGenerators.Models;
+using ZodSharp.SourceGenerators.Models.DataAttributes;
 
 namespace ZodSharp.SourceGenerators;
 
 partial class ZodSchemaGenerator
 {
 	static void GenerateCollectionValidations(
-		ExecutionContext executionContext,
+		GenerationContext generationContext,
 		IPropertySymbol property,
 		ITypeSymbol propertyType,
 		string propertyName,
 		ImmutableArray<AttributeData> attributes,
-		List<Diagnostic> diagnostics
+		List<DiagnosticInfo> diagnostics
 	)
 	{
-		var displayName = GetDisplayName(executionContext, property);
-		var lengthAccessor = ClassifyLengthAccessor(executionContext, propertyType);
-		var lengthAttributeData = FindAttribute(attributes, executionContext.LengthAttribute);
+		var displayName = GetDisplayName(generationContext, property);
+		var lengthAccessor = ClassifyLengthAccessor(generationContext, propertyType);
+		var lengthAttributeData = FindAttribute(attributes, generationContext.LengthAttribute);
 		var lengthAttr = lengthAttributeData is null
 			? LengthAttributeData.Empty
-			: LengthAttributeData.FromAttributeData(executionContext, lengthAttributeData);
-		var minLengthAttributeData = FindAttribute(attributes, executionContext.MinLengthAttribute);
+			: LengthAttributeData.FromAttributeData(generationContext, lengthAttributeData);
+		var minLengthAttributeData = FindAttribute(attributes, generationContext.MinLengthAttribute);
 		var minLengthAttr = minLengthAttributeData is null
 			? MinLengthAttributeData.Empty
-			: MinLengthAttributeData.FromAttributeData(executionContext, minLengthAttributeData);
-		var maxLengthAttributeData = FindAttribute(attributes, executionContext.MaxLengthAttribute);
+			: MinLengthAttributeData.FromAttributeData(generationContext, minLengthAttributeData);
+		var maxLengthAttributeData = FindAttribute(attributes, generationContext.MaxLengthAttribute);
 		var maxLengthAttr = maxLengthAttributeData is null
 			? MaxLengthAttributeData.Empty
-			: MaxLengthAttributeData.FromAttributeData(executionContext, maxLengthAttributeData);
+			: MaxLengthAttributeData.FromAttributeData(generationContext, maxLengthAttributeData);
 
 		if (!lengthAttr.Exists && !minLengthAttr.Exists && !maxLengthAttr.Exists)
 			return;
@@ -61,11 +61,11 @@ partial class ZodSchemaGenerator
 
 		var propertyValueName = GetLocalIdentifier(propertyName, "Value");
 		var propertyLengthName = GetLocalIdentifier(propertyName, "Length");
-		executionContext.Writer.WriteLine($"var {propertyValueName} = value.{propertyName};");
-		using (executionContext.Writer.Block($"if ({propertyValueName} is not null)"))
+		generationContext.Writer.WriteLine($"var {propertyValueName} = value.{propertyName};");
+		using (generationContext.Writer.Block($"if ({propertyValueName} is not null)"))
 		{
-			executionContext.Writer.WriteLine($"var propertyValue = {propertyValueName};");
-			executionContext.Writer.WriteLine($"var {propertyLengthName} = {lengthAccessor.LengthExpression};");
+			generationContext.Writer.WriteLine($"var propertyValue = {propertyValueName};");
+			generationContext.Writer.WriteLine($"var {propertyLengthName} = {lengthAccessor.LengthExpression};");
 
 			if (
 				lengthAttr.Exists
@@ -98,10 +98,10 @@ partial class ZodSchemaGenerator
 					lengthAttr.MinimumLength.ToString(CultureInfo.InvariantCulture)
 				);
 
-				using (executionContext.Writer.Block($"if ({propertyLengthName} < {lengthAttr.MinimumLength})"))
+				using (generationContext.Writer.Block($"if ({propertyLengthName} < {lengthAttr.MinimumLength})"))
 				{
 					WriteValidationError(
-						executionContext,
+						generationContext,
 						"too_small",
 						tooSmallMessage,
 						GetPathFieldName(propertyName),
@@ -110,10 +110,10 @@ partial class ZodSchemaGenerator
 					);
 				}
 
-				using (executionContext.Writer.Block($"else if ({propertyLengthName} > {lengthAttr.MaximumLength})"))
+				using (generationContext.Writer.Block($"else if ({propertyLengthName} > {lengthAttr.MaximumLength})"))
 				{
 					WriteValidationError(
-						executionContext,
+						generationContext,
 						"too_big",
 						tooBigMessage,
 						GetPathFieldName(propertyName),
@@ -137,10 +137,10 @@ partial class ZodSchemaGenerator
 					minLengthAttr.Length.ToString(CultureInfo.InvariantCulture)
 				);
 
-				using (executionContext.Writer.Block($"if ({propertyLengthName} < {minLengthAttr.Length})"))
+				using (generationContext.Writer.Block($"if ({propertyLengthName} < {minLengthAttr.Length})"))
 				{
 					WriteValidationError(
-						executionContext,
+						generationContext,
 						"too_small",
 						messageExpression,
 						GetPathFieldName(propertyName),
@@ -164,10 +164,10 @@ partial class ZodSchemaGenerator
 					maxLengthAttr.Length.ToString(CultureInfo.InvariantCulture)
 				);
 
-				using (executionContext.Writer.Block($"if ({propertyLengthName} > {maxLengthAttr.Length})"))
+				using (generationContext.Writer.Block($"if ({propertyLengthName} > {maxLengthAttr.Length})"))
 				{
 					WriteValidationError(
-						executionContext,
+						generationContext,
 						"too_big",
 						messageExpression,
 						GetPathFieldName(propertyName),
@@ -178,6 +178,6 @@ partial class ZodSchemaGenerator
 			}
 		}
 
-		executionContext.Writer.WriteLine();
+		generationContext.Writer.WriteLine();
 	}
 }

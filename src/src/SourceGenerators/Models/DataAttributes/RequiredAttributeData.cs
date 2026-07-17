@@ -1,22 +1,22 @@
 ﻿using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 
-namespace ZodSharp.SourceGenerators.Helpers.Models;
+namespace ZodSharp.SourceGenerators.Models.DataAttributes;
 
 readonly record struct RequiredAttributeData(bool Exists, bool AllowEmptyStrings, string? ErrorMessage)
 {
 	public static readonly RequiredAttributeData Empty = new(false, false, null);
 
 	public static RequiredAttributeData FromAttributeData(
-		ExecutionContext executionContext,
+		GenerationContext generationContext,
 		ImmutableArray<AttributeData> attributeData
 	)
 	{
-		if (executionContext.RequiredAttribute is not null)
+		if (generationContext.RequiredAttribute is not null)
 		{
 			for (var i = 0; i < attributeData.Length; i++)
 			{
-				var result = FromAttributeData(executionContext, attributeData[i]);
+				var result = FromAttributeData(generationContext, attributeData[i]);
 				if (result.Exists)
 					return result;
 			}
@@ -26,11 +26,11 @@ readonly record struct RequiredAttributeData(bool Exists, bool AllowEmptyStrings
 	}
 
 	public static RequiredAttributeData FromAttributeData(
-		ExecutionContext executionContext,
+		GenerationContext generationContext,
 		AttributeData attributeData
 	)
 	{
-		var attributeSymbol = executionContext.RequiredAttribute;
+		var attributeSymbol = generationContext.RequiredAttribute;
 		var exists =
 			attributeSymbol is not null
 			&& SymbolEqualityComparer.Default.Equals(attributeData?.AttributeClass, attributeSymbol);

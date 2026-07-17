@@ -1,11 +1,6 @@
-using System.Globalization;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using ZodSharp.SourceGenerators.Helpers;
-using ZodSharp.SourceGenerators.Helpers.Models;
 using ZodSharp.SourceGenerators.Templates;
-using ExecutionContext = ZodSharp.SourceGenerators.Helpers.Models.ExecutionContext;
 
 namespace ZodSharp.SourceGenerators;
 
@@ -33,69 +28,29 @@ public sealed partial class ZodSchemaGenerator : IIncrementalGenerator, ILogSupp
 			);
 		});
 
-		var generationValueProviders = GetGenerationValueProviders(context, _logger);
+		var generationValueProviders = SourceGenHelpers.GetGeneratorValueProviders(context, _logger);
 
 		// Register source outputs
 		context.RegisterSourceOutput(
 			generationValueProviders,
 			static (spc, source) =>
 			{
-				if (source.Left.IsSourceGeneratorDisabled)
+				if (!source.IsSourceGeneratorEnabled)
 					return;
 
-				if (source.Left.TargetDescriptor is null)
-					return;
+				foreach (var schema in source.ZodSchemas)
+				{
+					if (schema.HasDiagnostics)
+					{
+						ReportDiagnostics(spc, schema.Diagnostics, source.GenerationContext.Logger);
+					}
 
-				if (!ValidateExecutionContext(source.ExecutionContext, spc))
-					return;
+					if (schema.IsFatal)
+						return;
 
-				Execute(source.Left.TargetDescriptor, source.ExecutionContext, spc);
+					Execute(schema.Value!, source.GenerationContext, spc);
+				}
 			}
 		);
 	}
-
-	static bool IsSyntaxTargetForGeneration(SyntaxNode node) =>
-		node is ClassDeclarationSyntax or StructDeclarationSyntax or RecordDeclarationSyntax;
-
-	static TargetSymbolDescriptor? GetSemanticTargetForGeneration(
-		GeneratorAttributeSyntaxContext context,
-		CancellationToken cancellationToken
-	)
-	{
-		var declaration = (TypeDeclarationSyntax)context.TargetNode;
-		return context.SemanticModel.GetDeclaredSymbol(declaration, cancellationToken) is not INamedTypeSymbol symbol
-			? null
-			: new(symbol, declaration);
-	}
-
-	static void ReportDiagnostics(
-		SourceProductionContext context,
-		Diagnostic diagnostic,
-		ExecutionContext executionContext
-	) => ReportDiagnostics(context, [diagnostic], executionContext.Logger);
-
-	static void ReportDiagnostics(
-		SourceProductionContext context,
-		IEnumerable<Diagnostic> diagnostics,
-		ExecutionContext executionContext
-	) => ReportDiagnostics(context, diagnostics, executionContext.Logger);
-
-	static void ReportDiagnostics(SourceProductionContext context, Diagnostic diagnostic, GenerationLogger? logger) =>
-		ReportDiagnostics(context, [diagnostic], logger);
-
-	static void ReportDiagnostics(
-		SourceProductionContext context,
-		IEnumerable<Diagnostic> diagnostics,
-		GenerationLogger? logger
-	)
-	{
-		foreach (var diagnostic in diagnostics)
-		{
-			context.ReportDiagnostic(diagnostic);
-
-			logger?.Diagnostic(diagnostic.GetMessage(CultureInfo.InvariantCulture));
-		}
-	}
-
-	void ILogSupport.SetLogOutput(Action<string, OutputType> action) => _logger = new GenerationLogger(action);
 }

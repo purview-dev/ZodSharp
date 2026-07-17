@@ -1,8 +1,9 @@
 ﻿using Microsoft.CodeAnalysis;
+using ZodSharp.SourceGenerators.Helpers;
 
-namespace ZodSharp.SourceGenerators.Helpers.Models;
+namespace ZodSharp.SourceGenerators.Models;
 
-sealed record class ExecutionContext(
+sealed record class GenerationContext(
 	CodeWriter Writer,
 	// ZodSharp symbols
 	INamedTypeSymbol? ZodSchemaAttribute,
@@ -29,7 +30,7 @@ sealed record class ExecutionContext(
 	GenerationLogger? Logger
 )
 {
-	public static ExecutionContext Create(
+	public static GenerationContext Create(
 		Compilation compilation,
 		GenerationLogger? logging,
 		CancellationToken cancellationToken

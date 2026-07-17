@@ -1,7 +1,7 @@
 ﻿using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 
-namespace ZodSharp.SourceGenerators.Helpers.Models;
+namespace ZodSharp.SourceGenerators.Models.DataAttributes;
 
 readonly record struct MaxLengthAttributeData(
 	bool Exists,
@@ -14,16 +14,16 @@ readonly record struct MaxLengthAttributeData(
 	public static readonly MaxLengthAttributeData Empty = new(false, 0, null, null, null);
 
 	public static MaxLengthAttributeData FromAttributeData(
-		ExecutionContext executionContext,
+		GenerationContext generationContext,
 		ImmutableArray<AttributeData> attributes
 	)
 	{
-		if (executionContext.MaxLengthAttribute is null)
+		if (generationContext.MaxLengthAttribute is null)
 			return Empty;
 
 		for (var i = 0; i < attributes.Length; i++)
 		{
-			var result = FromAttributeData(executionContext, attributes[i]);
+			var result = FromAttributeData(generationContext, attributes[i]);
 
 			if (result.Exists)
 				return result;
@@ -33,11 +33,11 @@ readonly record struct MaxLengthAttributeData(
 	}
 
 	public static MaxLengthAttributeData FromAttributeData(
-		ExecutionContext executionContext,
+		GenerationContext generationContext,
 		AttributeData attributeData
 	)
 	{
-		var attributeSymbol = executionContext.MaxLengthAttribute;
+		var attributeSymbol = generationContext.MaxLengthAttribute;
 		if (
 			attributeSymbol is null
 			|| !SymbolEqualityComparer.Default.Equals(attributeData.AttributeClass, attributeSymbol)

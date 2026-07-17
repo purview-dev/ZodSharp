@@ -1,7 +1,7 @@
 ﻿using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 
-namespace ZodSharp.SourceGenerators.Helpers.Models;
+namespace ZodSharp.SourceGenerators.Models.DataAttributes;
 
 readonly record struct MinLengthAttributeData(
 	bool Exists,
@@ -14,16 +14,16 @@ readonly record struct MinLengthAttributeData(
 	public static readonly MinLengthAttributeData Empty = new(false, 0, null, null, null);
 
 	public static MinLengthAttributeData FromAttributeData(
-		ExecutionContext executionContext,
+		GenerationContext generationContext,
 		ImmutableArray<AttributeData> attributes
 	)
 	{
-		if (executionContext.MinLengthAttribute is null)
+		if (generationContext.MinLengthAttribute is null)
 			return Empty;
 
 		for (var i = 0; i < attributes.Length; i++)
 		{
-			var result = FromAttributeData(executionContext, attributes[i]);
+			var result = FromAttributeData(generationContext, attributes[i]);
 
 			if (result.Exists)
 				return result;
@@ -33,11 +33,11 @@ readonly record struct MinLengthAttributeData(
 	}
 
 	public static MinLengthAttributeData FromAttributeData(
-		ExecutionContext executionContext,
+		GenerationContext generationContext,
 		AttributeData attributeData
 	)
 	{
-		var attributeSymbol = executionContext.MinLengthAttribute;
+		var attributeSymbol = generationContext.MinLengthAttribute;
 		if (
 			attributeSymbol is null
 			|| !SymbolEqualityComparer.Default.Equals(attributeData.AttributeClass, attributeSymbol)

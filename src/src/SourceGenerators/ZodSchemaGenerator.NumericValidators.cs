@@ -2,33 +2,33 @@ using System.Collections.Immutable;
 using System.Globalization;
 using Microsoft.CodeAnalysis;
 using ZodSharp.SourceGenerators.Helpers;
-using ZodSharp.SourceGenerators.Helpers.Models;
-using ExecutionContext = ZodSharp.SourceGenerators.Helpers.Models.ExecutionContext;
+using ZodSharp.SourceGenerators.Models;
+using ZodSharp.SourceGenerators.Models.DataAttributes;
 
 namespace ZodSharp.SourceGenerators;
 
 partial class ZodSchemaGenerator
 {
 	static void GenerateNumericValidations(
-		ExecutionContext executionContext,
+		GenerationContext generationContext,
 		IPropertySymbol property,
 		ITypeSymbol propertyType,
 		string propertyName,
 		ImmutableArray<AttributeData> attributes,
-		List<Diagnostic> diagnostics
+		List<DiagnosticInfo> diagnostics
 	)
 	{
-		var rangeAttributeData = FindAttribute(attributes, executionContext.RangeAttribute);
+		var rangeAttributeData = FindAttribute(attributes, generationContext.RangeAttribute);
 		var rangeAttribute = rangeAttributeData is null
 			? RangeAttributeData.Empty
-			: RangeAttributeData.FromAttributeData(executionContext, rangeAttributeData);
+			: RangeAttributeData.FromAttributeData(generationContext, rangeAttributeData);
 		if (!rangeAttribute.Exists)
 			return;
 
 		if (!TryBuildRangeBoundaryExpressions(propertyType, rangeAttribute, out _, out _))
 			return;
 
-		var displayName = GetDisplayName(executionContext, property);
+		var displayName = GetDisplayName(generationContext, property);
 		var propertyValueName = GetLocalIdentifier(propertyName, "Value");
 		var minComparison = rangeAttribute.MinimumIsExclusive ? "<=" : "<";
 		var maxComparison = rangeAttribute.MaximumIsExclusive ? ">=" : ">";
@@ -51,17 +51,17 @@ partial class ZodSchemaGenerator
 			Quote(maximumDisplay)
 		);
 
-		using (executionContext.Writer.Block())
+		using (generationContext.Writer.Block())
 		{
-			executionContext.Writer.WriteLine($"var {propertyValueName} = value.{propertyName};");
+			generationContext.Writer.WriteLine($"var {propertyValueName} = value.{propertyName};");
 			using (
-				executionContext.Writer.Block(
+				generationContext.Writer.Block(
 					$"if ({propertyValueName} {minComparison} {GetRangeMinimumFieldName(propertyName)} || {propertyValueName} {maxComparison} {GetRangeMaximumFieldName(propertyName)})"
 				)
 			)
 			{
 				WriteValidationError(
-					executionContext,
+					generationContext,
 					"invalid_range",
 					messageExpression,
 					GetPathFieldName(propertyName)
@@ -69,7 +69,7 @@ partial class ZodSchemaGenerator
 			}
 		}
 
-		executionContext.Writer.WriteLine();
+		generationContext.Writer.WriteLine();
 	}
 
 	static bool TryBuildRangeBoundaryExpressions(

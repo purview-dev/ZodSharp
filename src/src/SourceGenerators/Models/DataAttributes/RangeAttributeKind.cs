@@ -1,4 +1,4 @@
-﻿namespace ZodSharp.SourceGenerators.Helpers.Models;
+﻿namespace ZodSharp.SourceGenerators.Models.DataAttributes;
 
 enum RangeAttributeKind
 {

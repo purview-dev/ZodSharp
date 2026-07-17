@@ -1,22 +1,22 @@
 ﻿using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 
-namespace ZodSharp.SourceGenerators.Helpers.Models;
+namespace ZodSharp.SourceGenerators.Models.DataAttributes;
 
 readonly record struct EmailAddressAttributeData(bool Exists, string? ErrorMessage)
 {
 	public static readonly EmailAddressAttributeData Empty = new(false, null);
 
 	public static EmailAddressAttributeData FromAttributeData(
-		ExecutionContext executionContext,
+		GenerationContext generationContext,
 		ImmutableArray<AttributeData> attributeData
 	)
 	{
-		if (executionContext.EmailAddressAttribute is not null)
+		if (generationContext.EmailAddressAttribute is not null)
 		{
 			for (var i = 0; i < attributeData.Length; i++)
 			{
-				var result = FromAttributeData(executionContext, attributeData[i]);
+				var result = FromAttributeData(generationContext, attributeData[i]);
 				if (result.Exists)
 					return result;
 			}
@@ -26,11 +26,11 @@ readonly record struct EmailAddressAttributeData(bool Exists, string? ErrorMessa
 	}
 
 	public static EmailAddressAttributeData FromAttributeData(
-		ExecutionContext executionContext,
+		GenerationContext generationContext,
 		AttributeData attributeData
 	)
 	{
-		var attributeSymbol = executionContext.EmailAddressAttribute;
+		var attributeSymbol = generationContext.EmailAddressAttribute;
 		var exists =
 			attributeSymbol is not null
 			&& SymbolEqualityComparer.Default.Equals(attributeData?.AttributeClass, attributeSymbol);

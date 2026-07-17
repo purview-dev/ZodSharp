@@ -1,7 +1,7 @@
 ﻿using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 
-namespace ZodSharp.SourceGenerators.Helpers.Models;
+namespace ZodSharp.SourceGenerators.Models.DataAttributes;
 
 readonly record struct AllowedValuesAttributeData(
 	bool Exists,
@@ -14,16 +14,16 @@ readonly record struct AllowedValuesAttributeData(
 	public static readonly AllowedValuesAttributeData Empty = new(false, [], null, null, null);
 
 	public static AllowedValuesAttributeData FromAttributeData(
-		ExecutionContext executionContext,
+		GenerationContext generationContext,
 		ImmutableArray<AttributeData> attributes
 	)
 	{
-		if (executionContext.AllowedValuesAttribute is null)
+		if (generationContext.AllowedValuesAttribute is null)
 			return Empty;
 
 		for (var i = 0; i < attributes.Length; i++)
 		{
-			var result = FromAttributeData(executionContext, attributes[i]);
+			var result = FromAttributeData(generationContext, attributes[i]);
 
 			if (result.Exists)
 				return result;
@@ -33,11 +33,11 @@ readonly record struct AllowedValuesAttributeData(
 	}
 
 	public static AllowedValuesAttributeData FromAttributeData(
-		ExecutionContext executionContext,
+		GenerationContext generationContext,
 		AttributeData attributeData
 	)
 	{
-		var attributeSymbol = executionContext.AllowedValuesAttribute;
+		var attributeSymbol = generationContext.AllowedValuesAttribute;
 		if (
 			attributeSymbol is null
 			|| !SymbolEqualityComparer.Default.Equals(attributeData.AttributeClass, attributeSymbol)

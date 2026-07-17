@@ -1,7 +1,7 @@
 ﻿using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 
-namespace ZodSharp.SourceGenerators.Helpers.Models;
+namespace ZodSharp.SourceGenerators.Models.DataAttributes;
 
 readonly record struct RegularExpressionAttributeData(
 	bool Exists,
@@ -14,15 +14,20 @@ readonly record struct RegularExpressionAttributeData(
 	public static readonly RegularExpressionAttributeData Empty = new(false, null, null, null, null);
 
 	public static RegularExpressionAttributeData FromAttributeData(
-		ExecutionContext executionContext,
+		GenerationContext generationContext,
 		ImmutableArray<AttributeData> attributeData
 	)
 	{
-		if (executionContext.RegularExpressionAttribute is not null)
+		if (generationContext is null)
+		{
+			throw new ArgumentNullException(nameof(generationContext));
+		}
+
+		if (generationContext.RegularExpressionAttribute is not null)
 		{
 			for (var i = 0; i < attributeData.Length; i++)
 			{
-				var result = FromAttributeData(executionContext, attributeData[i]);
+				var result = FromAttributeData(generationContext, attributeData[i]);
 				if (result.Exists)
 					return result;
 			}
@@ -32,11 +37,11 @@ readonly record struct RegularExpressionAttributeData(
 	}
 
 	public static RegularExpressionAttributeData FromAttributeData(
-		ExecutionContext executionContext,
+		GenerationContext generationContext,
 		AttributeData attributeData
 	)
 	{
-		var attributeSymbol = executionContext.RegularExpressionAttribute;
+		var attributeSymbol = generationContext.RegularExpressionAttribute;
 		var exists =
 			attributeSymbol is not null
 			&& SymbolEqualityComparer.Default.Equals(attributeData.AttributeClass, attributeSymbol);

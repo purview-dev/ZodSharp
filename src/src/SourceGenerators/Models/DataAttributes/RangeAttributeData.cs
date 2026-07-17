@@ -1,7 +1,7 @@
 ﻿using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 
-namespace ZodSharp.SourceGenerators.Helpers.Models;
+namespace ZodSharp.SourceGenerators.Models.DataAttributes;
 
 readonly record struct RangeAttributeData(
 	bool Exists,
@@ -34,16 +34,16 @@ readonly record struct RangeAttributeData(
 	);
 
 	public static RangeAttributeData FromAttributeData(
-		ExecutionContext executionContext,
+		GenerationContext generationContext,
 		ImmutableArray<AttributeData> attributes
 	)
 	{
-		if (executionContext.RangeAttribute is null)
+		if (generationContext.RangeAttribute is null)
 			return Empty;
 
 		for (var i = 0; i < attributes.Length; i++)
 		{
-			var result = FromAttributeData(executionContext, attributes[i]);
+			var result = FromAttributeData(generationContext, attributes[i]);
 
 			if (result.Exists)
 				return result;
@@ -52,9 +52,9 @@ readonly record struct RangeAttributeData(
 		return Empty;
 	}
 
-	public static RangeAttributeData FromAttributeData(ExecutionContext executionContext, AttributeData attributeData)
+	public static RangeAttributeData FromAttributeData(GenerationContext generationContext, AttributeData attributeData)
 	{
-		var rangeAttributeSymbol = executionContext.RangeAttribute;
+		var rangeAttributeSymbol = generationContext.RangeAttribute;
 		if (
 			rangeAttributeSymbol is null
 			|| !SymbolEqualityComparer.Default.Equals(attributeData.AttributeClass, rangeAttributeSymbol)

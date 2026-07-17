@@ -2,7 +2,7 @@ using System.Collections.Immutable;
 using System.Globalization;
 using Microsoft.CodeAnalysis;
 using ZodSharp.SourceGenerators.Helpers;
-using ExecutionContext = ZodSharp.SourceGenerators.Helpers.Models.ExecutionContext;
+using ZodSharp.SourceGenerators.Models;
 
 namespace ZodSharp.SourceGenerators;
 
@@ -24,9 +24,9 @@ partial class ZodSchemaGenerator
 		return null;
 	}
 
-	static string GetDisplayName(ExecutionContext executionContext, IPropertySymbol property)
+	static string GetDisplayName(GenerationContext generationContext, IPropertySymbol property)
 	{
-		var displayAttribute = FindAttribute(property.GetAttributes(), executionContext.DisplayAttribute);
+		var displayAttribute = FindAttribute(property.GetAttributes(), generationContext.DisplayAttribute);
 		if (displayAttribute is not null)
 		{
 			foreach (var namedArgument in displayAttribute.NamedArguments)
@@ -43,7 +43,7 @@ partial class ZodSchemaGenerator
 		return property.Name;
 	}
 
-	static LengthAccessor ClassifyLengthAccessor(ExecutionContext executionContext, ITypeSymbol propertyType)
+	static LengthAccessor ClassifyLengthAccessor(GenerationContext generationContext, ITypeSymbol propertyType)
 	{
 		if (propertyType.SpecialType == SpecialType.System_String || propertyType is IArrayTypeSymbol)
 			return new("propertyValue.Length", propertyType is IArrayTypeSymbol ? "array" : "string", true);
@@ -51,20 +51,21 @@ partial class ZodSchemaGenerator
 		if (TypeHelpers.HasAccessibleCountProperty(propertyType))
 			return new("propertyValue.Count", "collection", true);
 
-		if (TypeHelpers.ImplementsInterface(propertyType, executionContext.IEnumerableOfT))
+		if (TypeHelpers.ImplementsInterface(propertyType, generationContext.IEnumerableOfT))
 			return new(
 				"global::ZodSharp.Optimizations.CollectionCountHelper.GetCount(propertyValue)",
 				"collection",
 				true
 			);
 
-		if (TypeHelpers.ImplementsInterface(propertyType, executionContext.IEnumerable))
+		if (TypeHelpers.ImplementsInterface(propertyType, generationContext.IEnumerable))
 			return new(
 				"global::ZodSharp.Optimizations.CollectionCountHelper.GetCount(propertyValue)",
 				"collection",
 				true
 			);
 
+		// ...just a normal collection?
 		return new(string.Empty, "collection", false);
 	}
 
@@ -72,26 +73,26 @@ partial class ZodSchemaGenerator
 		attributeData?.ApplicationSyntaxReference?.GetSyntax().GetLocation();
 
 	static void AddInvalidLengthConfigurationDiagnostic(
-		List<Diagnostic> diagnostics,
+		List<DiagnosticInfo> diagnostics,
 		AttributeData? attributeData,
 		string message
 	) =>
 		diagnostics.Add(
-			Diagnostic.Create(
-				GeneratorDiagnostics.InvalidLengthAttributeConfiguration,
+			DiagnosticInfo.Create(
+				GeneratorDiagnostics.InvalidLengthAttribute,
 				GetAttributeLocation(attributeData),
 				message
 			)
 		);
 
 	static void AddUnsupportedLengthTargetDiagnostic(
-		List<Diagnostic> diagnostics,
+		List<DiagnosticInfo> diagnostics,
 		AttributeData? attributeData,
 		string propertyName,
 		ITypeSymbol propertyType
 	) =>
 		diagnostics.Add(
-			Diagnostic.Create(
+			DiagnosticInfo.Create(
 				GeneratorDiagnostics.UnsupportedLengthAttributeTarget,
 				GetAttributeLocation(attributeData),
 				string.Format(
@@ -104,20 +105,20 @@ partial class ZodSchemaGenerator
 		);
 
 	static void AddUnsupportedDataAnnotationsDiagnostic(
-		List<Diagnostic> diagnostics,
+		List<DiagnosticInfo> diagnostics,
 		AttributeData? attributeData,
 		string message
 	) =>
 		diagnostics.Add(
-			Diagnostic.Create(
-				GeneratorDiagnostics.UnsupportedDataAnnotationsUsage,
+			DiagnosticInfo.Create(
+				GeneratorDiagnostics.UnsupportedDataAnnoationsUsage,
 				GetAttributeLocation(attributeData),
 				message
 			)
 		);
 
 	static string BuildMessageExpression(
-		List<Diagnostic> diagnostics,
+		List<DiagnosticInfo> diagnostics,
 		AttributeData? attributeData,
 		string displayName,
 		string? literalMessage,
@@ -132,8 +133,8 @@ partial class ZodSchemaGenerator
 			if (string.IsNullOrEmpty(resourceName) || resourceType is null)
 			{
 				diagnostics.Add(
-					Diagnostic.Create(
-						GeneratorDiagnostics.InvalidErrorMessageResourceConfiguration,
+					DiagnosticInfo.Create(
+						GeneratorDiagnostics.InvalidDataAnnotationsErrorMessage,
 						GetAttributeLocation(attributeData),
 						"ErrorMessageResourceName and ErrorMessageResourceType must both be supplied."
 					)
@@ -155,8 +156,8 @@ partial class ZodSchemaGenerator
 			if (resourceProperty is null)
 			{
 				diagnostics.Add(
-					Diagnostic.Create(
-						GeneratorDiagnostics.InvalidErrorMessageResourceConfiguration,
+					DiagnosticInfo.Create(
+						GeneratorDiagnostics.InvalidDataAnnotationsErrorMessage,
 						GetAttributeLocation(attributeData),
 						string.Format(
 							CultureInfo.InvariantCulture,
@@ -186,7 +187,7 @@ partial class ZodSchemaGenerator
 			: $"global::System.String.Format(global::System.Globalization.CultureInfo.CurrentCulture, {formatExpression}, {string.Join(", ", formatArguments)})";
 
 	static void WriteValidationError(
-		ExecutionContext executionContext,
+		GenerationContext generationContext,
 		string errorCode,
 		string messageExpression,
 		string pathFieldName,
@@ -195,25 +196,25 @@ partial class ZodSchemaGenerator
 		int? maximum = null
 	)
 	{
-		executionContext.Writer.WriteLine(
+		generationContext.Writer.WriteLine(
 			"errors ??= new global::System.Collections.Generic.List<global::ZodSharp.Core.ValidationError>();"
 		);
-		executionContext.Writer.WriteLine(
+		generationContext.Writer.WriteLine(
 			$"errors.Add({TypeHelpers.ValidationError.Global()}.Create({Quote(errorCode)}, {messageExpression}, {pathFieldName}, origin: {Quote(origin)}, minimum: {(minimum.HasValue ? minimum.Value.ToString(CultureInfo.InvariantCulture) : "null")}, maximum: {(maximum.HasValue ? maximum.Value.ToString(CultureInfo.InvariantCulture) : "null")}, inclusive: true));"
 		);
 	}
 
 	static void WriteValidationError(
-		ExecutionContext executionContext,
+		GenerationContext generationContext,
 		string errorCode,
 		string messageExpression,
 		string pathFieldName
 	)
 	{
-		executionContext.Writer.WriteLine(
+		generationContext.Writer.WriteLine(
 			"errors ??= new global::System.Collections.Generic.List<global::ZodSharp.Core.ValidationError>();"
 		);
-		executionContext.Writer.WriteLine(
+		generationContext.Writer.WriteLine(
 			$"errors.Add({TypeHelpers.ValidationError.Global()}.Create({Quote(errorCode)}, {messageExpression}, {pathFieldName}));"
 		);
 	}
