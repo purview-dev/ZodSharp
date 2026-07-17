@@ -191,6 +191,7 @@ partial class ZodSchemaGenerator
 					$"return global::System.Threading.Tasks.ValueTask.FromResult({schemaName}.Validate(value));"
 				);
 			}
+
 			return;
 		}
 
@@ -203,8 +204,13 @@ partial class ZodSchemaGenerator
 			generationContext.Writer.WriteLine($"var syncResult = {schemaName}.Validate(value);");
 
 			var escapedMethodName = customValidation.MethodName;
+			var validationMethodPrefix =
+				customValidation.InvocationKind == CustomValidationInvocationKind.DefinedOnSchemaValidator
+					? ""
+					: $"{fullTypeName}.";
+
 			generationContext.Writer.WriteLine(
-				$"var customResult = await {fullTypeName}.{escapedMethodName}(value, cancellationToken).ConfigureAwait(false);"
+				$"var customResult = await {validationMethodPrefix}{escapedMethodName}(value, cancellationToken).ConfigureAwait(false);"
 			);
 
 			generationContext.Writer.WriteLine();

@@ -1,8 +1,4 @@
-using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
 using ZodSharp.Core;
-using ZodSharp.SourceGenerators.Infra;
 
 namespace ZodSharp.SourceGenerators;
 
@@ -78,7 +74,7 @@ namespace Testing
 
 		var assembly = await CompileToAssemblyAsync(source, cancellationToken);
 		var modelType = assembly.GetType("Testing.MergeModel")!;
-		var schemaType = assembly.GetType("Testing.MergeModelSchema")!;
+		//var schemaType = assembly.GetType("Testing.MergeModelSchema")!;
 		var validatorType = assembly.GetType("Testing.MergeModelSchemaValidator")!;
 
 		var instance = Activator.CreateInstance(modelType)!;
@@ -126,7 +122,7 @@ namespace Testing
 
 		var assembly = await CompileToAssemblyAsync(source, cancellationToken);
 		var modelType = assembly.GetType("Testing.BothPassModel")!;
-		var schemaType = assembly.GetType("Testing.BothPassModelSchema")!;
+		//var schemaType = assembly.GetType("Testing.BothPassModelSchema")!;
 		var validatorType = assembly.GetType("Testing.BothPassModelSchemaValidator")!;
 
 		var instance = Activator.CreateInstance(modelType)!;
@@ -179,17 +175,9 @@ namespace Testing
 		dynamic dynInstance = instance;
 
 		using var cts = new CancellationTokenSource();
-		cts.Cancel();
+		await cts.CancelAsync();
 
-		try
-		{
-			dynamic task = dynValidator.ValidateAsync(dynInstance, cts.Token);
-			await task;
-			throw new InvalidOperationException("Expected OperationCanceledException was not thrown.");
-		}
-		catch (OperationCanceledException)
-		{
-			// Expected — the custom method threw on cancellation.
-		}
+		dynamic task = dynValidator.ValidateAsync(dynInstance, cts.Token);
+		await Assert.That(async () => await task).ThrowsExactly<OperationCanceledException>();
 	}
 }

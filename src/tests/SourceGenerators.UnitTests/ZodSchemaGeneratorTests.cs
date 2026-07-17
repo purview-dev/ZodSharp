@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.Globalization;
+using System.Reflection;
 using Microsoft.CodeAnalysis;
 using ZodSharp.SourceGenerators.Infra;
 
@@ -48,6 +49,30 @@ public partial class ZodSchemaGeneratorTests : SourceGeneratorTestBase<ZodSchema
 			.That(errors)
 			.IsEmpty()
 			.Because("Errors:\n\t" + string.Join("\t", errors.Select(e => e.ToString() + Environment.NewLine)));
+	}
+
+	static async Task AssertNoDiagnostics(GeneratorDriverRunResult result, DiagnosticSeverity? minimumSeverity = null)
+	{
+		if (minimumSeverity.HasValue)
+		{
+			foreach (var diag in result.Diagnostics)
+			{
+				await Assert.That(diag.Severity < minimumSeverity.Value).IsTrue();
+			}
+		}
+		else
+			await Assert
+				.That(result.Diagnostics.Length)
+				.IsZero()
+				.Because(
+					$"Expecting no diagnostics:\n"
+						+ string.Join(
+							"  ",
+							result.Diagnostics.Select(d =>
+								$"[{d.Severity}]{d.Id}: {d.GetMessage(CultureInfo.InvariantCulture)}\n"
+							)
+						)
+				);
 	}
 
 	static async Task<Assembly> CompileToAssemblyAsync(Compilation compilation, CancellationToken cancellationToken)

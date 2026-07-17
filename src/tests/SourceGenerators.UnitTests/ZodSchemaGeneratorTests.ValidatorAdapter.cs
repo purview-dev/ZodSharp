@@ -82,31 +82,31 @@ namespace Testing
 
 		var source =
 			$@"
-using System.Threading;
-using System.Threading.Tasks;
-using ZodSharp.Core;
+	using System.Threading;
+	using System.Threading.Tasks;
+	using ZodSharp.Core;
 
-namespace Testing
-{{
-    [ZodSchema]
-    public class Gizmo
-    {{
-        public string? Name {{ get; set; }}
-    }}
-
-	partial class GizmoSchemaValidator
+	namespace Testing
 	{{
-		async ValueTask<ValidationResult<Gizmo>> CustomValidation(Gizmo value, CancellationToken cancellationToken = default)
+	    [ZodSchema]
+	    public class Gizmo
+	    {{
+	        public string? Name {{ get; set; }}
+	    }}
+
+		partial class GizmoSchemaValidator
 		{{
-			throw new Exception(""{rnd}"");
+			async ValueTask<ValidationResult<Gizmo>> CustomValidationAsync(Gizmo value, CancellationToken cancellationToken default)
+			{{
+				throw new Exception(""{rnd}"");
+			}}
 		}}
-	}}
-}}";
+	}}";
 		var (result, outputCompilation) = await GenerateAsync(source, cancellationToken);
-		var generatedSource = GetSchemaGeneratedSource(result, "GizmoSchema");
 
 		await AssertNoGeneratorExceptions(result);
 		await AssertNoCompilationErrors(outputCompilation, cancellationToken);
+		await AssertNoDiagnostics(result);
 
 		var assembly = await CompileToAssemblyAsync(outputCompilation, cancellationToken);
 
@@ -116,8 +116,10 @@ namespace Testing
 		await Assert.That(gizmoType).IsNotNull();
 		await Assert.That(gizmoSchemaType).IsNotNull();
 
-		var methods = gizmoSchemaType.GetMethods(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-		await Assert.That(methods).Contains(m => m.Name == "CustomValidation");
+		var methods = gizmoSchemaType.GetMethods(
+			System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
+		);
+		await Assert.That(methods).Contains(m => m.Name == "CustomValidationAsync");
 
 		var gizmo = Activator.CreateInstance(gizmoType);
 		var gizmoSchemaValidator = Activator.CreateInstance(gizmoSchemaType);
@@ -130,6 +132,5 @@ namespace Testing
 		void CallResult() => valueTaskResult.GetType().GetProperty("Result");
 
 		await Assert.That(CallResult).Throws<Exception>().WithMessage(rnd, StringComparison.Ordinal);
-
 	}
 }

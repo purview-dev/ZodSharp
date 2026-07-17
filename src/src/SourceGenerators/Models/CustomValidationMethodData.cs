@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using Microsoft.CodeAnalysis;
 
 namespace ZodSharp.SourceGenerators.Models;
 
@@ -13,6 +12,9 @@ enum CustomValidationInvocationKind
 
 	/// <summary>Invoke as a static method on the schema model type: TypeName.MethodName(value, ct).</summary>
 	StaticOnModelType,
+
+	/// <summary>Invoke as a method on the generated schema validator</summary>
+	DefinedOnSchemaValidator
 }
 
 /// <summary>

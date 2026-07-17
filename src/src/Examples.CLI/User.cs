@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using ZodSharp.Core;
 
 namespace ZodSharp.Examples.CLI;
 
@@ -19,5 +20,14 @@ sealed class User
 
 partial class UserSchemaValidator
 {
-	//
+	public bool WasCalled;
+
+	async ValueTask<ValidationResult<User>> CustomValidationAsync(User user, CancellationToken cancellationToken)
+	{
+		WasCalled = true;
+
+		cancellationToken.ThrowIfCancellationRequested();
+
+		return ValidationResult<User>.Success(user);
+	}
 }

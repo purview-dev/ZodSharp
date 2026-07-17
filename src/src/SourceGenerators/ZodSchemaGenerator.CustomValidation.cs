@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using ZodSharp.SourceGenerators.Helpers;
@@ -57,7 +55,7 @@ partial class ZodSchemaGenerator
 		// Validate the configured name is a valid C# identifier.
 		if (isExplicitlyConfigured && !IsValidIdentifier(methodName))
 		{
-			return new CustomValidationMethodData(
+			return new(
 				IsConfigured: true,
 				Exists: false,
 				IsValid: false,
@@ -83,32 +81,49 @@ partial class ZodSchemaGenerator
 			1
 		);
 
+		var validationMethodClassSymbol = classSymbol;
 		if (candidates.Count == 0)
 		{
-			// No method found. Only report a diagnostic if explicitly configured.
-			if (isExplicitlyConfigured)
+			var (s, c) = FindCandidatesFromSchemaValidator(classSymbol, methodName);
+			validationMethodClassSymbol = s;
+
+			if (c.Count == 0)
 			{
-				return new CustomValidationMethodData(
-					IsConfigured: true,
-					Exists: false,
-					IsValid: false,
-					MethodName: methodName,
-					InvocationKind: CustomValidationInvocationKind.None,
-					Diagnostics:
-					[
-						DiagnosticInfo.Create(
-							GeneratorDiagnostics.CustomValidationMethodNotFound,
-							GetAttributeLocation(zodSchemaAttribute, classSymbol),
-							methodName,
-							classSymbol.Name
-						),
-					]
-				);
+				// No method found, checking the model and the schema validator...but only report a diagnostic if explicitly configured.
+				if (isExplicitlyConfigured)
+				{
+					return new CustomValidationMethodData(
+						IsConfigured: true,
+						Exists: false,
+						IsValid: false,
+						MethodName: methodName,
+						InvocationKind: CustomValidationInvocationKind.None,
+						Diagnostics:
+						[
+							DiagnosticInfo.Create(
+								GeneratorDiagnostics.CustomValidationMethodNotFound,
+								GetAttributeLocation(zodSchemaAttribute, classSymbol),
+								methodName,
+								classSymbol.Name
+							),
+						]
+					);
+				}
 			}
 
-			// Implicit default, no method — silent fallback to synchronous.
-			return CustomValidationMethodData.None;
+			if (validationMethodClassSymbol == null)
+			{
+				// We checked the methods on the model and on the schema validator...
+				return CustomValidationMethodData.None;
+			}
+
+			// Set the current candidates to the one(s) we found on the schema.
+			candidates = c;
 		}
+
+		var invocationKind = SymbolEqualityComparer.Default.Equals(validationMethodClassSymbol, classSymbol)
+			? CustomValidationInvocationKind.StaticOnModelType
+			: CustomValidationInvocationKind.DefinedOnSchemaValidator;
 
 		// Validate each candidate and collect valid ones + diagnostics.
 		var validCandidates = new List<IMethodSymbol>();
@@ -116,7 +131,13 @@ partial class ZodSchemaGenerator
 
 		foreach (var candidate in candidates)
 		{
-			var (isValid, candidateDiagnostics) = ValidateMethodSignature(candidate, classSymbol, generationContext);
+			var (isValid, candidateDiagnostics) = ValidateMethodSignature(
+				candidate,
+				validationMethodClassSymbol,
+				classSymbol,
+				generationContext,
+				invocationKind
+			);
 			diagnostics.AddRange(candidateDiagnostics);
 			if (isValid)
 				validCandidates.Add(candidate);
@@ -161,8 +182,30 @@ partial class ZodSchemaGenerator
 			Exists: true,
 			IsValid: true,
 			MethodName: methodName,
-			InvocationKind: CustomValidationInvocationKind.StaticOnModelType,
+			InvocationKind: invocationKind,
 			Diagnostics: []
+		);
+	}
+
+	static (INamedTypeSymbol?, List<IMethodSymbol>) FindCandidatesFromSchemaValidator(
+		INamedTypeSymbol classSymbol,
+		string validationMethodName
+	)
+	{
+		var schemaSymbol = classSymbol
+			.ContainingNamespace.GetTypeMembers($"{classSymbol.Name}SchemaValidator")
+			.FirstOrDefault();
+		if (schemaSymbol == null)
+			return (null, []);
+
+		return (
+			schemaSymbol,
+			[
+				.. schemaSymbol
+					.GetMembers(validationMethodName)
+					.Where(static m => m is IMethodSymbol)
+					.Cast<IMethodSymbol>(),
+			]
 		);
 	}
 
@@ -194,12 +237,14 @@ partial class ZodSchemaGenerator
 
 	static (bool IsValid, List<DiagnosticInfo> Diagnostics) ValidateMethodSignature(
 		IMethodSymbol method,
+		INamedTypeSymbol validationClassSymbol,
 		INamedTypeSymbol classSymbol,
-		GenerationContext generationContext
+		GenerationContext generationContext,
+		CustomValidationInvocationKind invocationKind
 	)
 	{
 		var diagnostics = new List<DiagnosticInfo>();
-		var typeName = classSymbol.Name;
+		var typeName = validationClassSymbol.Name;
 		var methodLocation = method.Locations.Length > 0 ? method.Locations[0] : null;
 		var comparer = SymbolEqualityComparer.Default;
 
@@ -254,7 +299,7 @@ partial class ZodSchemaGenerator
 		}
 
 		// Must be static — the generated validator is a separate type, not a partial of the model.
-		if (!method.IsStatic)
+		if (invocationKind == CustomValidationInvocationKind.StaticOnModelType && !method.IsStatic)
 		{
 			diagnostics.Add(
 				DiagnosticInfo.Create(
@@ -335,7 +380,7 @@ partial class ZodSchemaGenerator
 		}
 
 		// Return type must be ValueTask<ValidationResult<T>>.
-		var expectedReturnType = GetExpectedReturnType(classSymbol, generationContext);
+		var expectedReturnType = GetExpectedReturnType(validationClassSymbol, generationContext);
 		if (expectedReturnType is not null && !comparer.Equals(method.ReturnType, expectedReturnType))
 		{
 			diagnostics.Add(
@@ -348,18 +393,21 @@ partial class ZodSchemaGenerator
 			);
 		}
 
-		// Accessibility check — the generated validator is in the same assembly + namespace,
-		// so internal and public are accessible. Private is not.
-		if (method.DeclaredAccessibility is Accessibility.Private or Accessibility.Protected)
+		if (invocationKind == CustomValidationInvocationKind.StaticOnModelType)
 		{
-			diagnostics.Add(
-				DiagnosticInfo.Create(
-					GeneratorDiagnostics.CustomValidationInaccessible,
-					methodLocation,
-					method.Name,
-					typeName
-				)
-			);
+			// Accessibility check — the generated validator is in the same assembly + namespace,
+			// so internal and public are accessible. Private is not.
+			if (method.DeclaredAccessibility is Accessibility.Private or Accessibility.Protected)
+			{
+				diagnostics.Add(
+					DiagnosticInfo.Create(
+						GeneratorDiagnostics.CustomValidationInaccessible,
+						methodLocation,
+						method.Name,
+						typeName
+					)
+				);
+			}
 		}
 
 		return (diagnostics.Count == 0, diagnostics);
