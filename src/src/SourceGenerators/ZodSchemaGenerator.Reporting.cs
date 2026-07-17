@@ -8,10 +8,10 @@ namespace ZodSharp.SourceGenerators;
 partial class ZodSchemaGenerator
 {
 	static void ReportDiagnostics(
-	SourceProductionContext context,
-	DiagnosticInfo diagnostic,
-	GenerationContext generationContext
-) => ReportDiagnostics(context, [diagnostic], generationContext.Logger);
+		SourceProductionContext context,
+		DiagnosticInfo diagnostic,
+		GenerationContext generationContext
+	) => ReportDiagnostics(context, [diagnostic], generationContext.Logger);
 
 	static void ReportDiagnostics(
 		SourceProductionContext context,

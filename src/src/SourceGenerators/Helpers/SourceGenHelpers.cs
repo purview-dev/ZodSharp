@@ -28,7 +28,8 @@ static class SourceGenHelpers
 					return new GenerationModel(
 						IsSourceGeneratorEnabled: !isDisabled,
 						GenerationContext: generationContext,
-						ZodSchemas: zodSchemas, []
+						ZodSchemas: zodSchemas,
+						[]
 					);
 				}
 			);
@@ -52,7 +53,8 @@ static class SourceGenHelpers
 		return targetSymbols;
 
 		// We only want to consider class declarations for generation, so we filter the syntax nodes accordingly.
-		static bool IsSyntaxTargetForGeneration(SyntaxNode node) => node is ClassDeclarationSyntax or StructDeclarationSyntax or RecordDeclarationSyntax;
+		static bool IsSyntaxTargetForGeneration(SyntaxNode node) =>
+			node is ClassDeclarationSyntax or StructDeclarationSyntax or RecordDeclarationSyntax;
 
 		static GeneratorResult<TargetSymbolDescriptor> GetSemanticTargetForGeneration(
 			GeneratorAttributeSyntaxContext context,
@@ -64,10 +66,7 @@ static class SourceGenHelpers
 			if (context.SemanticModel.GetDeclaredSymbol(declaration, cancellationToken) is not INamedTypeSymbol symbol)
 				return GeneratorResult<TargetSymbolDescriptor>.Empty;
 
-			TargetSymbolDescriptor result = new(
-				symbol,
-				declaration
-			);
+			TargetSymbolDescriptor result = new(symbol, declaration);
 
 			return GeneratorResult<TargetSymbolDescriptor>.Ok(result);
 		}
@@ -98,16 +97,11 @@ static class SourceGenHelpers
 			.AnalyzerConfigOptionsProvider.Select(
 				(opts, _) =>
 				{
-					opts.GlobalOptions.TryGetValue(
-						TypeHelpers.DisableZodSharpSourceGeneratorProperty,
-						out var val
-					);
+					opts.GlobalOptions.TryGetValue(TypeHelpers.DisableZodSharpSourceGeneratorProperty, out var val);
 					if (bool.TryParse(val, out var isDisabled))
 					{
 						if (isDisabled)
-							logger?.Info(
-								"ZodSharp source generators are disabled via MSBuild property"
-							);
+							logger?.Info("ZodSharp source generators are disabled via MSBuild property");
 					}
 
 					return isDisabled;

@@ -1,4 +1,5 @@
-﻿using Microsoft.CodeAnalysis;
+﻿using System.Reflection;
+using Microsoft.CodeAnalysis;
 using ZodSharp.SourceGenerators.Infra;
 
 namespace ZodSharp.SourceGenerators;
@@ -47,6 +48,24 @@ public partial class ZodSchemaGeneratorTests : SourceGeneratorTestBase<ZodSchema
 			.That(errors)
 			.IsEmpty()
 			.Because("Errors:\n\t" + string.Join("\t", errors.Select(e => e.ToString() + Environment.NewLine)));
+	}
+
+	static async Task<Assembly> CompileToAssemblyAsync(Compilation compilation, CancellationToken cancellationToken)
+	{
+		await using MemoryStream assemblyStream = new();
+		var emitResult = compilation.Emit(assemblyStream, cancellationToken: cancellationToken);
+		if (!emitResult.Success)
+		{
+			var diagnostics = string.Join(
+				Environment.NewLine,
+				emitResult.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error).Select(d => d.ToString())
+			);
+
+			throw new InvalidOperationException(diagnostics);
+		}
+
+		assemblyStream.Position = 0;
+		return System.Reflection.Assembly.Load(assemblyStream.ToArray());
 	}
 
 	static Diagnostic[] GetGeneratorDiagnostics(GeneratorDriverRunResult result) =>

@@ -58,7 +58,10 @@ public abstract class ZodType<TOutput, TInput> : IZodSchema<TOutput, TInput>
 	/// Validates the input value asynchronously.
 	/// Equivalent to Zod's safeParseAsync method.
 	/// </summary>
-	public ValueTask<ValidationResult<TOutput>> ValidateAsync(TInput value) => new(Validate(value));
+	public ValueTask<ValidationResult<TOutput>> ValidateAsync(
+		TInput value,
+		CancellationToken cancellationToken = default
+	) => new(Validate(value));
 
 	/// <summary>
 	/// Parses the input value to the output type.
@@ -148,16 +151,20 @@ public abstract class ZodType<TOutput, TInput> : IZodSchema<TOutput, TInput>
 	{
 		public ValidationResult<TAdapterOutput> Validate(TAdapterInput value) => inner.Validate(value);
 
-		public ValueTask<ValidationResult<TAdapterOutput>> ValidateAsync(TAdapterInput value) =>
-			inner.ValidateAsync(value);
+		public ValueTask<ValidationResult<TAdapterOutput>> ValidateAsync(
+			TAdapterInput value,
+			CancellationToken cancellationToken = default
+		) => inner.ValidateAsync(value, cancellationToken);
 	}
 
 	class RefinementAdapter<TAdapterType>(IZodSchema<TAdapterType, TAdapterType> inner) : IZodSchema<TAdapterType>
 	{
 		public ValidationResult<TAdapterType> Validate(TAdapterType value) => inner.Validate(value);
 
-		public ValueTask<ValidationResult<TAdapterType>> ValidateAsync(TAdapterType value) =>
-			inner.ValidateAsync(value);
+		public ValueTask<ValidationResult<TAdapterType>> ValidateAsync(
+			TAdapterType value,
+			CancellationToken cancellationToken = default
+		) => inner.ValidateAsync(value, cancellationToken);
 	}
 }
 
@@ -165,4 +172,4 @@ public abstract class ZodType<TOutput, TInput> : IZodSchema<TOutput, TInput>
 /// Convenience base class for schemas where input and output are the same type.
 /// </summary>
 /// <typeparam name="T">The type</typeparam>
-public abstract class ZodType<T> : ZodType<T, T>, IZodSchema<T> { }
+public abstract class ZodType<T> : ZodType<T, T>, IZodSchema<T>, IZodSchemaValidator<T> { }

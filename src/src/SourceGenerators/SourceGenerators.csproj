@@ -3,7 +3,6 @@
 		<TargetFrameworks></TargetFrameworks>
 		<TargetFramework>netstandard2.0</TargetFramework>
 		<IsPackable>false</IsPackable>
-		<!--<DisableGenerateAssemblyInfoClass>true</DisableGenerateAssemblyInfoClass>-->
 		<EmbedUntrackedSources>false</EmbedUntrackedSources>
 		<GenerateDocumentationFile>false</GenerateDocumentationFile>
 		<EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>

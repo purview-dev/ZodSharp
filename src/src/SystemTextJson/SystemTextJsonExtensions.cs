@@ -77,7 +77,7 @@ public static class SystemTextJsonExtensions
 				? ValidationResult<T>.Failure(
 					new ValidationError("deserialization_failed", "Failed to deserialize JSON", EmptyPath)
 				)
-				: await schema.ValidateAsync(deserialized);
+				: await schema.ValidateAsync(deserialized, cancellationToken);
 		}
 		catch (JsonException ex)
 		{
@@ -123,7 +123,7 @@ public static class SystemTextJsonExtensions
 		if (output == null)
 			throw new ArgumentNullException(nameof(output));
 
-		var result = await schema.ValidateAsync(value);
+		var result = await schema.ValidateAsync(value, cancellationToken);
 		if (!result.IsSuccess)
 			return ValidationResult<string>.Failure(result.Errors);
 

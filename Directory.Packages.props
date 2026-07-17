@@ -4,11 +4,14 @@
 		<!-- Keep compiler-facing Roslyn packages aligned with the minimum SDK pinned in global.json so analyser ProjectReferences load on build machines. -->
 		<RoslynCompilerVersion>[5.0.0]</RoslynCompilerVersion>
 		<RoslynAnalyzersVersion>[5.6.0]</RoslynAnalyzersVersion>
-		<TUnitVersion>1.58.0</TUnitVersion>
+		<TUnitVersion>1.61.0</TUnitVersion>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageVersion Include="TUnit.Mocks" Version="$(TUnitVersion)" />
 		<PackageVersion Include="Bogus" Version="35.6.5" />
+		<PackageVersion
+			Include="Microsoft.Extensions.DependencyInjection.Abstractions"
+			Version="10.0.9"
+		/>
 		<PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.300" />
 		<PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="$(RoslynCompilerVersion)" />
 		<PackageVersion
@@ -16,9 +19,11 @@
 			Version="$(RoslynAnalyzersVersion)"
 		/>
 		<PackageVersion Include="TUnit" Version="$(TUnitVersion)" />
+		<PackageVersion Include="TUnit.Mocks" Version="$(TUnitVersion)" />
 		<PackageVersion Include="System.Collections.Immutable" Version="10.0.9" />
 		<PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
 		<PackageVersion Include="System.Text.Json" Version="10.0.9" />
+		<PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
 		<PackageVersion Include="BenchmarkDotNet" Version="0.15.8" />
 	</ItemGroup>
 </Project>

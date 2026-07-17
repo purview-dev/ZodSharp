@@ -64,8 +64,10 @@ public sealed class CrossPlatformUserSchema : IZodSchema<CrossPlatformUser, Cros
 			: ValidationResult<CrossPlatformUser>.Failure(errors);
 	}
 
-	public ValueTask<ValidationResult<CrossPlatformUser>> ValidateAsync(CrossPlatformUser value) =>
-		new(Validate(value));
+	public ValueTask<ValidationResult<CrossPlatformUser>> ValidateAsync(
+		CrossPlatformUser value,
+		CancellationToken cancellationToken = default
+	) => new(Validate(value));
 
 	static bool IsValidEmail(string email) =>
 		email.Contains('@', StringComparison.Ordinal) && email.Contains('.', StringComparison.Ordinal);

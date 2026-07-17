@@ -33,7 +33,10 @@ readonly record struct LengthAttributeData(
 		return Empty;
 	}
 
-	public static LengthAttributeData FromAttributeData(GenerationContext generationContext, AttributeData attributeData)
+	public static LengthAttributeData FromAttributeData(
+		GenerationContext generationContext,
+		AttributeData attributeData
+	)
 	{
 		if (generationContext is null)
 		{

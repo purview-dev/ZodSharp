@@ -1,1 +1,15 @@
-﻿<Project Sdk="Microsoft.NET.Sdk"></Project>
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<ItemGroup>
+		<ProjectReference Include="..\..\src\AspNetCore\AspNetCore.csproj" />
+		<ProjectReference Include="..\..\src\ZodSharp\ZodSharp.csproj" />
+	</ItemGroup>
+	<ItemGroup>
+		<!-- Ensure the source generator runs in the test project so [ZodSchema] fixtures are processed -->
+		<ProjectReference
+			Include="..\..\src\SourceGenerators\SourceGenerators.csproj"
+			PrivateAssets="all"
+			OutputItemType="Analyzer"
+			ReferenceOutputAssembly="false"
+		/>
+	</ItemGroup>
+</Project>

@@ -65,6 +65,26 @@ public class ZodObjectTests
 		await Assert.That(result.Errors[0].Path).Contains("email");
 	}
 
+	[Test]
+	public async Task ObjectValidate_GivenInt64ForNumberField_CoercesToDoubleAndSucceeds()
+	{
+		// Newtonsoft.Json / System.Text.Json deserialize integer literals (e.g. `30`)
+		// as Int64, not Double. The SchemaWrapper must coerce boxed numeric values
+		// so hand-built object schemas validate JSON deserialization output.
+		var schema = CreateUserSchema();
+		var data = new Dictionary<string, object?>
+		{
+			["name"] = "John Doe",
+			["age"] = 30L,
+			["email"] = "john@example.com",
+		};
+
+		var result = schema.Validate(data);
+
+		await Assert.That(result.IsSuccess).IsTrue();
+		await Assert.That(result.Value!["age"]).IsEqualTo(30.0);
+	}
+
 	static ZodSharp.Schemas.ZodObject CreateUserSchema() =>
 		Z.Object()
 			.Field("name", Z.String().Min(1))

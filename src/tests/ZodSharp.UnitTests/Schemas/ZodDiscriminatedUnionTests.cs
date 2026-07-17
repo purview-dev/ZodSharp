@@ -97,6 +97,9 @@ public class ZodDiscriminatedUnionTests
 	{
 		public ValidationResult<object> Validate(object value) => ValidationResult<object>.Success(value);
 
-		public ValueTask<ValidationResult<object>> ValidateAsync(object value) => new(Validate(value));
+		public ValueTask<ValidationResult<object>> ValidateAsync(
+			object value,
+			CancellationToken cancellationToken = default
+		) => new(Validate(value));
 	}
 }

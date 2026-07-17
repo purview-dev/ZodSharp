@@ -73,3 +73,6 @@ AdvancedExamples.RunAll();
 Console.WriteLine("\n");
 JsonSchemaExamples.RunAll();
 
+Console.WriteLine("\n");
+DependencyInjectionExamples.RunAll();
+

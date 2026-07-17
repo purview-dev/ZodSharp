@@ -252,6 +252,9 @@ public class SystemTextJsonExtensionsTests
 				: ValidationResult<TestUser>.Failure(errors);
 		}
 
-		public ValueTask<ValidationResult<TestUser>> ValidateAsync(TestUser value) => new(Validate(value));
+		public ValueTask<ValidationResult<TestUser>> ValidateAsync(
+			TestUser value,
+			CancellationToken cancellationToken = default
+		) => new(Validate(value));
 	}
 }

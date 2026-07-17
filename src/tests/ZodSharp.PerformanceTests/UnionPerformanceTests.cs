@@ -84,7 +84,10 @@ public class UnionPerformanceTests
 			);
 		}
 
-		public ValueTask<ValidationResult<object>> ValidateAsync(object value) => new(Validate(value));
+		public ValueTask<ValidationResult<object>> ValidateAsync(
+			object value,
+			CancellationToken cancellationToken = default
+		) => new(Validate(value));
 	}
 
 	[Benchmark]

@@ -3,7 +3,6 @@
 		<AutoIncludeUsings>false</AutoIncludeUsings>
 		<RootNamespace>ZodSharp</RootNamespace>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
-		<DisableGenerateAssemblyInfoClass>true</DisableGenerateAssemblyInfoClass>
 	</PropertyGroup>
 
 	<PropertyGroup>

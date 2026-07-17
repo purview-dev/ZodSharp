@@ -35,4 +35,14 @@ sealed class ZodSchemaAttribute : global::System.Attribute
 	/// Default is true.
 	/// </summary>
 	public bool EnableComposition { get; set; } = true;
+
+	/// <summary>
+	/// Optional name of a custom asynchronous validation method to invoke
+	/// after synchronous validation. When set, the generator looks for a
+	/// method with the signature:
+	/// <code>static ValueTask&lt;ValidationResult&lt;T&gt;&gt; MethodName(T value, CancellationToken cancellationToken)</code>
+	/// If null, the default name <c>CustomValidationAsync</c> is used.
+	/// No diagnostic is reported when the default name has no matching method.
+	/// </summary>
+	public string? CustomValidationMethodName { get; set; }
 }

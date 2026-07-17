@@ -150,7 +150,7 @@ public static class NewtonsoftJsonExtensions
 		if (output == null)
 			throw new ArgumentNullException(nameof(output));
 
-		var result = await schema.ValidateAsync(value);
+		var result = await schema.ValidateAsync(value, cancellationToken);
 		if (!result.IsSuccess)
 			return ValidationResult<string>.Failure(result.Errors);
 

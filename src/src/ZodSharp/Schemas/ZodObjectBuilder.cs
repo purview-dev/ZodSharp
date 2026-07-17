@@ -39,7 +39,7 @@ public sealed class ZodObjectBuilder
 	{
 		public ValidationResult<object> Validate(object value)
 		{
-			if (value is T typedValue)
+			if (SchemaValueCoercion.TryCoerce<T>(value, out var typedValue))
 			{
 				var result = inner.Validate(typedValue);
 				return result.IsSuccess
@@ -56,6 +56,9 @@ public sealed class ZodObjectBuilder
 			);
 		}
 
-		public ValueTask<ValidationResult<object>> ValidateAsync(object value) => new(Validate(value));
+		public ValueTask<ValidationResult<object>> ValidateAsync(
+			object value,
+			CancellationToken cancellationToken = default
+		) => new(Validate(value));
 	}
 }

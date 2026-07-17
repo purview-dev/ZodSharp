@@ -26,7 +26,14 @@ partial class ZodSchemaGenerator
 			attributes,
 			diagnostics
 		);
-		GenerateDeniedValuesValidation(generationContext, property, propertyType, propertyName, attributes, diagnostics);
+		GenerateDeniedValuesValidation(
+			generationContext,
+			property,
+			propertyType,
+			propertyName,
+			attributes,
+			diagnostics
+		);
 	}
 
 	static void GenerateAllowedValuesValidation(

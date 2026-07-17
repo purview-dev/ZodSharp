@@ -26,6 +26,10 @@ sealed record class GenerationContext(
 	INamedTypeSymbol? ICollectionOfT,
 	INamedTypeSymbol? IEnumerableOfT,
 	INamedTypeSymbol? IReadOnlyCollectionOfT,
+	// Custom async validation symbols
+	INamedTypeSymbol? CancellationToken,
+	INamedTypeSymbol? ValueTaskOfT,
+	INamedTypeSymbol? ValidationResult,
 	// Debugging support
 	GenerationLogger? Logger
 )
@@ -62,6 +66,10 @@ sealed record class GenerationContext(
 			ICollectionOfT: compilation.GetTypeByMetadataName(TypeHelpers.ICollectionTMetadataName),
 			IEnumerableOfT: compilation.GetTypeByMetadataName(TypeHelpers.IEnumerableTMetadataName),
 			IReadOnlyCollectionOfT: compilation.GetTypeByMetadataName(TypeHelpers.IReadOnlyCollectionTMetadataName),
+			// Custom async validation symbols
+			CancellationToken: compilation.GetTypeByMetadataName(TypeHelpers.CancellationTokenMetadataName),
+			ValueTaskOfT: compilation.GetTypeByMetadataName(TypeHelpers.ValueTaskOfTMetadataName),
+			ValidationResult: compilation.GetTypeByMetadataName(TypeHelpers.ValidationResult),
 			// Debugging support
 			Logger: logging
 		);

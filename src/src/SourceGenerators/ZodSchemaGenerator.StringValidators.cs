@@ -151,7 +151,9 @@ partial class ZodSchemaGenerator
 					using (generationContext.Writer.Block($"if ({propertyValueName} is not null)"))
 					{
 						generationContext.Writer.WriteLine($"var {propertyLengthName} = {propertyValueName}.Length;");
-						using (generationContext.Writer.Block($"if ({propertyLengthName} < {lengthAttr.MinimumLength})"))
+						using (
+							generationContext.Writer.Block($"if ({propertyLengthName} < {lengthAttr.MinimumLength})")
+						)
 						{
 							WriteValidationError(
 								generationContext,

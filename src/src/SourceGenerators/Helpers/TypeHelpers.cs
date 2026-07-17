@@ -32,6 +32,13 @@ static class TypeHelpers
 	public const string ValidationResult = "ZodSharp.Core.ValidationResult";
 	public const string ValidationError = "ZodSharp.Core.ValidationError";
 
+	// Custom async validation framework types
+	public const string CancellationTokenMetadataName = "System.Threading.CancellationToken";
+	public const string ValueTaskOfTMetadataName = "System.Threading.Tasks.ValueTask`1";
+
+	// Default custom async validation method name when none is explicitly configured.
+	public const string DefaultCustomValidationMethodName = "CustomValidationAsync";
+
 	// System Types
 	public static readonly string ImmutableArrayMetadataName = typeof(ImmutableArray).FullName;
 	public const string ICollectionMetadataName = "System.Collections.ICollection";

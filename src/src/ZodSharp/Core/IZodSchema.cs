@@ -22,8 +22,9 @@ public interface IZodSchema<TOutput, TInput>
 	/// Equivalent to Zod's safeParseAsync method.
 	/// </summary>
 	/// <param name="value">The value to validate</param>
+	/// <param name="cancellationToken"></param>
 	/// <returns>A task that completes with a validation result</returns>
-	ValueTask<ValidationResult<TOutput>> ValidateAsync(TInput value);
+	ValueTask<ValidationResult<TOutput>> ValidateAsync(TInput value, CancellationToken cancellationToken = default);
 }
 
 /// <summary>

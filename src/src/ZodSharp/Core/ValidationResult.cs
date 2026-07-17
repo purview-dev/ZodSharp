@@ -32,6 +32,23 @@ public readonly record struct ValidationResult<T>
 	}
 
 	/// <summary>
+	/// Merges two <see cref="ValidationResult{T}"/>s together. Note the <see cref="Value"/>
+	/// is not checked for anything other than <see langword="null" />, and the <paramref name="lhs"/> is favoured.
+	/// </summary>
+	/// <param name="lhs"></param>
+	/// <param name="rhs"></param>
+	/// <returns></returns>
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1000:Do not declare static members on generic types")]
+	public static ValidationResult<T> Merge(ValidationResult<T> lhs, ValidationResult<T> rhs)
+	{
+		var isSuccess = lhs.IsSuccess && rhs.IsSuccess;
+		var value = lhs.Value ?? rhs.Value ?? default;
+		var errors = lhs.Errors.AddRange(rhs.Errors);
+
+		return new(isSuccess, value, errors);
+	}
+
+	/// <summary>
 	/// Throws a <see cref="ZodException"/> if validation failed.
 	/// </summary>
 	/// <returns>The validated value</returns>

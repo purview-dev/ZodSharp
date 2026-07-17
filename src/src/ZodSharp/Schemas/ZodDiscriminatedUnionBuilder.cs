@@ -54,7 +54,7 @@ public class ZodDiscriminatedUnionBuilder(string discriminator)
 	{
 		public ValidationResult<object> Validate(object value)
 		{
-			if (value is not T typedValue)
+			if (!SchemaValueCoercion.TryCoerce<T>(value, out var typedValue))
 			{
 				return ValidationResult<object>.Failure(
 					new ValidationError(
@@ -71,6 +71,9 @@ public class ZodDiscriminatedUnionBuilder(string discriminator)
 				: ValidationResult<object>.Failure(result.Errors);
 		}
 
-		public ValueTask<ValidationResult<object>> ValidateAsync(object value) => new(Validate(value));
+		public ValueTask<ValidationResult<object>> ValidateAsync(
+			object value,
+			CancellationToken cancellationToken = default
+		) => new(Validate(value));
 	}
 }

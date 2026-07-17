@@ -16,3 +16,8 @@ sealed class User
 	[EmailAddress]
 	public string? Email { get; set; }
 }
+
+partial class UserSchemaValidator
+{
+	//
+}
