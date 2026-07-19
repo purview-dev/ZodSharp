@@ -6,32 +6,53 @@
 	<PropertyGroup>
 		<IsPackable>true</IsPackable>
 		<PackageId>ZodSharp</PackageId>
-		<Description>A high-performance C# port of Zod schema validation library. Features zero-allocation validation, struct-based rules, fluent API, and source generator support for maximum performance.</Description>
+		<Description>
+			A high-performance C# port of Zod schema validation library.
+			Features zero-allocation validation, struct-based rules, fluent API,
+			and source generator support for maximum performance.
+		</Description>
 		<PackageTags>zod;validation;schema</PackageTags>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<ZodSharpSourceGeneratorProject>$(MSBuildThisFileDirectory)..\SourceGenerators\SourceGenerators.csproj</ZodSharpSourceGeneratorProject>
+		<ZodSharpSourceGeneratorTargetFramework>netstandard2.0</ZodSharpSourceGeneratorTargetFramework>
+		<ZodSharpSourceGeneratorAssembly>$(MSBuildThisFileDirectory)..\SourceGenerators\bin\$(Configuration)\$(ZodSharpSourceGeneratorTargetFramework)\ZodSharp.SourceGeneration.dll</ZodSharpSourceGeneratorAssembly>
+		<TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);IncludeZodSharpSourceGenerator</TargetsForTfmSpecificContentInPackage>
 	</PropertyGroup>
 
 	<ItemGroup>
 		<ProjectReference
-			Include="..\SourceGenerators\SourceGenerators.csproj"
+			Include="$(ZodSharpSourceGeneratorProject)"
 			PrivateAssets="all"
 			ReferenceOutputAssembly="false"
 			OutputItemType="Analyzer"
 		/>
-
-		<None
-			Include="../SourceGenerators/bin/$(Configuration)/netstandard2.0/ZodSharp.SourceGenerators.dll"
-			Condition="Exists('../SourceGenerators/bin/$(Configuration)/netstandard2.0/ZodSharp.SourceGenerators.dll')"
-			Pack="true"
-			PackagePath="analyzers/dotnet/cs"
-		/>
 	</ItemGroup>
+
+	<Target
+		Name="IncludeZodSharpSourceGenerator"
+		DependsOnTargets="Build"
+		Condition="'$(TargetFramework)' == 'netstandard2.1'"
+	>
+		<Error
+			Condition="!Exists('$(ZodSharpSourceGeneratorAssembly)')"
+			Text="The ZodSharp source generator was not found at '$(ZodSharpSourceGeneratorAssembly)'."
+		/>
+
+		<ItemGroup>
+			<TfmSpecificPackageFile Include="$(ZodSharpSourceGeneratorAssembly)">
+				<PackagePath>analyzers/dotnet/cs/</PackagePath>
+			</TfmSpecificPackageFile>
+		</ItemGroup>
+	</Target>
 
 	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">
 		<PackageReference Include="System.Collections.Immutable" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<None Include="..\..\..\README.md" Pack="true" PackagePath="\" />
+		<None Include="$(MSBuildThisFileDirectory)..\..\..\README.md" Pack="true" PackagePath="\" />
 	</ItemGroup>
 
 	<ItemGroup>

@@ -224,6 +224,7 @@ partial class ZodSchemaGenerator
 	{
 		if (attributeData?.ApplicationSyntaxReference?.GetSyntax() is { } syntax)
 			return syntax.GetLocation();
+
 		return classSymbol.Locations.Length > 0 ? classSymbol.Locations[0] : null;
 	}
 

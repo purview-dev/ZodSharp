@@ -7,6 +7,7 @@
 		<GenerateDocumentationFile>false</GenerateDocumentationFile>
 		<EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
 		<IsRoslynComponent>true</IsRoslynComponent>
+		<AssemblyName>ZodSharp.SourceGeneration</AssemblyName>
 	</PropertyGroup>
 
 	<ItemGroup Label="Compiler Visible SDK Properties">

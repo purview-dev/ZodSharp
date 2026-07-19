@@ -14,7 +14,7 @@ enum CustomValidationInvocationKind
 	StaticOnModelType,
 
 	/// <summary>Invoke as a method on the generated schema validator</summary>
-	DefinedOnSchemaValidator
+	DefinedOnSchemaValidator,
 }
 
 /// <summary>
