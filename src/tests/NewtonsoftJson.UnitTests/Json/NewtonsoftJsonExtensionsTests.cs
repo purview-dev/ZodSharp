@@ -9,9 +9,10 @@ public class NewtonsoftJsonExtensionsTests
 	public async Task DeserializeAndValidate_GivenValidJson_ReturnsSuccess()
 	{
 		var schema = new TestUserSchema();
-		var json = """{"name":"John","age":30}""";
+		var json = /*lang=json,strict*/
+			"""{"name":"John","age":30}""";
 
-		var result = schema.DeserializeAndValidate<TestUser>(json);
+		var result = schema.DeserializeAndValidate(json);
 
 		await Assert.That(result.IsSuccess).IsTrue();
 		await Assert.That(result.Value!.Name).IsEqualTo("John");
@@ -22,7 +23,7 @@ public class NewtonsoftJsonExtensionsTests
 	{
 		var schema = new TestUserSchema();
 
-		var result = schema.DeserializeAndValidate<TestUser>("{bad json");
+		var result = schema.DeserializeAndValidate("{bad json");
 
 		await Assert.That(result.IsSuccess).IsFalse();
 		await Assert.That(result.Errors[0].Code).IsEqualTo("json_error");
@@ -32,21 +33,28 @@ public class NewtonsoftJsonExtensionsTests
 	public async Task DeserializeAndValidate_GivenSchemaInvalidJson_ReturnsValidationFailure()
 	{
 		var schema = new TestUserSchema();
-		var json = """{"name":"","age":30}""";
+		var json = /*lang=json,strict*/
+			"""{"name":"","age":30}""";
 
-		var result = schema.DeserializeAndValidate<TestUser>(json);
+		var result = schema.DeserializeAndValidate(json);
 
 		await Assert.That(result.IsSuccess).IsFalse();
-		await Assert.That(result.Errors.Any(error => error.Path.Contains("Name"))).IsTrue();
+		await Assert.That(result.Errors.Any(static error => error.Path.Contains("Name"))).IsTrue();
 	}
 
 	[Test]
 	public async Task CreateValidatingConverter_GivenValidJson_DeserializesSuccessfully()
 	{
 		var schema = new TestUserSchema();
-		var settings = new JsonSerializerSettings { Converters = { schema.CreateValidatingConverter<TestUser>() } };
+		var settings = new JsonSerializerSettings
+		{
+			Converters = { schema.CreateValidatingConverter() },
+		};
 
-		var deserialized = JsonConvert.DeserializeObject<TestUser>("""{"name":"John","age":30}""", settings);
+		var deserialized = JsonConvert.DeserializeObject<TestUser>(
+			/*lang=json,strict*/"""{"name":"John","age":30}""",
+			settings
+		);
 
 		await Assert.That(deserialized).IsNotNull();
 		await Assert.That(deserialized!.Name).IsEqualTo("John");
@@ -56,14 +64,20 @@ public class NewtonsoftJsonExtensionsTests
 	public async Task CreateValidatingConverter_GivenInvalidData_ThrowsJsonSerializationException()
 	{
 		var schema = new TestUserSchema();
-		var settings = new JsonSerializerSettings { Converters = { schema.CreateValidatingConverter<TestUser>() } };
+		var settings = new JsonSerializerSettings
+		{
+			Converters = { schema.CreateValidatingConverter() },
+		};
 
 		var exception = Assert.Throws<JsonSerializationException>(() =>
-			JsonConvert.DeserializeObject<TestUser>("""{"name":"","age":30}""", settings)
+			JsonConvert.DeserializeObject<TestUser>( /*lang=json,strict*/
+				"""{"name":"","age":30}""",
+				settings
+			)
 		);
 
 		await Assert.That(exception).IsNotNull();
-		await Assert.That(exception!.Message).Contains("Validation failed");
+		await Assert.That(exception.Message).Contains("Validation failed");
 	}
 
 	sealed class TestUser
@@ -90,12 +104,20 @@ public class NewtonsoftJsonExtensionsTests
 
 			if (string.IsNullOrWhiteSpace(value.Name))
 			{
-				errors.Add(new ValidationError("too_small", "Name is required", [nameof(TestUser.Name)]));
+				errors.Add(
+					new ValidationError("too_small", "Name is required", [nameof(TestUser.Name)])
+				);
 			}
 
 			if (value.Age < 0)
 			{
-				errors.Add(new ValidationError("too_small", "Age must be non-negative", [nameof(TestUser.Age)]));
+				errors.Add(
+					new ValidationError(
+						"too_small",
+						"Age must be non-negative",
+						[nameof(TestUser.Age)]
+					)
+				);
 			}
 
 			return errors.Count == 0

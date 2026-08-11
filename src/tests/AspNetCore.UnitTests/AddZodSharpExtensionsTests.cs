@@ -1,5 +1,4 @@
 using Microsoft.Extensions.DependencyInjection;
-using ZodSharp.AspNetCore;
 using ZodSharp.Core;
 using ZodSharp.Schemas;
 
@@ -11,8 +10,9 @@ public class AddZodSharpExtensionsTests
 	public async Task AddZodSharp_RegistersFactory_AndResolvesRegisteredValidator()
 	{
 		var services = new ServiceCollection();
-		services.AddZodSharp(opts =>
-			opts.ConfigureFactory = factory => factory.Register(new ZodSchemaValidator<string>(new ZodString().Min(2)))
+		services.AddZodSharp(static opts =>
+			opts.ConfigureFactory = static factory =>
+				factory.Register(new ZodSchemaValidator<string>(new ZodString().Min(2)))
 		);
 		var provider = services.BuildServiceProvider();
 		var factory = provider.GetRequiredService<IZodSchemaFactory>();
@@ -34,7 +34,9 @@ public class AddZodSharpExtensionsTests
 	public async Task AddZodSharp_AutoRegistersGeneratedValidators_FromConfiguredAssemblies()
 	{
 		var services = new ServiceCollection();
-		services.AddZodSharp(opts => opts.ScanAssemblies.Add(typeof(AddZodSharpExtensionsTests).Assembly));
+		services.AddZodSharp(static opts =>
+			opts.ScanAssemblies.Add(typeof(AddZodSharpExtensionsTests).Assembly)
+		);
 		var provider = services.BuildServiceProvider();
 		var factory = provider.GetRequiredService<IZodSchemaFactory>();
 		await Assert.That(factory.IsRegistered<SampleDiDto>()).IsTrue();

@@ -78,7 +78,7 @@ public class ZodString : ZodType<string>
 	/// <param name="pattern">The regex pattern</param>
 	/// <param name="message">Optional error message</param>
 	/// <returns>This schema for method chaining</returns>
-	public ZodString Regex(System.Text.RegularExpressions.Regex pattern, string? message = null)
+	public ZodString Regex(Regex pattern, string? message = null)
 	{
 		AddRule(new RegexRule(pattern, message));
 		return this;
@@ -116,6 +116,39 @@ public class ZodString : ZodType<string>
 	public ZodString Url(string? message = null)
 	{
 		AddRule(new UrlRule(message));
+		return this;
+	}
+
+	/// <summary>
+	/// Adds a phone number format validation.
+	/// </summary>
+	/// <param name="message">Optional error message</param>
+	/// <returns>This schema for method chaining</returns>
+	public ZodString Phone(string? message = null)
+	{
+		AddRule(new PhoneRule(message));
+		return this;
+	}
+
+	/// <summary>
+	/// Adds a credit card number format validation.
+	/// </summary>
+	/// <param name="message">Optional error message</param>
+	/// <returns>This schema for method chaining</returns>
+	public ZodString CreditCard(string? message = null)
+	{
+		AddRule(new CreditCardRule(message));
+		return this;
+	}
+
+	/// <summary>
+	/// Adds a Base64 string format validation.
+	/// </summary>
+	/// <param name="message">Optional error message</param>
+	/// <returns>This schema for method chaining</returns>
+	public ZodString Base64String(string? message = null)
+	{
+		AddRule(new Base64StringRule(message));
 		return this;
 	}
 
@@ -158,10 +191,13 @@ public class ZodString : ZodType<string>
 	/// Transforms the string to lowercase.
 	/// </summary>
 	/// <returns>A new schema that transforms the value</returns>
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1308:Normalize strings to uppercase")]
+	[System.Diagnostics.CodeAnalysis.SuppressMessage(
+		"Globalization",
+		"CA1308:Normalize strings to uppercase"
+	)]
 	public ZodString ToLower()
 	{
-		var transform = Transform(s => s.ToLowerInvariant());
+		var transform = Transform(static s => s.ToLowerInvariant());
 		return new ZodStringWrapper(transform);
 	}
 
@@ -171,7 +207,7 @@ public class ZodString : ZodType<string>
 	/// <returns>A new schema that transforms the value</returns>
 	public ZodString ToUpper()
 	{
-		var transform = Transform(s => s.ToUpperInvariant());
+		var transform = Transform(static s => s.ToUpperInvariant());
 		return new ZodStringWrapper(transform);
 	}
 
@@ -181,12 +217,13 @@ public class ZodString : ZodType<string>
 	/// <returns>A new schema that transforms the value</returns>
 	public ZodString Trim()
 	{
-		var transform = Transform(s => s.Trim());
+		var transform = Transform(static s => s.Trim());
 		return new ZodStringWrapper(transform);
 	}
 
 	class ZodStringWrapper(ZodTransform<string, string> transform) : ZodString
 	{
-		protected override ValidationResult<string> ParseInternal(string value) => transform.Validate(value);
+		protected override ValidationResult<string> ParseInternal(string value) =>
+			transform.Validate(value);
 	}
 }

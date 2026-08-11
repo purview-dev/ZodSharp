@@ -5,7 +5,9 @@ namespace ZodSharp.SourceGenerators;
 partial class ZodSchemaGeneratorTests
 {
 	[Test]
-	public async Task Generate_GivenZodSchema_AlsoEmitsValidatorAdapter(CancellationToken cancellationToken)
+	public async Task Generate_GivenZodSchema_AlsoEmitsValidatorAdapter(
+		CancellationToken cancellationToken
+	)
 	{
 		const string source =
 			@"
@@ -17,11 +19,9 @@ namespace Testing
         public string? Name { get; set; }
     }
 }";
-		var (result, outputCompilation) = await GenerateAsync(source, cancellationToken);
-		var generatedSource = GetSchemaGeneratedSource(result, "WidgetSchema");
+		var driverResult = await GenerateZodAsync(source, cancellationToken);
+		var generatedSource = GetSchemaGeneratedSource(driverResult, "WidgetSchema");
 
-		await AssertNoGeneratorExceptions(result);
-		await AssertNoCompilationErrors(outputCompilation, cancellationToken);
 		await Assert.That(generatedSource).Contains("class WidgetSchemaValidator");
 		await Assert.That(generatedSource).Contains("IZodSchemaValidator");
 		await Assert.That(generatedSource).Contains("Widget");
@@ -30,7 +30,9 @@ namespace Testing
 	}
 
 	[Test]
-	public async Task Generate_GivenZodSchema_EmitsModuleAttribute(CancellationToken cancellationToken)
+	public async Task Generate_GivenZodSchema_EmitsModuleAttribute(
+		CancellationToken cancellationToken
+	)
 	{
 		const string source =
 			@"
@@ -39,11 +41,12 @@ namespace Testing
     [ZodSchema]
     public class Gadget { }
 }";
-		var (result, outputCompilation) = await GenerateAsync(source, cancellationToken);
-		var allGenerated = string.Join("\n", result.GeneratedTrees.Select(t => t.GetText().ToString()));
+		var driverResult = await GenerateZodAsync(source, cancellationToken);
+		var allGenerated = string.Join(
+			"\n",
+			driverResult.SyntaxTrees.Select(static t => t.GetText().ToString())
+		);
 
-		await AssertNoGeneratorExceptions(result);
-		await AssertNoCompilationErrors(outputCompilation, cancellationToken);
 		await Assert.That(allGenerated).Contains("ZodSchemaGenerated");
 		await Assert.That(allGenerated).Contains("Gadget");
 	}
@@ -63,11 +66,9 @@ namespace Testing
         public string? Name { get; set; }
     }
 }";
-		var (result, outputCompilation) = await GenerateAsync(source, cancellationToken);
-		var generatedSource = GetSchemaGeneratedSource(result, "GizmoSchema");
+		var driverResult = await GenerateZodAsync(source, cancellationToken);
+		var generatedSource = GetSchemaGeneratedSource(driverResult, "GizmoSchema");
 
-		await AssertNoGeneratorExceptions(result);
-		await AssertNoCompilationErrors(outputCompilation, cancellationToken);
 		await Assert.That(generatedSource).Contains("ValidateAsync");
 		await Assert.That(generatedSource).Contains("ValueTask");
 		await Assert.That(generatedSource).Contains("GizmoSchemaValidator");
@@ -96,19 +97,16 @@ namespace Testing
 
 		partial class GizmoSchemaValidator
 		{{
-			async ValueTask<ValidationResult<Gizmo>> CustomValidationAsync(Gizmo value, CancellationToken cancellationToken default)
+			async ValueTask<ValidationResult<Gizmo>> CustomValidationAsync(Gizmo value, CancellationToken cancellationToken = default)
 			{{
 				throw new Exception(""{rnd}"");
 			}}
 		}}
 	}}";
-		var (result, outputCompilation) = await GenerateAsync(source, cancellationToken);
+		var driverResult = await GenerateZodAsync(source, cancellationToken);
+		var assembly = await Assert.That(driverResult.Assembly).IsNotNull();
 
-		await AssertNoGeneratorExceptions(result);
-		await AssertNoCompilationErrors(outputCompilation, cancellationToken);
-		await AssertNoDiagnostics(result);
-
-		var assembly = await CompileToAssemblyAsync(outputCompilation, cancellationToken);
+		await Assert.That(driverResult).HasNoErrorDiagnostics();
 
 		var gizmoType = assembly.GetType("Testing.Gizmo");
 		var gizmoSchemaType = assembly.GetType("Testing.GizmoSchemaValidator");
@@ -129,8 +127,11 @@ namespace Testing
 
 		var valueTaskResult = method!.Invoke(gizmoSchemaValidator, [gizmo, cancellationToken])!;
 
-		void CallResult() => valueTaskResult.GetType().GetProperty("Result");
+		void CallResult() => ((dynamic)valueTaskResult).GetAwaiter().GetResult();
 
-		await Assert.That(CallResult).Throws<Exception>().WithMessage(rnd, StringComparison.Ordinal);
+		await Assert
+			.That(CallResult)
+			.Throws<Exception>()
+			.WithMessage(rnd, StringComparison.Ordinal);
 	}
 }

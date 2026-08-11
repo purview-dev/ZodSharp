@@ -31,7 +31,9 @@ public class ZodDiscriminatedUnionTests
 	{
 		var union = CreateUnion();
 
-		var result = union.Validate(new Dictionary<string, object?> { ["type"] = "admin", ["name"] = "Admin" });
+		var result = union.Validate(
+			new Dictionary<string, object?> { ["type"] = "admin", ["name"] = "Admin" }
+		);
 
 		await Assert.That(result.IsSuccess).IsTrue();
 	}
@@ -45,7 +47,10 @@ public class ZodDiscriminatedUnionTests
 			.Field("name", Z.String())
 			.Field("permissions", Z.Array(Z.String()))
 			.Build();
-		var union = Z.DiscriminatedUnion("type").Option("user", userSchema).Option("admin", adminSchema).Build();
+		var union = Z.DiscriminatedUnion("type")
+			.Option("user", userSchema)
+			.Option("admin", adminSchema)
+			.Build();
 
 		var result = union.Validate(
 			new Dictionary<string, object?>
@@ -86,7 +91,10 @@ public class ZodDiscriminatedUnionTests
 		var userSchema = new ObjectPassThroughSchema();
 		var adminSchema = new ObjectPassThroughSchema();
 
-		return Z.DiscriminatedUnion("type").Option("user", userSchema).Option("admin", adminSchema).Build();
+		return Z.DiscriminatedUnion("type")
+			.Option("user", userSchema)
+			.Option("admin", adminSchema)
+			.Build();
 	}
 
 	sealed record UnionUser(string Type, string Name);
@@ -95,7 +103,8 @@ public class ZodDiscriminatedUnionTests
 
 	sealed class ObjectPassThroughSchema : IZodSchema<object, object>
 	{
-		public ValidationResult<object> Validate(object value) => ValidationResult<object>.Success(value);
+		public ValidationResult<object> Validate(object value) =>
+			ValidationResult<object>.Success(value);
 
 		public ValueTask<ValidationResult<object>> ValidateAsync(
 			object value,

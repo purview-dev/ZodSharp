@@ -11,26 +11,42 @@
 - **Fluent API** - Fluent and extensible API similar to original Zod
 - **Type-safe** - Strong typing with advanced C# generics
 - **High performance** - Sub-microsecond validation times, 10x faster than reflection-based validation
-- **Cross-platform** - Works on .NET 9.0 and .NET Standard 2.1
+- **Cross-platform** - Works on .NET 8.0, .NET 9.0 and .NET 10.0
 - **Source Generators** - Compile-time validator generation with `[ZodSchema]` attribute
 - **DataAnnotations Support** - Automatic validation from `[Required]`, `[StringLength]`, `[Length]`, `[MinLength]`, `[MaxLength]`, `[Range]`, `[RegularExpression]`, `[AllowedValues]`, `[DeniedValues]`, `[EmailAddress]`, etc.  
 
 ## Installation
 
+Install the core `ZodSharp` package, plus the optional JSON integration packages you need:
+
 ### NuGet Package Manager
 ```powershell
 Install-Package ZodSharp
+Install-Package ZodSharp.SystemTextJson
+Install-Package ZodSharp.NewtonsoftJson
+Install-Package ZodSharp.AspNetCore
 ```
 
 ### .NET CLI
 ```bash
 dotnet add package ZodSharp
+dotnet add package ZodSharp.SystemTextJson
+dotnet add package ZodSharp.NewtonsoftJson
+dotnet add package ZodSharp.AspNetCore
 ```
 
 ### PackageReference
 ```xml
-<PackageReference Include="ZodSharp" Version="1.0.0" />
+<PackageReference Include="ZodSharp" Version="2.0.0" />
+<PackageReference Include="ZodSharp.SystemTextJson" Version="2.0.0" />
+<PackageReference Include="ZodSharp.NewtonsoftJson" Version="2.0.0" />
+<PackageReference Include="ZodSharp.AspNetCore" Version="2.0.0" />
 ```
+
+- **ZodSharp** — Core validation library and source generator (`[ZodSchema]`).
+- **ZodSharp.SystemTextJson** — System.Text.Json integration and JSON Schema import.
+- **ZodSharp.NewtonsoftJson** — Newtonsoft.Json integration and JSON Schema import.
+- **ZodSharp.AspNetCore** — ASP.NET Core ProblemDetails integration.
 
 ## Usage Examples
 
@@ -162,7 +178,7 @@ ZodSharp is designed for maximum performance with zero-allocation validation and
 
 ### Performance Characteristics
 
-**Typical validation times** (measured on .NET 9.0, Release mode):
+**Typical validation times** (measured on .NET 10.0, Release mode):
 - Simple string validation: **~50-100 ns** per validation
 - Number validation: **~30-80 ns** per validation
 - Small arrays (10 items): **~500-800 ns** per validation
@@ -217,14 +233,14 @@ var schema = Z.String()
 
 ### Performance Benchmarks
 
-We maintain comprehensive performance tests in the `performance/` folder. Run them yourself:
+We maintain comprehensive performance tests in `src/tests/ZodSharp.PerformanceTests`. Run them yourself:
 
 ```bash
 # Run all performance benchmarks
-dotnet run --project performance/performance.csproj -c Release
+dotnet run --project src/tests/ZodSharp.PerformanceTests/ZodSharp.PerformanceTests.csproj -c Release
 
 # Run specific test suites
-dotnet run --project performance/performance.csproj -c Release --filter "*MemoryPerformanceTests*"
+dotnet run --project src/tests/ZodSharp.PerformanceTests/ZodSharp.PerformanceTests.csproj -c Release --filter "*MemoryPerformanceTests*"
 ```
 
 **Key performance highlights**:
@@ -239,24 +255,20 @@ See the [performance README](performance/README.md) for detailed benchmark resul
 ## Architecture
 
 ```
-ZodSharp/
-├── Core/              # Base interfaces and classes
-│   ├── IZodSchema.cs
-│   ├── ZodType.cs
-│   ├── ValidationResult.cs
-│   └── ValidationError.cs
-├── Schemas/           # Schema implementations
-│   ├── ZodString.cs
-│   ├── ZodNumber.cs
-│   ├── ZodObject.cs
-│   └── ...
-├── Rules/             # Validation rules (structs)
-│   ├── MinLengthRule.cs
-│   ├── EmailRule.cs
-│   └── ...
-└── Optimizations/     # Optimization helpers
-    └── ZeroAllocationHelpers.cs
+src/
+├── ZodSharp/              # Core validation library
+│   ├── Core/              # Base interfaces and classes
+│   ├── Schemas/           # Schema implementations
+│   ├── Rules/             # Validation rules (structs)
+│   ├── JsonSchema/        # JSON Schema definition and export (ToJsonSchema)
+│   └── SourceGenerators/  # Compile-time [ZodSchema] generator
+├── SystemTextJson/        # System.Text.Json integration and JSON Schema import
+├── NewtonsoftJson/        # Newtonsoft.Json integration and JSON Schema import
+├── AspNetCore/            # ASP.NET Core ProblemDetails integration
+└── Examples.CLI/          # Usage examples
 ```
+
+The source generator itself targets `netstandard2.0` so it can run in any compiler. The library packages target `net8.0`, `net9.0` and `net10.0`.
 
 ## Advanced Features
 
@@ -307,7 +319,25 @@ var result = schema.Validate(null); // "unknown"
 ```
 
 ### JSON Integration
-Integrated JSON validation with Newtonsoft.Json:
+
+ZodSharp ships separate integration packages for the two major .NET JSON libraries.
+
+#### System.Text.Json (`ZodSharp.SystemTextJson`)
+
+```csharp
+using ZodSharp.Json;
+
+// Deserialize and validate from string
+var result = schema.DeserializeAndValidate(jsonString);
+
+// Deserialize and validate from stream (async)
+var result2 = await schema.DeserializeAndValidateAsync(jsonStream);
+
+// Create JsonConverter with validation
+var converter = schema.CreateValidatingConverter();
+```
+
+#### Newtonsoft.Json (`ZodSharp.NewtonsoftJson`)
 
 ```csharp
 using ZodSharp.Json;
@@ -329,6 +359,8 @@ var converter = schema.CreateValidatingConverter();
 
 Share schemas between TypeScript (Zod) and C# (ZodSharp) using JSON Schema. This enables infinite interoperability, allowing you to define a schema in one language and reuse it in another.
 
+The export API (`Z.ToJsonSchema`) lives in the core `ZodSharp` package. The import API (`Z.FromJsonSchema`) is provided by the JSON integration package you choose — either `ZodSharp.SystemTextJson` or `ZodSharp.NewtonsoftJson`.
+
 #### Export to JSON Schema (ZodSharp -> JSON Schema)
 
 ```csharp
@@ -339,17 +371,25 @@ var userSchema = Z.Object()
     .Build();
 
 // Convert to JSON Schema object
-var jsonSchema = Z.ToJsonSchema<Dictionary<string, object?>>(userSchema, new ToJsonSchemaOptions 
-{ 
+var jsonSchema = Z.ToJsonSchema<Dictionary<string, object?>>(userSchema, new ToJsonSchemaOptions
+{
     Title = "User",
-    Id = "https://example.com/schemas/user.json" 
+    Id = "https://example.com/schemas/user.json"
 });
 
-// Serialize to string
-var jsonString = JsonConvert.SerializeObject(jsonSchema, JsonSchemaSerializerOptions.Default);
+// Serialize with your preferred JSON library
+// System.Text.Json (add ZodSharp.SystemTextJson):
+using ZodSharp.JsonSchema;
+var systemTextJson = System.Text.Json.JsonSerializer.Serialize(jsonSchema, JsonSchemaSerializerOptions.Default);
+
+// Newtonsoft.Json (add ZodSharp.NewtonsoftJson):
+using ZodSharp.JsonSchema;
+var newtonsoftJson = JsonConvert.SerializeObject(jsonSchema, JsonSchemaSerializerOptions.Default);
 ```
 
 #### Import from JSON Schema (JSON Schema -> ZodSharp)
+
+Add either `ZodSharp.SystemTextJson` or `ZodSharp.NewtonsoftJson` to your project, then:
 
 ```csharp
 var jsonSchemaString = @"{
@@ -438,15 +478,16 @@ public class User
 var result = UserSchema.Validate(user);
 var validated = UserSchema.Parse(user); // Throws on failure
 
-// Composition methods
-var refined = UserSchema.Refine(user, u => u.Age >= 18, "Must be adult");
-var combined = UserSchema.And(user, u => u.Name.Length > 5, "Name too short");
+// Value-first composition methods (validate a value, then run an extra predicate)
+var refined = UserSchema.ApplyRefine(user, u => u.Age >= 18, "Must be adult");
+var combined = UserSchema.ApplyAnd(user, u => u.Name.Length > 5, "Name too short");
+var either = UserSchema.ApplyOr(user, u => u.Age < 18, "Must be an adult or a minor with consent");
 ```
 
 **Features:**
 - Automatic validation from DataAnnotations attributes
 - Zero-reflection, zero-allocation validators
-- Composition methods (`.And()`, `.Or()`, `.Refine()`)
+- Value-first composition methods (`.ApplyAnd()`, `.ApplyOr()`, `.ApplyRefine()`) plus instance schema-composing composition (`.Refine()`, `.SuperRefine()`, `.Pipe()`, `.Catch()`, `.Prefault()`, `.Default()`)
 - Supports classes, structs, and records
 
 #### Supported DataAnnotations size validators

@@ -24,7 +24,10 @@ public class ObjectPerformanceTests
 
 	public ObjectPerformanceTests()
 	{
-		_simpleObjectSchema = Z.Object().Field("name", Z.String().Min(1)).Field("age", Z.Number().Min(0)).Build();
+		_simpleObjectSchema = Z.Object()
+			.Field("name", Z.String().Min(1))
+			.Field("age", Z.Number().Min(0))
+			.Build();
 
 		_mediumObjectSchema = Z.Object()
 			.Field("id", Z.String().Uuid())
@@ -111,7 +114,11 @@ public class ObjectPerformanceTests
 	[Benchmark]
 	public ValidationResult<Dictionary<string, object?>> ValidateComplexObjectInvalid()
 	{
-		var invalid = new Dictionary<string, object?>(_complexObject) { ["email"] = "invalid-email", ["age"] = -1.0 };
+		var invalid = new Dictionary<string, object?>(_complexObject)
+		{
+			["email"] = "invalid-email",
+			["age"] = -1.0,
+		};
 		return _complexObjectSchema.Validate(invalid);
 	}
 }

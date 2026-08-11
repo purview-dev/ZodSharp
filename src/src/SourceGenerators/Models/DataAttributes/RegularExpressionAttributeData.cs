@@ -1,81 +1,64 @@
-﻿using System.Collections.Immutable;
+using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
+using Purview.SourceGeneratorFramework.Extensions;
+using ZodSharp.SourceGenerators.Helpers;
 
 namespace ZodSharp.SourceGenerators.Models.DataAttributes;
 
 readonly record struct RegularExpressionAttributeData(
 	bool Exists,
 	string? Pattern,
-	string? ErrorMessage,
-	string? ErrorMessageResourceName,
-	INamedTypeSymbol? ErrorMessageResourceType
+	int MatchTimeoutInMiniseconds,
+	ValidationAttributeData ValidationAttribute
 )
 {
-	public static readonly RegularExpressionAttributeData Empty = new(false, null, null, null, null);
+	public static readonly RegularExpressionAttributeData Empty = new(
+		false,
+		null,
+		0,
+		ValidationAttributeData.Empty
+	);
 
 	public static RegularExpressionAttributeData FromAttributeData(
-		GenerationContext generationContext,
 		ImmutableArray<AttributeData> attributeData
+	) => FromAttributeData(attributeData, out _);
+
+	public static RegularExpressionAttributeData FromAttributeData(
+		ImmutableArray<AttributeData> attributeData,
+		out AttributeData? attribute
 	)
 	{
-		if (generationContext is null)
+		attribute = null;
+		for (var i = 0; i < attributeData.Length; i++)
 		{
-			throw new ArgumentNullException(nameof(generationContext));
-		}
-
-		if (generationContext.RegularExpressionAttribute is not null)
-		{
-			for (var i = 0; i < attributeData.Length; i++)
+			var result = FromAttributeData(attributeData[i]);
+			if (result.Exists)
 			{
-				var result = FromAttributeData(generationContext, attributeData[i]);
-				if (result.Exists)
-					return result;
+				attribute = attributeData[i];
+				return result;
 			}
 		}
 
 		return Empty;
 	}
 
-	public static RegularExpressionAttributeData FromAttributeData(
-		GenerationContext generationContext,
-		AttributeData attributeData
-	)
+	public static RegularExpressionAttributeData FromAttributeData(AttributeData attributeData)
 	{
-		var attributeSymbol = generationContext.RegularExpressionAttribute;
-		var exists =
-			attributeSymbol is not null
-			&& SymbolEqualityComparer.Default.Equals(attributeData.AttributeClass, attributeSymbol);
-		string? pattern = null;
-		var errorMessage = (string?)null;
-		string? errorMessageResourceName = null;
-		INamedTypeSymbol? errorMessageResourceType = null;
-		if (exists)
-		{
-			var constructorArguments = attributeData.ConstructorArguments;
-			if (constructorArguments.Length > 0)
-			{
-				var patternArgument = constructorArguments[0];
-				if (patternArgument.Value is string value)
-					pattern = value;
-			}
+		if (
+			!TypeLibrary.DataAnnotations.RegularExpressionAttribute.Equals(
+				attributeData.AttributeClass
+			)
+		)
+			return Empty;
 
-			foreach (var namedArg in attributeData.NamedArguments)
-			{
-				switch (namedArg.Key)
-				{
-					case nameof(ErrorMessage) when namedArg.Value.Value is string errorMsg:
-						errorMessage = errorMsg;
-						break;
-					case nameof(ErrorMessageResourceName) when namedArg.Value.Value is string resourceName:
-						errorMessageResourceName = resourceName;
-						break;
-					case nameof(ErrorMessageResourceType) when namedArg.Value.Value is INamedTypeSymbol resourceType:
-						errorMessageResourceType = resourceType;
-						break;
-				}
-			}
-		}
+		attributeData.TryGetConstructorArgument<string>("pattern", out var pattern);
+		attributeData.TryGetNamedArgument(
+			nameof(MatchTimeoutInMiniseconds),
+			out int matchTimeoutInMilliseconds
+		);
 
-		return new(exists, pattern, errorMessage, errorMessageResourceName, errorMessageResourceType);
+		var validationAttributeData = ValidationAttributeData.FromAttributeData(attributeData);
+
+		return new(true, pattern, matchTimeoutInMilliseconds, validationAttributeData);
 	}
 }

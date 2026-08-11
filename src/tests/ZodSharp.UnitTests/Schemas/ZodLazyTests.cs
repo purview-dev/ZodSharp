@@ -7,7 +7,10 @@ public class ZodLazyTests
 	{
 		ZodLazy<Dictionary<string, object?>>? categorySchema = null;
 		categorySchema = Z.Lazy(() =>
-			Z.Object().Field("name", Z.String()).Field("subcategories", Z.Array(categorySchema!)).Build()
+			Z.Object()
+				.Field("name", Z.String())
+				.Field("subcategories", Z.Array(categorySchema!))
+				.Build()
 		);
 		var data = new Dictionary<string, object?>
 		{

@@ -13,8 +13,10 @@ namespace ZodSharp.Schemas;
 /// </remarks>
 /// <param name="inputSchema">The input schema</param>
 /// <param name="transform">The transformation function</param>
-public class ZodTransform<TInput, TOutput>(IZodSchema<TInput, TInput> inputSchema, Func<TInput, TOutput> transform)
-	: ZodType<TOutput, TInput>
+public class ZodTransform<TInput, TOutput>(
+	IZodSchema<TInput, TInput> inputSchema,
+	Func<TInput, TOutput> transform
+) : ZodType<TOutput, TInput>
 {
 	/// <summary>
 	/// Parses and transforms the input value.

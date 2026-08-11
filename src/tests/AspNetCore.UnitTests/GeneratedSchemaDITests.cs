@@ -10,7 +10,7 @@ public class GeneratedSchemaDITests
 	public async Task AddZodSharp_WithAssemblyScan_RegistersGeneratedUserDtoValidator()
 	{
 		var services = new ServiceCollection();
-		services.AddZodSharp(opts => opts.ScanAssemblies.Add(typeof(UserDto).Assembly));
+		services.AddZodSharp(static opts => opts.ScanAssemblies.Add(typeof(UserDto).Assembly));
 		var provider = services.BuildServiceProvider();
 		var factory = provider.GetRequiredService<IZodSchemaFactory>();
 
@@ -23,7 +23,7 @@ public class GeneratedSchemaDITests
 	public async Task GeneratedValidator_ProducesCorrectValidationResult()
 	{
 		var services = new ServiceCollection();
-		services.AddZodSharp(opts => opts.ScanAssemblies.Add(typeof(UserDto).Assembly));
+		services.AddZodSharp(static opts => opts.ScanAssemblies.Add(typeof(UserDto).Assembly));
 		var provider = services.BuildServiceProvider();
 		var factory = provider.GetRequiredService<IZodSchemaFactory>();
 		var result = factory.Validate(new UserDto { Name = "A", Age = 1 });

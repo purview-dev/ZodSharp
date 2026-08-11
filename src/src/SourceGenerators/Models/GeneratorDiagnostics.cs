@@ -1,5 +1,4 @@
-﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis;
 
 namespace ZodSharp.SourceGenerators.Models;
 
@@ -9,9 +8,9 @@ static class GeneratorDiagnostics
 
 	public static readonly DiagnosticDescriptor UnhandledException = new(
 		id: "ZODSGEN001",
-		title: "Fatal error",
-		messageFormat: "This is effectively a fatal incident where the source generator has failed",
-		category: Category,
+		title: "Unhandled exception",
+		messageFormat: "Source generator failed for {0}: {1}",
+		category: "ZodSharp.SourceGenerator",
 		defaultSeverity: DiagnosticSeverity.Error,
 		isEnabledByDefault: true
 	);
@@ -169,19 +168,12 @@ static class GeneratorDiagnostics
 		isEnabledByDefault: true
 	);
 
-	public static DiagnosticInfo Create(
-		DiagnosticDescriptor diagnostic,
-		INamedTypeSymbol? symbol = null,
-		TypeDeclarationSyntax? declaration = null,
-		SyntaxNode? locationNode = null
-	)
-	{
-		var messageArgs = symbol is not null ? new[] { symbol.Name } : [];
-
-		return DiagnosticInfo.Create(
-			diagnostic,
-			locationNode?.GetLocation() ?? declaration?.Identifier.GetLocation(),
-			messageArgs
-		);
-	}
+	public static readonly DiagnosticDescriptor ComparePropertyNotFound = new(
+		id: "ZODSGEN020",
+		title: "Compare property not found",
+		messageFormat: "CompareAttribute on '{0}' references unknown property '{1}'",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Error,
+		isEnabledByDefault: true
+	);
 }

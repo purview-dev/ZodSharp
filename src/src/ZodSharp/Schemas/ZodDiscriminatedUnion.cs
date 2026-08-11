@@ -38,7 +38,11 @@ public class ZodDiscriminatedUnion(
 		if (discriminatorValue is null)
 		{
 			return ValidationResult<object>.Failure(
-				new ValidationError("missing_discriminator", $"Discriminator field '{discriminator}' not found", [])
+				new ValidationError(
+					"missing_discriminator",
+					$"Discriminator field '{discriminator}' not found",
+					[]
+				)
 			);
 		}
 
@@ -71,12 +75,17 @@ public class ZodDiscriminatedUnion(
 
 		var property = value
 			.GetType()
-			.GetProperty(discriminator, BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+			.GetProperty(
+				discriminator,
+				BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase
+			);
 
 		return property?.GetValue(value)?.ToString();
 	}
 
-	string? TryGetDictionaryDiscriminatorValue(IEnumerable<KeyValuePair<string, object?>> dictionary)
+	string? TryGetDictionaryDiscriminatorValue(
+		IEnumerable<KeyValuePair<string, object?>> dictionary
+	)
 	{
 		foreach (var (key, dictionaryValue) in dictionary)
 		{

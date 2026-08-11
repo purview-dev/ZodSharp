@@ -12,6 +12,7 @@
 			and source generator support for maximum performance.
 		</Description>
 		<PackageTags>zod;validation;schema</PackageTags>
+		<NoWarn>$(NoWarn);NU5118</NoWarn>
 	</PropertyGroup>
 
 	<PropertyGroup>
@@ -28,34 +29,45 @@
 			ReferenceOutputAssembly="false"
 			OutputItemType="Analyzer"
 		/>
+
+		<None
+			Include="buildTransitive\ZodSharp.props"
+			Pack="true"
+			PackagePath="buildTransitive\ZodSharp.props"
+			Visible="true"
+		/>
 	</ItemGroup>
 
-	<Target
-		Name="IncludeZodSharpSourceGenerator"
-		DependsOnTargets="Build"
-		Condition="'$(TargetFramework)' == 'netstandard2.1'"
-	>
+	<Target Name="IncludeZodSharpSourceGenerator">
 		<Error
 			Condition="!Exists('$(ZodSharpSourceGeneratorAssembly)')"
 			Text="The ZodSharp source generator was not found at '$(ZodSharpSourceGeneratorAssembly)'."
 		/>
 
+		<MSBuild
+			Projects="$(ZodSharpSourceGeneratorProject)"
+			Targets="GetSourceGeneratorAnalyzerFiles"
+			Properties="Configuration=$(Configuration);TargetFramework=$(ZodSharpSourceGeneratorTargetFramework)"
+		>
+			<Output TaskParameter="TargetOutputs" ItemName="_ZodSharpSourceGeneratorFiles" />
+		</MSBuild>
+
 		<ItemGroup>
-			<TfmSpecificPackageFile Include="$(ZodSharpSourceGeneratorAssembly)">
-				<PackagePath>analyzers/dotnet/cs/</PackagePath>
-			</TfmSpecificPackageFile>
+			<TfmSpecificPackageFile
+				Include="@(_ZodSharpSourceGeneratorFiles)"
+				PackagePath="analyzers/dotnet/cs/"
+			/>
 		</ItemGroup>
 	</Target>
-
-	<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">
-		<PackageReference Include="System.Collections.Immutable" />
-	</ItemGroup>
 
 	<ItemGroup>
 		<None Include="$(MSBuildThisFileDirectory)..\..\..\README.md" Pack="true" PackagePath="\" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+		<PackageReference
+			Include="Microsoft.Extensions.DependencyInjection.Abstractions"
+			VersionOverride="$(MicrosoftExtensionsDependencyInjectionAbstractionsVersion)"
+		/>
 	</ItemGroup>
 </Project>

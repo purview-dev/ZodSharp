@@ -14,7 +14,7 @@ public static class SchemaCache
 	/// Gets or creates a schema using a cache key.
 	/// </summary>
 	public static T GetOrCreate<T>(string key, Func<T> factory)
-		where T : class => (T)Cache.GetOrAdd(key, _ => factory()!);
+		where T : class => (T)Cache.GetOrAdd(key, _ => factory());
 
 	/// <summary>
 	/// Gets or creates a schema using a cache key.

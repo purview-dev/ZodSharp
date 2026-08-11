@@ -9,7 +9,8 @@ sealed class SampleDiDto
 
 sealed class SampleDiDtoSchemaValidator : IZodSchemaValidator<SampleDiDto>
 {
-	public ValidationResult<SampleDiDto> Validate(SampleDiDto value) => ValidationResult<SampleDiDto>.Success(value);
+	public ValidationResult<SampleDiDto> Validate(SampleDiDto value) =>
+		ValidationResult<SampleDiDto>.Success(value);
 
 	public ValueTask<ValidationResult<SampleDiDto>> ValidateAsync(
 		SampleDiDto value,

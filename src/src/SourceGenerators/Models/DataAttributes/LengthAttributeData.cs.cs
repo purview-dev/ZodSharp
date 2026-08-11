@@ -1,5 +1,6 @@
-﻿using System.Collections.Immutable;
+using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
+using ZodSharp.SourceGenerators.Helpers;
 
 namespace ZodSharp.SourceGenerators.Models.DataAttributes;
 
@@ -7,84 +8,48 @@ readonly record struct LengthAttributeData(
 	bool Exists,
 	int MinimumLength,
 	int MaximumLength,
-	string? ErrorMessage,
-	string? ErrorMessageResourceName,
-	INamedTypeSymbol? ErrorMessageResourceType
+	ValidationAttributeData ValidationAttribute
 )
 {
-	public static readonly LengthAttributeData Empty = new(false, 0, int.MaxValue, null, null, null);
+	public static readonly LengthAttributeData Empty = new(
+		false,
+		0,
+		int.MaxValue,
+		ValidationAttributeData.Empty
+	);
+
+	public static LengthAttributeData FromAttributeData(ImmutableArray<AttributeData> attributes) =>
+		FromAttributeData(attributes, out _);
 
 	public static LengthAttributeData FromAttributeData(
-		GenerationContext generationContext,
-		ImmutableArray<AttributeData> attributes
+		ImmutableArray<AttributeData> attributes,
+		out AttributeData? attribute
 	)
 	{
-		if (generationContext.LengthAttribute is null)
-			return Empty;
-
+		attribute = null;
 		for (var i = 0; i < attributes.Length; i++)
 		{
-			var result = FromAttributeData(generationContext, attributes[i]);
+			var result = FromAttributeData(attributes[i]);
 
 			if (result.Exists)
+			{
+				attribute = attributes[i];
 				return result;
+			}
 		}
 
 		return Empty;
 	}
 
-	public static LengthAttributeData FromAttributeData(
-		GenerationContext generationContext,
-		AttributeData attributeData
-	)
+	public static LengthAttributeData FromAttributeData(AttributeData attributeData)
 	{
-		if (generationContext is null)
-		{
-			throw new ArgumentNullException(nameof(generationContext));
-		}
-
-		var attributeSymbol = generationContext.LengthAttribute;
-
-		if (
-			attributeSymbol is null
-			|| !SymbolEqualityComparer.Default.Equals(attributeData.AttributeClass, attributeSymbol)
-		)
-		{
+		if (!TypeLibrary.DataAnnotations.LengthAttribute.Equals(attributeData.AttributeClass))
 			return Empty;
-		}
-
-		string? errorMessage = null;
-		string? errorMessageResourceName = null;
-		INamedTypeSymbol? errorMessageResourceType = null;
 
 		var minimumLength = (int)attributeData.ConstructorArguments[0].Value!;
 		var maximumLength = (int)attributeData.ConstructorArguments[1].Value!;
+		var validationAttribute = ValidationAttributeData.FromAttributeData(attributeData);
 
-		foreach (var namedArgument in attributeData.NamedArguments)
-		{
-			switch (namedArgument.Key)
-			{
-				case nameof(ErrorMessage) when namedArgument.Value.Value is string message:
-					errorMessage = message;
-					break;
-
-				case nameof(ErrorMessageResourceName) when namedArgument.Value.Value is string resourceName:
-					errorMessageResourceName = resourceName;
-					break;
-
-				case nameof(ErrorMessageResourceType) when namedArgument.Value.Value is INamedTypeSymbol resourceType:
-					errorMessageResourceType = resourceType;
-					break;
-			}
-		}
-
-		return new(
-			Exists: true,
-			MinimumLength: minimumLength,
-			MaximumLength: maximumLength,
-			ErrorMessage: errorMessage,
-			ErrorMessageResourceName: errorMessageResourceName,
-			ErrorMessageResourceType: errorMessageResourceType
-		);
+		return new(true, minimumLength, maximumLength, validationAttribute);
 	}
 }

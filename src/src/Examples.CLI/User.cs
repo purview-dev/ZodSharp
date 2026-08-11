@@ -22,7 +22,15 @@ partial class UserSchemaValidator
 {
 	public bool WasCalled;
 
-	async ValueTask<ValidationResult<User>> CustomValidationAsync(User user, CancellationToken cancellationToken)
+	[System.Diagnostics.CodeAnalysis.SuppressMessage(
+		"Style",
+		"IDE0390:Make method synchronous",
+		Justification = "This is an example of an asynchronous custom validation method"
+	)]
+	async ValueTask<ValidationResult<User>> CustomValidationAsync(
+		User user,
+		CancellationToken cancellationToken
+	)
 	{
 		WasCalled = true;
 

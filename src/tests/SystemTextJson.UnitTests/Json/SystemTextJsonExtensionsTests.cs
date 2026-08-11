@@ -1,19 +1,22 @@
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using ZodSharp.Core;
 
 namespace ZodSharp.Json;
 
 public class SystemTextJsonExtensionsTests
 {
-	static readonly JsonSerializerOptions CamelCase = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+	static readonly JsonSerializerOptions CamelCase = new()
+	{
+		PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+	};
 
 	[Test]
 	public async Task DeserializeAndValidate_GivenValidJson_ReturnsSuccess()
 	{
 		var schema = new TestUserSchema();
-		var json = """{"Name":"John","Age":30}""";
+		var json = /*lang=json,strict*/
+			"""{"Name":"John","Age":30}""";
 
 		var result = schema.DeserializeAndValidate(json);
 
@@ -26,7 +29,8 @@ public class SystemTextJsonExtensionsTests
 	public async Task DeserializeAndValidate_GivenValidJson_WithCamelCaseOptions_ReturnsSuccess()
 	{
 		var schema = new TestUserSchema();
-		var json = """{"name":"John","age":30}""";
+		var json = /*lang=json,strict*/
+			"""{"name":"John","age":30}""";
 
 		var result = schema.DeserializeAndValidate(json, CamelCase);
 
@@ -49,12 +53,13 @@ public class SystemTextJsonExtensionsTests
 	public async Task DeserializeAndValidate_GivenSchemaInvalidJson_ReturnsValidationFailure()
 	{
 		var schema = new TestUserSchema();
-		var json = """{"Name":"","Age":30}""";
+		var json = /*lang=json,strict*/
+			"""{"Name":"","Age":30}""";
 
 		var result = schema.DeserializeAndValidate(json);
 
 		await Assert.That(result.IsSuccess).IsFalse();
-		await Assert.That(result.Errors.Any(e => e.Path.Contains("Name"))).IsTrue();
+		await Assert.That(result.Errors.Any(static e => e.Path.Contains("Name"))).IsTrue();
 	}
 
 	[Test]
@@ -62,7 +67,9 @@ public class SystemTextJsonExtensionsTests
 	{
 		var schema = new TestUserSchema();
 
-		var exception = Assert.Throws<ArgumentNullException>(() => schema.DeserializeAndValidate(null!));
+		var exception = Assert.Throws<ArgumentNullException>(() =>
+			schema.DeserializeAndValidate(null!)
+		);
 
 		await Assert.That(exception!.ParamName).IsEqualTo("json");
 	}
@@ -72,7 +79,9 @@ public class SystemTextJsonExtensionsTests
 	{
 		IZodSchema<TestUser, TestUser> schema = null!;
 
-		var exception = Assert.Throws<ArgumentNullException>(() => schema.DeserializeAndValidate("{}"));
+		var exception = Assert.Throws<ArgumentNullException>(() =>
+			schema.DeserializeAndValidate("{}")
+		);
 
 		await Assert.That(exception!.ParamName).IsEqualTo("schema");
 	}
@@ -81,7 +90,9 @@ public class SystemTextJsonExtensionsTests
 	public async Task DeserializeAndValidateAsync_GivenValidJsonStream_ReturnsSuccess()
 	{
 		var schema = new TestUserSchema();
-		var jsonBytes = Encoding.UTF8.GetBytes("""{"Name":"John","Age":30}""");
+		var jsonBytes = Encoding.UTF8.GetBytes( /*lang=json,strict*/
+			"""{"Name":"John","Age":30}"""
+		);
 		using var stream = new MemoryStream(jsonBytes);
 
 		var result = await schema.DeserializeAndValidateAsync(stream);
@@ -113,7 +124,11 @@ public class SystemTextJsonExtensionsTests
 		var result = schema.ValidateAndSerialize(user);
 
 		await Assert.That(result.IsSuccess).IsTrue();
-		await Assert.That(result.Value).IsEqualTo("""{"Name":"John","Age":30}""");
+		await Assert
+			.That(result.Value)
+			.IsEqualTo( /*lang=json,strict*/
+				"""{"Name":"John","Age":30}"""
+			);
 	}
 
 	[Test]
@@ -125,7 +140,7 @@ public class SystemTextJsonExtensionsTests
 		var result = schema.ValidateAndSerialize(user);
 
 		await Assert.That(result.IsSuccess).IsFalse();
-		await Assert.That(result.Errors.Any(e => e.Path.Contains("Name"))).IsTrue();
+		await Assert.That(result.Errors.Any(static e => e.Path.Contains("Name"))).IsTrue();
 	}
 
 	[Test]
@@ -137,7 +152,11 @@ public class SystemTextJsonExtensionsTests
 		var result = schema.ValidateAndSerialize(user, CamelCase);
 
 		await Assert.That(result.IsSuccess).IsTrue();
-		await Assert.That(result.Value).IsEqualTo("""{"name":"Jane","age":25}""");
+		await Assert
+			.That(result.Value)
+			.IsEqualTo( /*lang=json,strict*/
+				"""{"name":"Jane","age":25}"""
+			);
 	}
 
 	[Test]
@@ -145,7 +164,7 @@ public class SystemTextJsonExtensionsTests
 	{
 		var schema = new TestUserSchema();
 
-		var result = schema.ValidateAndSerialize((TestUser)null!);
+		var result = schema.ValidateAndSerialize(null!);
 
 		await Assert.That(result.IsSuccess).IsFalse();
 	}
@@ -155,7 +174,9 @@ public class SystemTextJsonExtensionsTests
 	{
 		IZodSchema<TestUser, TestUser> schema = null!;
 
-		var exception = Assert.Throws<ArgumentNullException>(() => schema.ValidateAndSerialize(new TestUser()));
+		var exception = Assert.Throws<ArgumentNullException>(() =>
+			schema.ValidateAndSerialize(new TestUser())
+		);
 
 		await Assert.That(exception!.ParamName).IsEqualTo("schema");
 	}
@@ -239,12 +260,20 @@ public class SystemTextJsonExtensionsTests
 
 			if (string.IsNullOrWhiteSpace(value.Name))
 			{
-				errors.Add(new ValidationError("too_small", "Name is required", [nameof(TestUser.Name)]));
+				errors.Add(
+					new ValidationError("too_small", "Name is required", [nameof(TestUser.Name)])
+				);
 			}
 
 			if (value.Age < 0)
 			{
-				errors.Add(new ValidationError("too_small", "Age must be non-negative", [nameof(TestUser.Age)]));
+				errors.Add(
+					new ValidationError(
+						"too_small",
+						"Age must be non-negative",
+						[nameof(TestUser.Age)]
+					)
+				);
 			}
 
 			return errors.Count == 0

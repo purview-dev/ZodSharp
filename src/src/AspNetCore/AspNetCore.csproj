@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFrameworks></TargetFrameworks>
-		<TargetFramework>net10.0</TargetFramework>
+		<TargetFrameworks>$(ZodSharpNetTargetFrameworks)</TargetFrameworks>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<IsPackable>true</IsPackable>
 		<PackageId>ZodSharp.AspNetCore</PackageId>

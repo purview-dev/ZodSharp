@@ -39,5 +39,6 @@ readonly record struct CustomValidationMethodData(
 		Diagnostics: []
 	);
 
-	public bool HasCustomValidation => IsValid && InvocationKind != CustomValidationInvocationKind.None;
+	public bool HasCustomValidation =>
+		IsValid && InvocationKind != CustomValidationInvocationKind.None;
 };

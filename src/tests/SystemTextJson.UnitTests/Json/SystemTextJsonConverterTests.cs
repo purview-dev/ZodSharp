@@ -6,7 +6,7 @@ namespace ZodSharp.Json;
 public class SystemTextJsonConverterTests
 {
 	static JsonSerializerOptions CreateOptions<T>(IZodSchema<T, T> schema) =>
-		new() { Converters = { schema.CreateValidatingConverter<T>() } };
+		new() { Converters = { schema.CreateValidatingConverter() } };
 
 	[Test]
 	public async Task CreateValidatingConverter_GivenValidJson_DeserializesSuccessfully()
@@ -14,7 +14,10 @@ public class SystemTextJsonConverterTests
 		var schema = new TestUserSchema();
 		var options = CreateOptions(schema);
 
-		var deserialized = JsonSerializer.Deserialize<TestUser>("""{"Name":"John","Age":30}""", options);
+		var deserialized = JsonSerializer.Deserialize<TestUser>(
+			"""{"Name":"John","Age":30}""",
+			options
+		);
 
 		await Assert.That(deserialized).IsNotNull();
 		await Assert.That(deserialized!.Name).IsEqualTo("John");
@@ -45,7 +48,7 @@ public class SystemTextJsonConverterTests
 		);
 
 		await Assert.That(exception).IsNotNull();
-		await Assert.That(exception!.Message).Contains("Validation failed");
+		await Assert.That(exception.Message).Contains("Validation failed");
 	}
 
 	[Test]
@@ -71,7 +74,7 @@ public class SystemTextJsonConverterTests
 		var exception = Assert.Throws<JsonException>(() => JsonSerializer.Serialize(user, options));
 
 		await Assert.That(exception).IsNotNull();
-		await Assert.That(exception!.Message).Contains("Validation failed");
+		await Assert.That(exception.Message).Contains("Validation failed");
 	}
 
 	[Test]
@@ -79,7 +82,9 @@ public class SystemTextJsonConverterTests
 	{
 		IZodSchema<TestUser, TestUser> schema = null!;
 
-		var exception = Assert.Throws<ArgumentNullException>(() => schema.CreateValidatingConverter<TestUser>());
+		var exception = Assert.Throws<ArgumentNullException>(() =>
+			schema.CreateValidatingConverter()
+		);
 
 		await Assert.That(exception!.ParamName).IsEqualTo("schema");
 	}
@@ -105,12 +110,20 @@ public class SystemTextJsonConverterTests
 
 			if (string.IsNullOrWhiteSpace(value.Name))
 			{
-				errors.Add(new ValidationError("too_small", "Name is required", [nameof(TestUser.Name)]));
+				errors.Add(
+					new ValidationError("too_small", "Name is required", [nameof(TestUser.Name)])
+				);
 			}
 
 			if (value.Age < 0)
 			{
-				errors.Add(new ValidationError("too_small", "Age must be non-negative", [nameof(TestUser.Age)]));
+				errors.Add(
+					new ValidationError(
+						"too_small",
+						"Age must be non-negative",
+						[nameof(TestUser.Age)]
+					)
+				);
 			}
 
 			return errors.Count == 0

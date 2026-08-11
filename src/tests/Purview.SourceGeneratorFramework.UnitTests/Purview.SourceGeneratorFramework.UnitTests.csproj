@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<DisableNamespacePrefixCheck>true</DisableNamespacePrefixCheck>
+		<NoWarn>$(NoWarn);IDE0130;</NoWarn>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\src\Purview.SourceGeneratorFramework\Purview.SourceGeneratorFramework.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+	</ItemGroup>
+</Project>

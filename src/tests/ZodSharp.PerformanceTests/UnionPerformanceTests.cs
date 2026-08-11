@@ -91,7 +91,8 @@ public class UnionPerformanceTests
 	}
 
 	[Benchmark]
-	public ValidationResult<object> ValidateUnion_String() => _unionSchema.Validate("user@example.com");
+	public ValidationResult<object> ValidateUnion_String() =>
+		_unionSchema.Validate("user@example.com");
 
 	[Benchmark]
 	public ValidationResult<object> ValidateUnion_Number() => _unionSchema.Validate(42.0);

@@ -23,7 +23,10 @@ public class StringExtensionsTests
 	[Arguments("one two three ", 14)]
 	[Arguments(" one two three", 14)]
 	[Arguments(" one two three ", 15)]
-	public async Task LengthOrDefault_GivenNonNullStrings_ReturnsCorrectLength(string value, int length)
+	public async Task LengthOrDefault_GivenNonNullStrings_ReturnsCorrectLength(
+		string value,
+		int length
+	)
 	{
 		// Act
 		var result = value.LengthOrDefault();

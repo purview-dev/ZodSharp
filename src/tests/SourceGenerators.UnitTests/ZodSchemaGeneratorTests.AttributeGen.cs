@@ -1,9 +1,18 @@
-﻿namespace ZodSharp.SourceGenerators;
+using System.Diagnostics.CodeAnalysis;
 
+namespace ZodSharp.SourceGenerators;
+
+[SuppressMessage(
+	"Maintainability",
+	"CA1506",
+	Justification = "Test class naturally couples to many framework and generated types."
+)]
 partial class ZodSchemaGeneratorTests
 {
 	[Test]
-	public async Task Generate_GivenEmptySource_GeneratesAttributesOnly(CancellationToken cancellationToken)
+	public async Task Generate_GivenEmptySource_GeneratesAttributesOnly(
+		CancellationToken cancellationToken
+	)
 	{
 		// Arrange
 		const string source =
@@ -15,14 +24,16 @@ namespace Testing
 ";
 
 		// Act
-		var (result, _) = await GenerateAsync(source, cancellationToken);
+		var driverResult = await GenerateZodAsync(source, cancellationToken);
 
 		// Assert
-		await Assert.That(result.GeneratedTrees).Count().IsEqualTo(ExpectedFileCount);
+		await Assert.That(driverResult.GeneratedTrees).Count().IsEqualTo(ExpectedFileCount);
 	}
 
 	[Test]
-	public async Task Generate_GivenAttributeFiles_ContainsGenerateZodAttributes(CancellationToken cancellationToken)
+	public async Task Generate_GivenAttributeFiles_ContainsGenerateZodAttributes(
+		CancellationToken cancellationToken
+	)
 	{
 		// Arrange
 		const string source =
@@ -34,10 +45,13 @@ namespace Testing
 ";
 
 		// Act
-		var (result, _) = await GenerateAsync(source, cancellationToken);
+		var driverResult = await GenerateZodAsync(source, cancellationToken);
+		var assembly = await Assert.That(driverResult.Assembly).IsNotNull();
 
 		// Assert — attribute files are generated
-		var attributeSources = result.GeneratedTrees.Select(t => t.GetText().ToString()).ToList();
+		var attributeSources = driverResult
+			.GeneratedTrees.Select(static t => t.GetText().ToString())
+			.ToList();
 
 		await Assert.That(attributeSources).Count().IsEqualTo(ExpectedFileCount);
 

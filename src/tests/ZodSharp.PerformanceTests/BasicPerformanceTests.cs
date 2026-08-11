@@ -34,12 +34,17 @@ public class BasicPerformanceTests
 	public ValidationResult<bool> ValidateBoolean() => _booleanSchema.Validate(true);
 
 	[Benchmark]
-	public ValidationResult<string[]> ValidateStringArray() => _arraySchema.Validate(["a", "b", "c", "d", "e"]);
+	public ValidationResult<string[]> ValidateStringArray() =>
+		_arraySchema.Validate(["a", "b", "c", "d", "e"]);
 
 	[Benchmark]
 	public ValidationResult<string> ValidateStringWithMultipleRules()
 	{
-		var schema = Z.String().Min(5).Max(100).Email().Regex(@"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$");
+		var schema = Z.String()
+			.Min(5)
+			.Max(100)
+			.Email()
+			.Regex(@"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$");
 		return schema.Validate("test@example.com");
 	}
 

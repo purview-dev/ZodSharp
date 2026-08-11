@@ -1,8 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
-		<TargetFrameworks></TargetFrameworks>
-		<TargetFramework>net10.0</TargetFramework>
 		<NoWarn>$(NoWarn);CA1303;CA1308;</NoWarn>
 		<NoWarn>$(NoWarn);CS0471;</NoWarn>
 	</PropertyGroup>

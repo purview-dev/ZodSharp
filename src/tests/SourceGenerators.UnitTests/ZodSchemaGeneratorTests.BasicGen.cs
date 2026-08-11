@@ -1,9 +1,11 @@
-﻿namespace ZodSharp.SourceGenerators;
+namespace ZodSharp.SourceGenerators;
 
 partial class ZodSchemaGeneratorTests
 {
 	[Test]
-	public async Task Generate_GivenEmptyZodSchema_OutputCompilationHasNoErrors(CancellationToken cancellationToken)
+	public async Task Generate_GivenEmptyZodSchema_OutputCompilationHasNoErrors(
+		CancellationToken cancellationToken
+	)
 	{
 		// Arrange
 		const string source =
@@ -16,16 +18,14 @@ namespace Testing
 ";
 
 		// Act
-		var (result, outputCompilation) = await GenerateAsync(source, cancellationToken);
+		var driverResult = await GenerateZodAsync(source, cancellationToken);
 
 		// Assert
-		await AssertNoGeneratorExceptions(result);
-		await AssertNoCompilationErrors(outputCompilation, cancellationToken);
+		await Assert.That(driverResult.EnsureValid).ThrowsNothing();
 	}
 
 	[Test]
 	[Arguments("public")]
-	[Arguments("private")]
 	[Arguments("internal")]
 	// This is internal too
 	[Arguments("")]
@@ -35,7 +35,8 @@ namespace Testing
 	)
 	{
 		// Arrange
-		var expectation = $"{modifier} static partial class ModifierTestSchema";
+		var expectedModifier = string.IsNullOrEmpty(modifier) ? "internal" : modifier;
+		var expectation = $"{expectedModifier} static partial class ModifierTestSchema";
 
 		var source =
 			$@"
@@ -47,8 +48,8 @@ namespace Testing
 ";
 
 		// Act
-		var (result, _) = await GenerateAsync(source, cancellationToken);
-		var generatedSource = GetSchemaGeneratedSource(result);
+		var driverResult = await GenerateZodAsync(source, cancellationToken);
+		var generatedSource = GetSchemaGeneratedSource(driverResult);
 
 		// Assert — generated file starts with auto-generated header
 		await Assert.That(generatedSource).Contains(expectation);

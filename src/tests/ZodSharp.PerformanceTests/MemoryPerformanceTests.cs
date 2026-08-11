@@ -19,16 +19,20 @@ public class MemoryPerformanceTests
 	{
 		_stringSchema = Z.String().Min(1).Max(100).Email();
 		_arraySchema = Z.Array(Z.Number().Min(0).Max(100)).Min(1).Max(100);
-		_objectSchema = Z.Object().Field("name", Z.String().Min(1)).Field("age", Z.Number().Min(0)).Build();
+		_objectSchema = Z.Object()
+			.Field("name", Z.String().Min(1))
+			.Field("age", Z.Number().Min(0))
+			.Build();
 	}
 
 	[Benchmark(Baseline = true)]
-	public ValidationResult<string> ValidateString_Allocations() => _stringSchema.Validate("user@example.com");
+	public ValidationResult<string> ValidateString_Allocations() =>
+		_stringSchema.Validate("user@example.com");
 
 	[Benchmark]
 	public ValidationResult<double[]> ValidateArray_Allocations()
 	{
-		var data = Enumerable.Range(1, 100).Select(i => (double)i).ToArray();
+		var data = Enumerable.Range(1, 100).Select(static i => (double)i).ToArray();
 		return _arraySchema.Validate(data);
 	}
 
@@ -51,7 +55,7 @@ public class MemoryPerformanceTests
 	[Benchmark]
 	public void ValidateArray_ManyIterations()
 	{
-		var data = Enumerable.Range(1, 100).Select(i => (double)i).ToArray();
+		var data = Enumerable.Range(1, 100).Select(static i => (double)i).ToArray();
 		for (var i = 0; i < 100; i++)
 		{
 			_arraySchema.Validate(data);

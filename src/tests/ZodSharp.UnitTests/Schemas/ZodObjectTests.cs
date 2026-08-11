@@ -28,7 +28,9 @@ public class ZodObjectTests
 		var result = schema.Validate(data);
 
 		await Assert.That(result.IsSuccess).IsFalse();
-		await Assert.That(result.Errors.Any(error => error.Code == "missing_field")).IsTrue();
+		await Assert
+			.That(result.Errors.Any(static error => error.Code == "missing_field"))
+			.IsTrue();
 	}
 
 	[Test]
@@ -85,7 +87,7 @@ public class ZodObjectTests
 		await Assert.That(result.Value!["age"]).IsEqualTo(30.0);
 	}
 
-	static ZodSharp.Schemas.ZodObject CreateUserSchema() =>
+	static ZodObject CreateUserSchema() =>
 		Z.Object()
 			.Field("name", Z.String().Min(1))
 			.Field("age", Z.Number().Min(0).Max(120))

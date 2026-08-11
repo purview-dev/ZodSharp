@@ -1,8 +1,25 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<ItemGroup>
 		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+		<PackageReference Include="Purview.SourceGeneratorFramework.Testing.TUnit" />
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\..\src\ZodSharp\ZodSharp.csproj" />
+		<!-- Reference the analyzer output as a normal reference so the test code can use HostKitGenerator. -->
+		<ProjectReference
+			Include="..\..\src\SourceGenerators\SourceGenerators.csproj"
+			ReferenceOutputAssembly="false"
+			PrivateAssets="all"
+		/>
+		<Reference Include="..\..\src\SourceGenerators\bin\$(Configuration)\netstandard2.0\ZodSharp.SourceGeneration.dll" />
+	</ItemGroup>
+
+	<!--
+		The source generator is built against System.Collections.Immutable 10.0.0.0.
+		Net8.0 and net9.0 runtimes ship older versions, so bring the matching package
+		into the test process so the analyzer can load. Net10.0 already ships 10.0.0.0.
+	-->
+	<ItemGroup Condition="'$(TargetFramework)' == 'net8.0' or '$(TargetFramework)' == 'net9.0'">
+		<PackageReference Include="System.Collections.Immutable" VersionOverride="10.0.9" />
 	</ItemGroup>
 </Project>

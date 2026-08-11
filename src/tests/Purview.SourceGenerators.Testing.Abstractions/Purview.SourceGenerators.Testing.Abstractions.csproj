@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFrameworks></TargetFrameworks>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<IsPackable>false</IsPackable>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<DisableNamespacePrefixCheck>true</DisableNamespacePrefixCheck>
+		<NoWarn>$(NoWarn);IDE0130;</NoWarn>
+	</PropertyGroup>
+</Project>

@@ -40,9 +40,9 @@ public class ZodTypeTests
 	[Test]
 	public async Task Parse_GivenInvalidData_ThrowsZodException()
 	{
-		var exception = Assert.Throws<ZodException>(() => Z.String().Min(3).Parse("AB"));
+		var exception = Assert.Throws<ZodException>(static () => Z.String().Min(3).Parse("AB"));
 
 		await Assert.That(exception).IsNotNull();
-		await Assert.That(exception!.Errors).Count().IsEqualTo(1);
+		await Assert.That(exception.Errors).Count().IsEqualTo(1);
 	}
 }

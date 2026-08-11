@@ -100,7 +100,17 @@ public readonly record struct ValidationError
 		int? minimum = null,
 		int? maximum = null,
 		bool? inclusive = null
-	) => new(code, message, path.IsDefault ? [] : path, parameters, origin, minimum, maximum, inclusive);
+	) =>
+		new(
+			code,
+			message,
+			path.IsDefault ? [] : path,
+			parameters,
+			origin,
+			minimum,
+			maximum,
+			inclusive
+		);
 
 	ValidationError(
 		string code,

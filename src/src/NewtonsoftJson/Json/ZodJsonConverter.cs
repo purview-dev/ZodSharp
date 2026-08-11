@@ -84,7 +84,11 @@ sealed class ZodJsonConverter<T>(IZodSchema<T, T> schema) : JsonConverter<T>
 			TypeNameHandling = serializer.TypeNameHandling,
 		};
 
-		foreach (var converter in serializer.Converters.Where(converter => !ReferenceEquals(converter, this)))
+		foreach (
+			var converter in serializer.Converters.Where(converter =>
+				!ReferenceEquals(converter, this)
+			)
+		)
 		{
 			clone.Converters.Add(converter);
 		}

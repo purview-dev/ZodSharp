@@ -38,7 +38,9 @@ public class ZodTransformTests
 	[Test]
 	public async Task Transform_GivenTransformThrows_ReturnsFailure()
 	{
-		var result = Z.String().Transform<string>(_ => throw new InvalidOperationException("boom")).Validate("hello");
+		var result = Z.String()
+			.Transform<string>(static _ => throw new InvalidOperationException("boom"))
+			.Validate("hello");
 
 		await Assert.That(result.IsSuccess).IsFalse();
 		await Assert.That(result.Errors[0].Code).IsEqualTo("transform_error");

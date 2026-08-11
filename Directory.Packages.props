@@ -1,10 +1,20 @@
 <Project>
 	<PropertyGroup>
 		<CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
-		<!-- Keep compiler-facing Roslyn packages aligned with the minimum SDK pinned in global.json so analyser ProjectReferences load on build machines. -->
-		<RoslynCompilerVersion>[5.0.0]</RoslynCompilerVersion>
-		<RoslynAnalyzersVersion>[5.6.0]</RoslynAnalyzersVersion>
+		<!--
+			Keep compiler-facing Roslyn packages aligned with the minimum required by
+			Purview.SourceGeneratorFramework (Microsoft.CodeAnalysis 4.13.0.0). Consumers can still
+			compile net8.0 projects, but they need a build SDK that ships Roslyn 4.13+.
+		-->
+		<!--
+			Minimum Roslyn version that ships the APIs used by the source generator
+			(e.g. IncrementalGeneratorPostInitializationContext.AddEmbeddedAttributeDefinition).
+			Consumers can still target net8.0, but the build SDK must be .NET 10+.
+		-->
+		<RoslynCompilerVersion>[5.0.0,)</RoslynCompilerVersion>
+		<RoslynAnalyzersVersion>[5.6.0,)</RoslynAnalyzersVersion>
 		<TUnitVersion>1.61.0</TUnitVersion>
+		<PurviewSourceGenFramework>[1.0.0-prerelease.9,)</PurviewSourceGenFramework>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageVersion Include="Bogus" Version="35.6.5" />
@@ -13,7 +23,10 @@
 			Version="10.0.9"
 		/>
 		<PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.300" />
-		<PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="$(RoslynCompilerVersion)" />
+		<PackageVersion
+			Include="Microsoft.CodeAnalysis.CSharp"
+			Version="$(RoslynCompilerVersion)"
+		/>
 		<PackageVersion
 			Include="Microsoft.CodeAnalysis.Analyzers"
 			Version="$(RoslynAnalyzersVersion)"
@@ -25,5 +38,13 @@
 		<PackageVersion Include="System.Text.Json" Version="10.0.9" />
 		<PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
 		<PackageVersion Include="BenchmarkDotNet" Version="0.15.8" />
+		<PackageVersion
+			Include="Purview.SourceGeneratorFramework"
+			Version="$(PurviewSourceGenFramework)"
+		/>
+		<PackageVersion
+			Include="Purview.SourceGeneratorFramework.Testing.TUnit"
+			Version="$(PurviewSourceGenFramework)"
+		/>
 	</ItemGroup>
 </Project>

@@ -17,9 +17,9 @@ public class ZodException : Exception
 	/// </summary>
 	/// <param name="errors">The validation errors</param>
 	public ZodException(ImmutableArray<ValidationError> errors)
-		: base($"Validation failed with {errors.Length} error(s)")
+		: base($"Validation failed with {(errors.IsDefault ? 0 : errors.Length)} error(s)")
 	{
-		Errors = errors;
+		Errors = errors.IsDefault ? [] : errors;
 	}
 
 	/// <summary>
@@ -38,7 +38,9 @@ public class ZodException : Exception
 		if (Errors.IsDefaultOrEmpty)
 			return base.ToString();
 
-		var errorMessages = Errors.Select(e => $"{string.Join(".", e.Path)}: {e.Message} ({e.Code})");
+		var errorMessages = Errors.Select(static e =>
+			$"{string.Join(".", e.Path)}: {e.Message} ({e.Code})"
+		);
 
 		return $"{Message}\n{string.Join("\n", errorMessages)}";
 	}

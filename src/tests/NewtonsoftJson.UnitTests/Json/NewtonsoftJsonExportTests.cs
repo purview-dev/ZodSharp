@@ -16,7 +16,11 @@ public class NewtonsoftJsonExportTests
 		var result = schema.ValidateAndSerialize(user);
 
 		await Assert.That(result.IsSuccess).IsTrue();
-		await Assert.That(result.Value).IsEqualTo("""{"name":"John","age":30}""");
+		await Assert
+			.That(result.Value)
+			.IsEqualTo( /*lang=json,strict*/
+				"""{"name":"John","age":30}"""
+			);
 	}
 
 	[Test]
@@ -28,7 +32,7 @@ public class NewtonsoftJsonExportTests
 		var result = schema.ValidateAndSerialize(user);
 
 		await Assert.That(result.IsSuccess).IsFalse();
-		await Assert.That(result.Errors.Any(e => e.Path.Contains("Name"))).IsTrue();
+		await Assert.That(result.Errors.Any(static e => e.Path.Contains("Name"))).IsTrue();
 	}
 
 	[Test]
@@ -36,7 +40,9 @@ public class NewtonsoftJsonExportTests
 	{
 		IZodSchema<TestUser, TestUser> schema = null!;
 
-		var exception = Assert.Throws<ArgumentNullException>(() => schema.ValidateAndSerialize(new TestUser()));
+		var exception = Assert.Throws<ArgumentNullException>(() =>
+			schema.ValidateAndSerialize(new TestUser())
+		);
 
 		await Assert.That(exception!.ParamName).IsEqualTo("schema");
 	}
@@ -46,12 +52,19 @@ public class NewtonsoftJsonExportTests
 	{
 		var schema = new TestUserSchema();
 		var user = new TestUser { Name = "Jane", Age = 25 };
-		var settings = new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() };
+		var settings = new JsonSerializerSettings
+		{
+			ContractResolver = new CamelCasePropertyNamesContractResolver(),
+		};
 
 		var result = schema.ValidateAndSerialize(user, settings);
 
 		await Assert.That(result.IsSuccess).IsTrue();
-		await Assert.That(result.Value).IsEqualTo("""{"name":"Jane","age":25}""");
+		await Assert
+			.That(result.Value)
+			.IsEqualTo( /*lang=json,strict*/
+				"""{"name":"Jane","age":25}"""
+			);
 	}
 
 	[Test]
@@ -71,7 +84,7 @@ public class NewtonsoftJsonExportTests
 	{
 		var schema = new TestUserSchema();
 
-		var result = schema.ValidateAndSerialize((TestUser)null!);
+		var result = schema.ValidateAndSerialize(null!);
 
 		await Assert.That(result.IsSuccess).IsFalse();
 	}
@@ -160,12 +173,20 @@ public class NewtonsoftJsonExportTests
 
 			if (string.IsNullOrWhiteSpace(value.Name))
 			{
-				errors.Add(new ValidationError("too_small", "Name is required", [nameof(TestUser.Name)]));
+				errors.Add(
+					new ValidationError("too_small", "Name is required", [nameof(TestUser.Name)])
+				);
 			}
 
 			if (value.Age < 0)
 			{
-				errors.Add(new ValidationError("too_small", "Age must be non-negative", [nameof(TestUser.Age)]));
+				errors.Add(
+					new ValidationError(
+						"too_small",
+						"Age must be non-negative",
+						[nameof(TestUser.Age)]
+					)
+				);
 			}
 
 			return errors.Count == 0

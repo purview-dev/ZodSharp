@@ -18,7 +18,9 @@ public static class ProblemDetailsExtensions
 	)
 	{
 		if (result.IsSuccess)
-			throw new InvalidOperationException("Cannot create ProblemDetails from a successful validation result.");
+			throw new InvalidOperationException(
+				"Cannot create ProblemDetails from a successful validation result."
+			);
 
 		var errors = new Dictionary<string, string[]>(StringComparer.Ordinal);
 		var groupedMessages = new Dictionary<string, List<string>>(StringComparer.Ordinal);
@@ -75,7 +77,7 @@ public static class ProblemDetailsExtensions
 			Type = details.Type,
 			Detail = details.Detail,
 			Instance = details.Instance,
-			Extensions = { ["issues"] = details.Extensions["issues"]! },
+			Extensions = { ["issues"] = details.Extensions["issues"] },
 		};
 	}
 
@@ -89,9 +91,9 @@ public static class ProblemDetailsExtensions
 		{
 			var segment = path[i];
 			if (i > 0 && !segment.StartsWith('['))
-				builder.Append('.');
+				builder = builder.Append('.');
 
-			builder.Append(segment);
+			builder = builder.Append(segment);
 		}
 
 		return builder.ToString();
@@ -131,7 +133,10 @@ public sealed class ValidationIssue
 	/// <summary>
 	/// The issue path segments.
 	/// </summary>
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
+	[System.Diagnostics.CodeAnalysis.SuppressMessage(
+		"Performance",
+		"CA1819:Properties should not return arrays"
+	)]
 	public required string[] Path { get; init; }
 
 	/// <summary>

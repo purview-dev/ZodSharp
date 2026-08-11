@@ -1,3 +1,19 @@
 ﻿<Project>
+	<!--
+		Per-TFM package versions so each target gets the best-matched dependency.
+		When .NET 8 is dropped, remove the net8.0 entries below.
+	-->
+	<PropertyGroup>
+		<MicrosoftExtensionsDependencyInjectionAbstractionsVersion
+			Condition="'$(TargetFramework)' == 'net8.0'"
+			>8.0.2</MicrosoftExtensionsDependencyInjectionAbstractionsVersion>
+		<MicrosoftExtensionsDependencyInjectionAbstractionsVersion
+			Condition="'$(TargetFramework)' == 'net9.0'"
+			>9.0.0</MicrosoftExtensionsDependencyInjectionAbstractionsVersion>
+		<MicrosoftExtensionsDependencyInjectionAbstractionsVersion
+			Condition="'$(TargetFramework)' == 'net10.0'"
+			>10.0.9</MicrosoftExtensionsDependencyInjectionAbstractionsVersion>
+	</PropertyGroup>
+
 	<Import Sdk="Purview.DotNetProjectSdk" Project="Sdk.targets" />
 </Project>

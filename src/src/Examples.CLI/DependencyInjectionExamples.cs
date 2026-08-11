@@ -227,6 +227,7 @@ sealed class OrderService(IZodSchemaFactory schemaFactory)
 
 	public ValidationResult<User> ValidateUser(User user) => _schemaFactory.Validate(user);
 
-	public ValidationResult<Dictionary<string, object?>> ValidateProduct(Dictionary<string, object?> product) =>
-		_schemaFactory.Validate(product);
+	public ValidationResult<Dictionary<string, object?>> ValidateProduct(
+		Dictionary<string, object?> product
+	) => _schemaFactory.Validate(product);
 }

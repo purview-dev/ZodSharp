@@ -1,6 +1,5 @@
 using Microsoft.CodeAnalysis;
 using ZodSharp.SourceGenerators.Helpers;
-using ZodSharp.SourceGenerators.Templates;
 
 namespace ZodSharp.SourceGenerators;
 
@@ -9,10 +8,8 @@ namespace ZodSharp.SourceGenerators;
 /// Uses IIncrementalGenerator for better performance and incremental compilation support.
 /// </summary>
 [Generator]
-public sealed partial class ZodSchemaGenerator : IIncrementalGenerator, ILogSupport
+public sealed partial class ZodSchemaGenerator : IIncrementalGenerator
 {
-	GenerationLogger? _logger;
-
 	public void Initialize(IncrementalGeneratorInitializationContext context)
 	{
 		context.RegisterPostInitializationOutput(static ctx =>
@@ -23,32 +20,44 @@ public sealed partial class ZodSchemaGenerator : IIncrementalGenerator, ILogSupp
 			ctx.AddEmbeddedAttributeDefinition();
 
 			ctx.AddSource(
-				$"{nameof(TypeHelpers.ZodSchemaAttribute)}.g.cs",
-				EmbeddedResources.LoadTemplate(nameof(TypeHelpers.ZodSchemaAttribute))
+				$"{nameof(TypeLibrary.ZodSchemaAttribute)}.g.cs",
+				EmbeddedResources.Load(nameof(TypeLibrary.ZodSchemaAttribute))
 			);
 		});
 
-		var generationValueProviders = SourceGenHelpers.GetGeneratorValueProviders(context, _logger);
+		var generationValueProviders = SourceGenLibrary.GetGeneratorValueProviders(
+			context,
+			_logger
+		);
 
 		// Register source outputs
 		context.RegisterSourceOutput(
 			generationValueProviders,
-			static (spc, source) =>
+			(spc, source) =>
 			{
-				if (!source.IsSourceGeneratorEnabled)
+				if (source.IsSourceGeneratorEnabled)
 					return;
 
+				var isFatal = false;
 				foreach (var schema in source.ZodSchemas)
 				{
 					if (schema.HasDiagnostics)
 					{
-						ReportDiagnostics(spc, schema.Diagnostics, source.GenerationContext.Logger);
+						ReportDiagnostics(spc, schema.Diagnostics, _logger);
 					}
 
 					if (schema.IsFatal)
-						return;
+						isFatal = true;
+				}
 
-					Execute(schema.Value!, source.GenerationContext, spc);
+				if (isFatal)
+					return;
+
+				var allSchemas = DiscoverAllSchemas(source.ZodSchemas);
+				foreach (var (descriptor, isPrimary) in allSchemas)
+				{
+					source.GenerationContext.CreateCodeWriter();
+					BuildSchema(descriptor, source.GenerationContext, _logger, spc, isPrimary);
 				}
 			}
 		);

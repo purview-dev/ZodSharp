@@ -29,7 +29,9 @@ public class ZodArrayTests
 	[Test]
 	public async Task ArrayMax_GivenTooManyItems_ReturnsFailure()
 	{
-		var result = Z.Array(Z.Number()).Max(10).Validate([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0]);
+		var result = Z.Array(Z.Number())
+			.Max(10)
+			.Validate([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0]);
 
 		await Assert.That(result.IsSuccess).IsFalse();
 	}

@@ -5,7 +5,9 @@ namespace ZodSharp.SourceGenerators;
 partial class ZodSchemaGeneratorTests
 {
 	[Test]
-	public async Task CustomValidation_Runtime_SyncErrorsRemainPresent(CancellationToken cancellationToken)
+	public async Task CustomValidation_Runtime_SyncErrorsRemainPresent(
+		CancellationToken cancellationToken
+	)
 	{
 		var source =
 			@"
@@ -29,7 +31,9 @@ namespace Testing
 	}
 }";
 
-		var assembly = await CompileToAssemblyAsync(source, cancellationToken);
+		var driverResult = await GenerateZodAsync(source, cancellationToken);
+		var assembly = await Assert.That(driverResult.Assembly).IsNotNull();
+
 		var modelType = assembly.GetType("Testing.RuntimeModel")!;
 		var schemaType = assembly.GetType("Testing.RuntimeModelSchema")!;
 
@@ -41,11 +45,16 @@ namespace Testing
 		var isSuccessProp = result.GetType().GetProperty("IsSuccess")!;
 		var isSuccess = (bool)isSuccessProp.GetValue(result)!;
 
-		await Assert.That(isSuccess).IsFalse().Because("Sync validation should fail for short name");
+		await Assert
+			.That(isSuccess)
+			.IsFalse()
+			.Because("Sync validation should fail for short name");
 	}
 
 	[Test]
-	public async Task CustomValidation_Runtime_CustomErrorAddedToSyncErrors(CancellationToken cancellationToken)
+	public async Task CustomValidation_Runtime_CustomErrorAddedToSyncErrors(
+		CancellationToken cancellationToken
+	)
 	{
 		var source =
 			@"
@@ -72,7 +81,9 @@ namespace Testing
 	}
 }";
 
-		var assembly = await CompileToAssemblyAsync(source, cancellationToken);
+		var driverResult = await GenerateZodAsync(source, cancellationToken);
+		var assembly = await Assert.That(driverResult.Assembly).IsNotNull();
+
 		var modelType = assembly.GetType("Testing.MergeModel")!;
 		//var schemaType = assembly.GetType("Testing.MergeModelSchema")!;
 		var validatorType = assembly.GetType("Testing.MergeModelSchemaValidator")!;
@@ -96,7 +107,9 @@ namespace Testing
 	}
 
 	[Test]
-	public async Task CustomValidation_Runtime_BothSuccess_ProducesSuccess(CancellationToken cancellationToken)
+	public async Task CustomValidation_Runtime_BothSuccess_ProducesSuccess(
+		CancellationToken cancellationToken
+	)
 	{
 		var source =
 			@"
@@ -120,7 +133,9 @@ namespace Testing
 	}
 }";
 
-		var assembly = await CompileToAssemblyAsync(source, cancellationToken);
+		var driverResult = await GenerateZodAsync(source, cancellationToken);
+		var assembly = await Assert.That(driverResult.Assembly).IsNotNull();
+
 		var modelType = assembly.GetType("Testing.BothPassModel")!;
 		//var schemaType = assembly.GetType("Testing.BothPassModelSchema")!;
 		var validatorType = assembly.GetType("Testing.BothPassModelSchemaValidator")!;
@@ -141,7 +156,9 @@ namespace Testing
 	}
 
 	[Test]
-	public async Task CustomValidation_Runtime_CancellationTokenPassed(CancellationToken cancellationToken)
+	public async Task CustomValidation_Runtime_CancellationTokenPassed(
+		CancellationToken cancellationToken
+	)
 	{
 		var source =
 			@"
@@ -165,7 +182,9 @@ namespace Testing
 	}
 }";
 
-		var assembly = await CompileToAssemblyAsync(source, cancellationToken);
+		var driverResult = await GenerateZodAsync(source, cancellationToken);
+		var assembly = await Assert.That(driverResult.Assembly).IsNotNull();
+
 		var modelType = assembly.GetType("Testing.CancellationModel")!;
 		var validatorType = assembly.GetType("Testing.CancellationModelSchemaValidator")!;
 

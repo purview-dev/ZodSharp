@@ -1,8 +1,10 @@
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using ZodSharp.Core;
 using ZodSharp.Json;
+#if NETSTANDARD2_1_OR_GREATER
+using System.Text;
+#endif
 
 namespace ZodSharp;
 
@@ -35,7 +37,11 @@ public static class SystemTextJsonExtensions
 			var deserialized = JsonSerializer.Deserialize<T>(json, options);
 			return deserialized == null
 				? ValidationResult<T>.Failure(
-					new ValidationError("deserialization_failed", "Failed to deserialize JSON", EmptyPath)
+					new ValidationError(
+						"deserialization_failed",
+						"Failed to deserialize JSON",
+						EmptyPath
+					)
 				)
 				: schema.Validate(deserialized);
 		}
@@ -66,16 +72,24 @@ public static class SystemTextJsonExtensions
 		{
 			T? deserialized;
 #if NETSTANDARD2_1_OR_GREATER
-			// System.Text.Json on netstandard2.1 lacks the CancellationToken overload of DeserializeAsync.
+			// Older System.Text.Json packages lack the CancellationToken overload of DeserializeAsync.
 			using StreamReader reader = new(jsonStream, Encoding.UTF8, true, 1024, true);
 			var json = await reader.ReadToEndAsync();
 			deserialized = JsonSerializer.Deserialize<T>(json, options);
 #else
-			deserialized = await JsonSerializer.DeserializeAsync<T>(jsonStream, options, cancellationToken);
+			deserialized = await JsonSerializer.DeserializeAsync<T>(
+				jsonStream,
+				options,
+				cancellationToken
+			);
 #endif
 			return deserialized == null
 				? ValidationResult<T>.Failure(
-					new ValidationError("deserialization_failed", "Failed to deserialize JSON", EmptyPath)
+					new ValidationError(
+						"deserialization_failed",
+						"Failed to deserialize JSON",
+						EmptyPath
+					)
 				)
 				: await schema.ValidateAsync(deserialized, cancellationToken);
 		}
@@ -135,5 +149,7 @@ public static class SystemTextJsonExtensions
 	/// Creates a custom JsonConverter that validates using a Zod schema.
 	/// </summary>
 	public static JsonConverter<T> CreateValidatingConverter<T>(this IZodSchema<T, T> schema) =>
-		schema == null ? throw new ArgumentNullException(nameof(schema)) : new ZodJsonConverter<T>(schema);
+		schema == null
+			? throw new ArgumentNullException(nameof(schema))
+			: new ZodJsonConverter<T>(schema);
 }

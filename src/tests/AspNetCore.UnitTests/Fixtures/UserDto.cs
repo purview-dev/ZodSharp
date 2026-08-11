@@ -1,5 +1,3 @@
-using ZodSharp;
-
 namespace ZodSharp.AspNetCore.Fixtures;
 
 [ZodSchema]

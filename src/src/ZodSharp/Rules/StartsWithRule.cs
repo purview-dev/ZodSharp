@@ -25,7 +25,8 @@ public readonly record struct StartsWithRule : Core.IValidationRule<string>
 	/// </summary>
 	/// <param name="value">The value to validate</param>
 	/// <returns>True if valid, false otherwise</returns>
-	public bool IsValid(in string value) => value != null && value.StartsWith(_prefix, StringComparison.Ordinal);
+	public bool IsValid(in string value) =>
+		value != null && value.StartsWith(_prefix, StringComparison.Ordinal);
 
 	/// <summary>
 	/// Gets the error message for a failed validation.

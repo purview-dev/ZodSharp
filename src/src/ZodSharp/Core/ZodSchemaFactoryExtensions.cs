@@ -13,7 +13,10 @@ public static class ZodSchemaFactoryExtensions
 	/// Generated validators are expected to live in the same namespace as the target type and be named
 	/// <c>{TypeName}SchemaValidator</c>.
 	/// </summary>
-	public static IZodSchemaFactory RegisterFromAssembly(this IZodSchemaFactory factory, Assembly assembly)
+	public static IZodSchemaFactory RegisterFromAssembly(
+		this IZodSchemaFactory factory,
+		Assembly assembly
+	)
 	{
 		if (factory is null)
 			throw new ArgumentNullException(nameof(factory));
@@ -29,7 +32,11 @@ public static class ZodSchemaFactoryExtensions
 				?? throw new InvalidOperationException(
 					$"No generated validator '{validatorTypeName}' found for type '{targetType.FullName}' in assembly '{assembly.GetName().Name}'."
 				);
-			var validator = (IZodSchemaValidator)Activator.CreateInstance(validatorType)!;
+			if (Activator.CreateInstance(validatorType) is not IZodSchemaValidator validator)
+				throw new InvalidOperationException(
+					$"Generated validator '{validatorType.FullName}' does not implement IZodSchemaValidator."
+				);
+
 			factory.Register(targetType, validator);
 		}
 

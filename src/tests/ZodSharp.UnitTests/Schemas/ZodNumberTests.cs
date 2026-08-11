@@ -84,7 +84,7 @@ public class ZodNumberTests
 	[Test]
 	public async Task NumberMultipleOf_GivenZeroDivisor_ThrowsArgumentException()
 	{
-		var exception = Assert.Throws<ArgumentException>(() => Z.Number().MultipleOf(0));
+		var exception = Assert.Throws<ArgumentException>(static () => Z.Number().MultipleOf(0));
 
 		await Assert.That(exception).IsNotNull();
 	}

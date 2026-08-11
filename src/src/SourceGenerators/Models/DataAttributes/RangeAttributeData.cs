@@ -1,7 +1,17 @@
-﻿using System.Collections.Immutable;
+using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
+using Purview.SourceGeneratorFramework.Extensions;
+using ZodSharp.SourceGenerators.Helpers;
 
 namespace ZodSharp.SourceGenerators.Models.DataAttributes;
+
+enum RangeAttributeKind
+{
+	None,
+	Int32,
+	Double,
+	Converted,
+}
 
 readonly record struct RangeAttributeData(
 	bool Exists,
@@ -13,9 +23,7 @@ readonly record struct RangeAttributeData(
 	bool MaximumIsExclusive,
 	bool ConvertValueInInvariantCulture,
 	bool ParseLimitsInInvariantCulture,
-	string? ErrorMessage,
-	string? ErrorMessageResourceName,
-	INamedTypeSymbol? ErrorMessageResourceType
+	ValidationAttributeData ValidationAttribute
 )
 {
 	public static readonly RangeAttributeData Empty = new(
@@ -28,113 +36,95 @@ readonly record struct RangeAttributeData(
 		false,
 		false,
 		false,
-		null,
-		null,
-		null
+		ValidationAttributeData.Empty
 	);
 
+	public static RangeAttributeData FromAttributeData(ImmutableArray<AttributeData> attributes) =>
+		FromAttributeData(attributes, out _);
+
 	public static RangeAttributeData FromAttributeData(
-		GenerationContext generationContext,
-		ImmutableArray<AttributeData> attributes
+		ImmutableArray<AttributeData> attributes,
+		out AttributeData? attribute
 	)
 	{
-		if (generationContext.RangeAttribute is null)
-			return Empty;
-
+		attribute = null;
 		for (var i = 0; i < attributes.Length; i++)
 		{
-			var result = FromAttributeData(generationContext, attributes[i]);
-
+			var result = FromAttributeData(attributes[i]);
 			if (result.Exists)
+			{
+				attribute = attributes[i];
 				return result;
+			}
 		}
 
 		return Empty;
 	}
 
-	public static RangeAttributeData FromAttributeData(GenerationContext generationContext, AttributeData attributeData)
+	public static RangeAttributeData FromAttributeData(AttributeData attributeData)
 	{
-		var rangeAttributeSymbol = generationContext.RangeAttribute;
-		if (
-			rangeAttributeSymbol is null
-			|| !SymbolEqualityComparer.Default.Equals(attributeData.AttributeClass, rangeAttributeSymbol)
-		)
-		{
+		if (!TypeLibrary.DataAnnotations.RangeAttribute.Equals(attributeData.AttributeClass))
 			return Empty;
-		}
 
 		var constructorArguments = attributeData.ConstructorArguments;
 
 		if (constructorArguments.Length is not (2 or 3))
-			return Empty with { Exists = true, ErrorMessage = "RangeAttribute has an unsupported constructor shape." };
+		{
+			// RangeAttribute has an unsupported constructor shape
+			return Empty;
+		}
 
 		var kind = RangeAttributeKind.None;
 		object? minimum = null;
 		object? maximum = null;
 		ITypeSymbol? operandType = null;
 
-		switch (constructorArguments.Length)
+		if (constructorArguments.Length == 2)
 		{
 			// Min + Max
-			case 2:
-				ReadNumericRange(constructorArguments, ref kind, ref minimum, ref maximum, ref operandType);
-				break;
+			ReadNumericRange(
+				constructorArguments,
+				ref kind,
+				ref minimum,
+				ref maximum,
+				ref operandType
+			);
+		}
+		else if (constructorArguments.Length == 3)
+		{
 			// OperandType + Min + Max
-			case 3:
-				ReadConvertedRange(constructorArguments, ref kind, ref minimum, ref maximum, ref operandType);
-				break;
+			ReadConvertedRange(
+				constructorArguments,
+				ref kind,
+				ref minimum,
+				ref maximum,
+				ref operandType
+			);
 		}
-
-		var minimumIsExclusive = false;
-		var maximumIsExclusive = false;
-		var convertValueInInvariantCulture = false;
-		var parseLimitsInInvariantCulture = false;
-		string? errorMessage = null;
-		string? errorMessageResourceName = null;
-		INamedTypeSymbol? errorMessageResourceType = null;
-
-		foreach (var namedArgument in attributeData.NamedArguments)
+		else
 		{
-			switch (namedArgument.Key)
-			{
-				case nameof(MinimumIsExclusive) when namedArgument.Value.Value is bool value:
-					minimumIsExclusive = value;
-					break;
-
-				case nameof(MaximumIsExclusive) when namedArgument.Value.Value is bool value:
-					maximumIsExclusive = value;
-					break;
-
-				case nameof(ConvertValueInInvariantCulture) when namedArgument.Value.Value is bool value:
-					convertValueInInvariantCulture = value;
-					break;
-
-				case nameof(ParseLimitsInInvariantCulture) when namedArgument.Value.Value is bool value:
-					parseLimitsInInvariantCulture = value;
-					break;
-
-				case nameof(ErrorMessage) when namedArgument.Value.Value is string value:
-					errorMessage = value;
-					break;
-
-				case nameof(ErrorMessageResourceName) when namedArgument.Value.Value is string value:
-					errorMessageResourceName = value;
-					break;
-
-				case nameof(ErrorMessageResourceType) when namedArgument.Value.Value is INamedTypeSymbol value:
-					errorMessageResourceType = value;
-					break;
-			}
+			// This is kind of future proofing, but if the constructor arguments are not 2 or 3, we don't know how to handle it.
+			return Empty;
 		}
 
-		if (kind == RangeAttributeKind.None)
-		{
-			return Empty with
-			{
-				Exists = true,
-				ErrorMessage = errorMessage ?? "RangeAttribute contains unsupported range values.",
-			};
-		}
+		attributeData.TryGetNamedArgument<bool>(
+			nameof(MinimumIsExclusive),
+			out var minimumIsExclusive
+		);
+		attributeData.TryGetNamedArgument<bool>(
+			nameof(MaximumIsExclusive),
+			out var maximumIsExclusive
+		);
+		attributeData.TryGetNamedArgument<bool>(
+			nameof(ConvertValueInInvariantCulture),
+			out var convertValueInInvariantCulture
+		);
+		attributeData.TryGetNamedArgument<bool>(
+			nameof(ParseLimitsInInvariantCulture),
+			out var parseLimitsInInvariantCulture
+		);
+
+		var validationAttribute = ValidationAttributeData.FromAttributeData(attributeData);
 
 		// Success..!!
 		return new(
@@ -143,13 +133,11 @@ readonly record struct RangeAttributeData(
 			Minimum: minimum,
 			Maximum: maximum,
 			OperandType: operandType,
-			MinimumIsExclusive: minimumIsExclusive,
+			minimumIsExclusive,
 			MaximumIsExclusive: maximumIsExclusive,
 			ConvertValueInInvariantCulture: convertValueInInvariantCulture,
 			ParseLimitsInInvariantCulture: parseLimitsInInvariantCulture,
-			ErrorMessage: errorMessage,
-			ErrorMessageResourceName: errorMessageResourceName,
-			ErrorMessageResourceType: errorMessageResourceType
+			ValidationAttribute: validationAttribute
 		);
 	}
 
@@ -173,7 +161,10 @@ readonly record struct RangeAttributeData(
 			return;
 		}
 
-		if (minimumArgument.Value is double minimumValueDouble && maximumArgument.Value is double maximumValueDouble)
+		if (
+			minimumArgument.Value is double minimumValueDouble
+			&& maximumArgument.Value is double maximumValueDouble
+		)
 		{
 			kind = RangeAttributeKind.Double;
 			minimum = minimumValueDouble;

@@ -94,15 +94,17 @@ static class AdvancedExamples
 	{
 		Console.WriteLine("--- Transform Examples ---");
 
-		var upperSchema = Z.String().Transform(s => s.ToUpperInvariant());
+		var upperSchema = Z.String().Transform(static s => s.ToUpperInvariant());
 		var upperResult = upperSchema.Validate("hello");
 		Console.WriteLine($"Transform to upper: '{upperResult.Value}'");
 
-		var doubleSchema = Z.Number().Transform(n => n * 2);
+		var doubleSchema = Z.Number().Transform(static n => n * 2);
 		var doubleResult = doubleSchema.Validate(5.0);
 		Console.WriteLine($"Transform number (double): {doubleResult.Value}");
 
-		var chainSchema = Z.String().Transform(s => s.Trim()).Transform(static s => s.ToLowerInvariant());
+		var chainSchema = Z.String()
+			.Transform(static s => s.Trim())
+			.Transform(static s => s.ToLowerInvariant());
 		var chainResult = chainSchema.Validate("  HELLO  ");
 		Console.WriteLine($"Chained transforms: '{chainResult.Value}'");
 
@@ -113,15 +115,15 @@ static class AdvancedExamples
 	{
 		Console.WriteLine("--- Refinement Examples ---");
 
-		var evenSchema = Z.Number().Refine(n => n % 2 == 0, "Must be even");
+		var evenSchema = Z.Number().Refine(static n => n % 2 == 0, "Must be even");
 		var evenResult = evenSchema.Validate(4.0);
 		Console.WriteLine($"Even number validation: {evenResult.IsSuccess}");
 
 		var passwordSchema = Z.String()
 			.Min(8)
-			.Refine(s => s.Any(char.IsUpper), "Must contain uppercase")
-			.Refine(s => s.Any(char.IsLower), "Must contain lowercase")
-			.Refine(s => s.Any(char.IsDigit), "Must contain digit");
+			.Refine(static s => s.Any(char.IsUpper), "Must contain uppercase")
+			.Refine(static s => s.Any(char.IsLower), "Must contain lowercase")
+			.Refine(static s => s.Any(char.IsDigit), "Must contain digit");
 
 		var passwordResult = passwordSchema.Validate("Password123");
 		Console.WriteLine($"Password validation: {passwordResult.IsSuccess}");
@@ -141,7 +143,10 @@ static class AdvancedExamples
 			.Field("permissions", Z.Array(Z.String()))
 			.Build();
 
-		var union = Z.DiscriminatedUnion("type").Option("user", userSchema).Option("admin", adminSchema).Build();
+		var union = Z.DiscriminatedUnion("type")
+			.Option("user", userSchema)
+			.Option("admin", adminSchema)
+			.Build();
 
 		var userData = new Dictionary<string, object?> { { "type", "user" }, { "name", "John" } };
 
@@ -157,7 +162,10 @@ static class AdvancedExamples
 
 		ZodLazy<Dictionary<string, object?>>? categorySchema = null;
 		categorySchema = Z.Lazy(() =>
-			Z.Object().Field("name", Z.String()).Field("subcategories", Z.Array(categorySchema!)).Build()
+			Z.Object()
+				.Field("name", Z.String())
+				.Field("subcategories", Z.Array(categorySchema!))
+				.Build()
 		);
 
 		var categoryData = new Dictionary<string, object?>
@@ -227,9 +235,13 @@ static class AdvancedExamples
 	{
 		Console.WriteLine("--- JSON Integration Examples ---");
 
-		var schema = Z.Object().Field("name", Z.String().Min(1)).Field("age", Z.Number().Min(0)).Build();
+		var schema = Z.Object()
+			.Field("name", Z.String().Min(1))
+			.Field("age", Z.Number().Min(0))
+			.Build();
 
-		var json = """{"name": "John", "age": 30}""";
+		var json = /*lang=json,strict*/
+			"""{"name": "John", "age": 30}""";
 
 		var result = schema.DeserializeAndValidate(json);
 		Console.WriteLine($"JSON validation: {result.IsSuccess}");
@@ -239,10 +251,9 @@ static class AdvancedExamples
 
 		try
 		{
-			var deserialized = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, object?>>(
-				json,
-				settings
-			);
+			var deserialized = Newtonsoft.Json.JsonConvert.DeserializeObject<
+				Dictionary<string, object?>
+			>(json, settings);
 			Console.WriteLine($"JSON converter result: {deserialized != null}");
 		}
 		catch (Exception ex)
@@ -258,11 +269,11 @@ static class AdvancedExamples
 		Console.WriteLine("--- Default Value Examples ---");
 
 		var schema = Z.String().Default("unknown");
-		var result = schema.Validate(null!);
+		var result = schema.Validate(null);
 		Console.WriteLine($"Default value result: '{result.Value}'");
 
 		var validatedDefault = Z.String().Min(3).Default("default");
-		var validatedResult = validatedDefault.Validate(null!);
+		var validatedResult = validatedDefault.Validate(null);
 		Console.WriteLine($"Validated default result: '{validatedResult.Value}'");
 
 		Console.WriteLine();
@@ -274,7 +285,8 @@ static class AdvancedExamples
 
 		var schema = SchemaCache.GetOrCreate(
 			"user",
-			() => Z.Object().Field("name", Z.String().Min(1)).Field("age", Z.Number().Min(0)).Build()
+			static () =>
+				Z.Object().Field("name", Z.String().Min(1)).Field("age", Z.Number().Min(0)).Build()
 		);
 
 		if (SchemaCache.TryGet("user", out ZodObject cachedSchema))

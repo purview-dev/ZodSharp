@@ -3,19 +3,22 @@ name: Publish NuGet
 on:
   push:
     tags:
-      - 'v*.*.*'
+      - "v*.*.*"
 
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: '9.0.x'
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
 
       - name: Extract version from tag
         id: version
@@ -24,13 +27,13 @@ jobs:
           echo "version=$TAG" >> $GITHUB_OUTPUT
 
       - name: Restore
-        run: dotnet restore src/ZodSharp/ZodSharp.csproj
+        run: dotnet restore src/ZodSharp.slnx
 
       - name: Build (release)
-        run: dotnet build src/ZodSharp/ZodSharp.csproj -c Release --no-restore /p:Version=${{ steps.version.outputs.version }}
+        run: dotnet build src/ZodSharp.slnx -c Release --no-restore /p:Version=${{ steps.version.outputs.version }}
 
       - name: Pack
-        run: dotnet pack src/ZodSharp/ZodSharp.csproj -c Release --no-build -o ./nupkg /p:PackageVersion=${{ steps.version.outputs.version }}
+        run: dotnet pack src/ZodSharp.slnx -c Release --no-build -o ./nupkg /p:PackageVersion=${{ steps.version.outputs.version }}
 
       - name: Push to NuGet
         env:
@@ -40,4 +43,3 @@ jobs:
             --api-key "$NUGET_API_KEY" \
             --source "https://api.nuget.org/v3/index.json" \
             --skip-duplicate
-

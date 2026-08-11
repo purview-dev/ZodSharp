@@ -87,7 +87,8 @@ public class HeavyPerformanceTests
 		_wideObjectSchema.Validate(_wideObject);
 
 	[Benchmark]
-	public ValidationResult<string[][]> ValidateNestedArray() => _nestedArraySchema.Validate(_nestedArray);
+	public ValidationResult<string[][]> ValidateNestedArray() =>
+		_nestedArraySchema.Validate(_nestedArray);
 
 	[Benchmark]
 	public ValidationResult<string> ValidateStringWithManyRefinements()
@@ -99,9 +100,9 @@ public class HeavyPerformanceTests
 			.Regex(@"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
 			.StartsWith("user")
 			.EndsWith(".com")
-			.Refine(s => s.Contains('@', StringComparison.Ordinal), "Must contain @")
-			.Refine(s => s.Length > 10, "Must be longer than 10")
-			.Refine(s => s.Count(c => c == '.') <= 2, "Too many dots");
+			.Refine(static s => s.Contains('@', StringComparison.Ordinal), "Must contain @")
+			.Refine(static s => s.Length > 10, "Must be longer than 10")
+			.Refine(static s => s.Count(static c => c == '.') <= 2, "Too many dots");
 		return schema.Validate("user@example.com");
 	}
 
@@ -129,7 +130,7 @@ public class HeavyPerformanceTests
 				"items",
 				Enumerable
 					.Range(1, 100)
-					.Select(i => new Dictionary<string, object?>
+					.Select(static i => new Dictionary<string, object?>
 					{
 						{ "id", Guid.NewGuid().ToString() },
 						{ "name", $"Item {i}" },

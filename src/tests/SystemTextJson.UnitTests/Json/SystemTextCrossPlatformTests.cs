@@ -1,16 +1,25 @@
 using System.Text.Json;
-using ZodSharp.Core;
 
 namespace ZodSharp.Json;
 
 /// <summary>
-/// Cross-platform tests: C# (System.Text.Json) <--> TS (Zod).
+/// Cross-platform tests: C# (System.Text.Json) $lt;--$gt; TS (Zod).
 ///
 /// Mirrors the Newtonsoft cross-platform tests but using System.Text.Json.
 /// </summary>
 public class SystemTextCrossPlatformTests
 {
-	static readonly string FixturesDir = Path.Combine("..", "..", "..", "..", "..", "..", "src", "ts", "fixtures");
+	static readonly string FixturesDir = Path.Combine(
+		"..",
+		"..",
+		"..",
+		"..",
+		"..",
+		"..",
+		"src",
+		"ts",
+		"fixtures"
+	);
 	static readonly string OutputDir = Path.Combine(
 		"..",
 		"..",
@@ -25,7 +34,10 @@ public class SystemTextCrossPlatformTests
 	);
 	static readonly string ManifestPath = Path.Combine(FixturesDir, "manifest.json");
 
-	static readonly JsonSerializerOptions CamelCase = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+	static readonly JsonSerializerOptions CamelCase = new()
+	{
+		PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+	};
 
 	static readonly string[] InvalidKeys =
 	[
@@ -37,7 +49,10 @@ public class SystemTextCrossPlatformTests
 	];
 	static readonly string[] ValidKeys = ["valid", "validMinimal", "validMaxAge"];
 
-	static readonly JsonSerializerOptions ManifestOptions = new() { PropertyNameCaseInsensitive = true };
+	static readonly JsonSerializerOptions ManifestOptions = new()
+	{
+		PropertyNameCaseInsensitive = true,
+	};
 
 	static CrossPlatformManifest LoadManifest()
 	{
@@ -105,7 +120,9 @@ public class SystemTextCrossPlatformTests
 	}
 
 	[Test]
-	public async Task SystemText_SerializesValidData_CanBeParsedByTS_Zod()
+	public async Task SystemText_SerializesValidData_CanBeParsedByTS_Zod(
+		CancellationToken cancellationToken
+	)
 	{
 		// Serialize valid data using System.Text.Json, write to output dir for TS tests to consume
 		var schema = new CrossPlatformUserSchema();
@@ -122,19 +139,24 @@ public class SystemTextCrossPlatformTests
 
 		Directory.CreateDirectory(OutputDir);
 		var outputPath = Path.Combine(OutputDir, "systemtext-valid.json");
-		File.WriteAllText(outputPath, result.Value!);
+		await File.WriteAllTextAsync(outputPath, result.Value, cancellationToken);
 
 		// Verify the output is valid JSON with expected fields
-		var writtenJson = File.ReadAllText(outputPath);
+		var writtenJson = await File.ReadAllTextAsync(outputPath, cancellationToken);
 		await Assert.That(writtenJson).Contains("CSharp Export");
 		await Assert.That(writtenJson).Contains("42");
 		await Assert.That(writtenJson).Contains("csharp@example.com");
 	}
 
 	[Test]
-	public async Task SystemText_RoundTrip_TSFixture_ToCSharp_ToJSON_BackToCSharp()
+	public async Task SystemText_RoundTrip_TSFixture_ToCSharp_ToJSON_BackToCSharp(
+		CancellationToken cancellationToken
+	)
 	{
-		var originalJson = File.ReadAllText(Path.Combine(FixturesDir, "valid.json"));
+		var originalJson = await File.ReadAllTextAsync(
+			Path.Combine(FixturesDir, "valid.json"),
+			cancellationToken
+		);
 		var schema = new CrossPlatformUserSchema();
 
 		var firstResult = schema.DeserializeAndValidate(originalJson, CamelCase);

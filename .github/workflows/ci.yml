@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - develop
+      - main
+  pull_request:
+    branches:
+      - develop
+      - main
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+
+      - name: Restore
+        run: dotnet restore src/ZodSharp.slnx
+
+      - name: Build
+        run: dotnet build src/ZodSharp.slnx -c Release --no-restore
+
+      - name: Test
+        run: dotnet test src/ZodSharp.slnx -c Release --no-build --treenode-filter "/*/*/*/*/"
