@@ -14,7 +14,7 @@
 		<RoslynCompilerVersion>[5.0.0,)</RoslynCompilerVersion>
 		<RoslynAnalyzersVersion>[5.6.0,)</RoslynAnalyzersVersion>
 		<TUnitVersion>1.61.0</TUnitVersion>
-		<PurviewSourceGenFramework>[1.0.0-prerelease.11,)</PurviewSourceGenFramework>
+		<PurviewSourceGenFramework>[1.0.0-prerelease.12,)</PurviewSourceGenFramework>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageVersion Include="Bogus" Version="35.6.5" />
