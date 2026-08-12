@@ -67,7 +67,7 @@ partial class ZodSchemaGenerator
 		var propertyValueName = CodeGenHelpers.GetLocalIdentifier(propertyName, "Value");
 		var propertyLengthName = CodeGenHelpers.GetLocalIdentifier(propertyName, "Length");
 		generationContext.CodeWriter.WriteLine($"var {propertyValueName} = value.{propertyName};");
-		using (generationContext.CodeWriter.Block($"if ({propertyValueName} is not null)"))
+		using (generationContext.CodeWriter.OpenBlockScope($"if ({propertyValueName} is not null)"))
 		{
 			generationContext.CodeWriter.WriteLine($"var propertyValue = {propertyValueName};");
 			generationContext.CodeWriter.WriteLine(
@@ -104,7 +104,7 @@ partial class ZodSchemaGenerator
 				);
 
 				using (
-					generationContext.CodeWriter.Block(
+					generationContext.CodeWriter.OpenBlockScope(
 						$"if ({propertyLengthName} < {lengthAttr.MinimumLength})"
 					)
 				)
@@ -120,7 +120,7 @@ partial class ZodSchemaGenerator
 				}
 
 				using (
-					generationContext.CodeWriter.Block(
+					generationContext.CodeWriter.OpenBlockScope(
 						$"else if ({propertyLengthName} > {lengthAttr.MaximumLength})"
 					)
 				)
@@ -150,7 +150,7 @@ partial class ZodSchemaGenerator
 				);
 
 				using (
-					generationContext.CodeWriter.Block(
+					generationContext.CodeWriter.OpenBlockScope(
 						$"if ({propertyLengthName} < {minLengthAttr.Length})"
 					)
 				)
@@ -180,7 +180,7 @@ partial class ZodSchemaGenerator
 				);
 
 				using (
-					generationContext.CodeWriter.Block(
+					generationContext.CodeWriter.OpenBlockScope(
 						$"if ({propertyLengthName} > {maxLengthAttr.Length})"
 					)
 				)

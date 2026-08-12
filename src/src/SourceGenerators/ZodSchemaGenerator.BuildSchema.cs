@@ -216,7 +216,7 @@ partial class ZodSchemaGenerator
 			.WriteUsing(TypeLibrary.ZodSharpCoreNamespace)
 			.NewLine();
 
-		using (writer.WriteBlockNamespace(namespaceName))
+		using (writer.WriteBlockNamespaceScope(namespaceName))
 		{
 			writer.WriteXmlSummary(
 				$"Auto-generated schema validator for {className}.",
@@ -229,14 +229,14 @@ partial class ZodSchemaGenerator
 			foreach (var containingType in containingTypes)
 			{
 				wrapperBlocks.Add(
-					writer.WriteType(
+					writer.WriteTypeScope(
 						TypeHelpers.CreatePartialTypeDeclarationOptions(containingType)
 					)
 				);
 			}
 
 			using (
-				writer.WriteClass(
+				writer.WriteClassScope(
 					new(schemaName)
 					{
 						IsPartial = true,
@@ -250,8 +250,19 @@ partial class ZodSchemaGenerator
 				)
 			)
 			{
-				generationContext.CodeWriter.WriteLine(
-					$"static readonly {TypeLibrary.Collections.ImmutableArray.MakeGeneric(TypeLibrary.System.String)} EmptyPath = [];"
+				generationContext.CodeWriter.WriteField(
+					new(
+						"EmptyPath",
+						TypeLibrary.Collections.ImmutableArray.MakeGeneric(
+							TypeLibrary.System.String
+						)
+					)
+					{
+						Accessibility = TypeDeclarationAccessibility.Private,
+						IsStatic = true,
+						IsReadOnly = true,
+						Initializer = "[]",
+					}
 				);
 
 				GeneratePathFields(generationContext, classSymbol);
@@ -371,7 +382,7 @@ partial class ZodSchemaGenerator
 			$"DI-friendly validator adapter for {classSymbol.Name}, delegating to {schemaName}."
 		);
 		using (
-			generationContext.CodeWriter.Block(
+			generationContext.CodeWriter.OpenBlockScope(
 				$"{modifier} sealed partial class {schemaName}Validator : global::ZodSharp.Core.IZodSchemaValidator<{fullTypeName}>"
 			)
 		)
@@ -379,7 +390,7 @@ partial class ZodSchemaGenerator
 			generationContext.CodeWriter.WriteLine(
 				$"public global::ZodSharp.Core.ValidationResult<{fullTypeName}> Validate({fullTypeName} value)"
 			);
-			using (generationContext.CodeWriter.Block())
+			using (generationContext.CodeWriter.OpenBlockScope())
 			{
 				generationContext.CodeWriter.WriteLine($"return {schemaName}.Validate(value);");
 			}
@@ -423,7 +434,7 @@ partial class ZodSchemaGenerator
 			generationContext.CodeWriter.WriteLine(
 				$"public global::System.Threading.Tasks.ValueTask<{validationResultGlobal}<{fullTypeName}>> ValidateAsync({fullTypeName} value, {ctParam})"
 			);
-			using (generationContext.CodeWriter.Block())
+			using (generationContext.CodeWriter.OpenBlockScope())
 			{
 				generationContext.CodeWriter.WriteLine(
 					$"return global::System.Threading.Tasks.ValueTask.FromResult({schemaName}.Validate(value));"
@@ -437,7 +448,7 @@ partial class ZodSchemaGenerator
 		generationContext.CodeWriter.WriteLine(
 			$"public async global::System.Threading.Tasks.ValueTask<{validationResultGlobal}<{fullTypeName}>> ValidateAsync({fullTypeName} value, {ctParam})"
 		);
-		using (generationContext.CodeWriter.Block())
+		using (generationContext.CodeWriter.OpenBlockScope())
 		{
 			generationContext.CodeWriter.WriteLine(
 				$"var syncResult = {schemaName}.Validate(value);"
@@ -476,19 +487,19 @@ partial class ZodSchemaGenerator
 				$"public static {TypeLibrary.ValidationResult.MakeGeneric(fullTypeName)} Validate({fullTypeName} value)"
 			);
 
-		using (writer.Block())
+		using (writer.OpenBlockScope())
 		{
 			if (TypeHelpers.CanBeNull(classSymbol))
 			{
-				writer.Block(
+				writer.WriteBlock(
 					"if (value == null)",
 					ifBody =>
-						ifBody.Block(
+						ifBody.WriteDelimitedBlock(
 							$"return {TypeLibrary.ValidationResult.MakeGeneric(fullTypeName)}.Failure",
 							"(",
 							");",
 							failureArguments =>
-								failureArguments.Block(
+								failureArguments.WriteDelimitedBlock(
 									$"{TypeLibrary.ValidationError}.Create",
 									"(",
 									")",
@@ -518,7 +529,7 @@ partial class ZodSchemaGenerator
 			foreach (var property in properties)
 				GeneratePropertyValidation(generationContext, logger, property, diagnostics);
 
-			using (writer.Block("if (errors is not null)"))
+			using (writer.OpenBlockScope("if (errors is not null)"))
 			{
 				writer.WriteLine(
 					$"return {TypeLibrary.ValidationResult}<{fullTypeName}>.Failure(errors);"
@@ -584,7 +595,7 @@ partial class ZodSchemaGenerator
 				errorMessage
 			);
 
-			block = generationContext.CodeWriter.Block("else");
+			block = generationContext.CodeWriter.OpenBlockScope("else");
 			GenerateValueSetValidations(
 				generationContext,
 				logger,
@@ -608,7 +619,9 @@ partial class ZodSchemaGenerator
 			);
 
 			if (canBeNull)
-				block = generationContext.CodeWriter.Block($"if (value.{propertyName} != null)");
+				block = generationContext.CodeWriter.OpenBlockScope(
+					$"if (value.{propertyName} != null)"
+				);
 		}
 
 		GenerateTypeSpecificValidations(
@@ -873,7 +886,7 @@ partial class ZodSchemaGenerator
 		);
 
 		using (
-			generationContext.CodeWriter.Block(
+			generationContext.CodeWriter.OpenBlockScope(
 				$"if (!global::System.Collections.Generic.EqualityComparer<object>.Default.Equals(value.{propertyName}, value.{otherPropertyName}))"
 			)
 		)
@@ -942,24 +955,32 @@ partial class ZodSchemaGenerator
 		generationContext.CodeWriter.WriteLine(
 			$"var {collectionValueName} = value.{propertyName};"
 		);
-		using (generationContext.CodeWriter.Block($"if ({collectionValueName} is not null)"))
+		using (
+			generationContext.CodeWriter.OpenBlockScope($"if ({collectionValueName} is not null)")
+		)
 		{
 			generationContext.CodeWriter.WriteLine($"var {indexName} = 0;");
 			using (
-				generationContext.CodeWriter.Block(
+				generationContext.CodeWriter.OpenBlockScope(
 					$"foreach (var {itemValueName} in {collectionValueName})"
 				)
 			)
 			{
 				if (canItemBeNull)
 				{
-					using (generationContext.CodeWriter.Block($"if ({itemValueName} is not null)"))
+					using (
+						generationContext.CodeWriter.OpenBlockScope(
+							$"if ({itemValueName} is not null)"
+						)
+					)
 					{
 						generationContext.CodeWriter.WriteLine(
 							$"var {itemResultName} = {schemaTypeName}.Validate({itemValueName});"
 						);
 						using (
-							generationContext.CodeWriter.Block($"if (!{itemResultName}.IsSuccess)")
+							generationContext.CodeWriter.OpenBlockScope(
+								$"if (!{itemResultName}.IsSuccess)"
+							)
 						)
 						{
 							generationContext.CodeWriter.WriteLine(
@@ -973,7 +994,11 @@ partial class ZodSchemaGenerator
 					generationContext.CodeWriter.WriteLine(
 						$"var {itemResultName} = {schemaTypeName}.Validate({itemValueName});"
 					);
-					using (generationContext.CodeWriter.Block($"if (!{itemResultName}.IsSuccess)"))
+					using (
+						generationContext.CodeWriter.OpenBlockScope(
+							$"if (!{itemResultName}.IsSuccess)"
+						)
+					)
 					{
 						generationContext.CodeWriter.WriteLine(
 							$"AddNestedErrors(ref errors, {itemResultName}, {CodeGenHelpers.Quote(propertyName)}, {indexName});"
@@ -1008,12 +1033,18 @@ partial class ZodSchemaGenerator
 		generationContext.CodeWriter.WriteLine($"var {propertyValueName} = value.{propertyName};");
 		if (canBeNull)
 		{
-			using (generationContext.CodeWriter.Block($"if ({propertyValueName} is not null)"))
+			using (
+				generationContext.CodeWriter.OpenBlockScope($"if ({propertyValueName} is not null)")
+			)
 			{
 				generationContext.CodeWriter.WriteLine(
 					$"var {nestedResultName} = {schemaTypeName}.Validate({propertyValueName});"
 				);
-				using (generationContext.CodeWriter.Block($"if (!{nestedResultName}.IsSuccess)"))
+				using (
+					generationContext.CodeWriter.OpenBlockScope(
+						$"if (!{nestedResultName}.IsSuccess)"
+					)
+				)
 				{
 					generationContext.CodeWriter.WriteLine(
 						$"AddNestedErrors(ref errors, {nestedResultName}, {CodeGenHelpers.Quote(propertyName)});"
@@ -1026,7 +1057,9 @@ partial class ZodSchemaGenerator
 			generationContext.CodeWriter.WriteLine(
 				$"var {nestedResultName} = {schemaTypeName}.Validate({propertyValueName});"
 			);
-			using (generationContext.CodeWriter.Block($"if (!{nestedResultName}.IsSuccess)"))
+			using (
+				generationContext.CodeWriter.OpenBlockScope($"if (!{nestedResultName}.IsSuccess)")
+			)
 			{
 				generationContext.CodeWriter.WriteLine(
 					$"AddNestedErrors(ref errors, {nestedResultName}, {CodeGenHelpers.Quote(propertyName)});"
@@ -1131,7 +1164,7 @@ partial class ZodSchemaGenerator
 		writer.WriteLine(
 			$"static void AddError(ref {TypeLibrary.Collections.List.MakeGeneric(TypeLibrary.ValidationError)}? errors, {TypeLibrary.ValidationError} error)"
 		);
-		using (writer.Block())
+		using (writer.OpenBlockScope())
 		{
 			writer.WriteLine(
 				$"(errors ??= new {TypeLibrary.Collections.List.MakeGeneric(TypeLibrary.ValidationError)}()).Add(error);"
@@ -1140,19 +1173,19 @@ partial class ZodSchemaGenerator
 
 		writer.WriteLine().Comment("THIS ONE");
 		using (
-			writer.Block(
+			writer.OpenBlockScope(
 				$"static void AddNestedErrors<T>(ref {TypeLibrary.Collections.List.MakeGeneric(TypeLibrary.ValidationError)}? errors, {TypeLibrary.ValidationResult}<T> nestedResult, string prefix)"
 			)
 		)
 		{
-			using (writer.Block("foreach (var error in nestedResult.Errors)"))
+			using (writer.OpenBlockScope("foreach (var error in nestedResult.Errors)"))
 			{
-				writer.Block(
+				writer.WriteDelimitedBlock(
 					"AddError",
 					"(",
 					");",
 					errorArguments =>
-						errorArguments.Block(
+						errorArguments.WriteDelimitedBlock(
 							$"ref errors, {TypeLibrary.ValidationError}.Create",
 							"(",
 							")",
@@ -1176,12 +1209,12 @@ partial class ZodSchemaGenerator
 
 		writer.WriteLine();
 		using (
-			writer.Block(
+			writer.OpenBlockScope(
 				$"static void AddNestedErrors<T>(ref {TypeLibrary.Collections.List.MakeGeneric(TypeLibrary.ValidationError)}? errors, {TypeLibrary.ValidationResult}<T> nestedResult, string prefix, int index)"
 			)
 		)
 		{
-			using (writer.Block("foreach (var error in nestedResult.Errors)"))
+			using (writer.OpenBlockScope("foreach (var error in nestedResult.Errors)"))
 			{
 				writer.WriteLine($"AddError(ref errors, {TypeLibrary.ValidationError}.Create(");
 				writer.Indent();
@@ -1204,7 +1237,7 @@ partial class ZodSchemaGenerator
 		writer.WriteLine(
 			"static string FormatCount(int count, string singularNoun, string pluralNoun)"
 		);
-		using (writer.Block())
+		using (writer.OpenBlockScope())
 		{
 			writer.WriteLine(
 				"return count == 1 ? $\"1 {singularNoun}\" : $\"{count} {pluralNoun}\";"
@@ -1220,7 +1253,7 @@ partial class ZodSchemaGenerator
 			"Validates and returns the value, throwing an exception if validation fails."
 		);
 		using (
-			generationContext.CodeWriter.Block(
+			generationContext.CodeWriter.OpenBlockScope(
 				$"public static {fullTypeName} Parse({fullTypeName} value)"
 			)
 		)
@@ -1244,12 +1277,12 @@ partial class ZodSchemaGenerator
 		var validationResultType = TypeLibrary.ValidationResult.MakeGeneric(fullTypeName);
 
 		void WriteFailure(CodeWriter body, string fallbackMessage) =>
-			body.Block(
+			body.WriteDelimitedBlock(
 				$"return {validationResultType}.Failure",
 				"(",
 				");",
 				failureArguments =>
-					failureArguments.Block(
+					failureArguments.WriteDelimitedBlock(
 						$"{TypeLibrary.ValidationError}.Create",
 						"(",
 						")",
@@ -1269,7 +1302,7 @@ partial class ZodSchemaGenerator
 			"Equivalent to Zod's .and() semantics applied to a value."
 		);
 
-		writer.Block(
+		writer.WriteBlock(
 			$"public static {validationResultType} ApplyAnd("
 				+ $"{fullTypeName} value, "
 				+ $"global::System.Func<{fullTypeName}, bool> additionalValidation, "
@@ -1278,14 +1311,14 @@ partial class ZodSchemaGenerator
 			{
 				method.WriteLine("var result = Validate(value);");
 
-				method.Block(
+				method.WriteBlock(
 					"if (!result.IsSuccess)",
 					ifBody => ifBody.WriteLine("return result;")
 				);
 
 				method.NewLine();
 
-				method.Block(
+				method.WriteBlock(
 					"if (!additionalValidation(value))",
 					ifBody =>
 						WriteFailure(ifBody, $"Additional validation failed for {classSymbol.Name}")
@@ -1303,7 +1336,7 @@ partial class ZodSchemaGenerator
 			"Equivalent to Zod's .or() semantics applied to a value."
 		);
 
-		writer.Block(
+		writer.WriteBlock(
 			$"public static {validationResultType} ApplyOr("
 				+ $"{fullTypeName} value, "
 				+ $"global::System.Func<{fullTypeName}, bool> alternativeValidation, "
@@ -1312,11 +1345,14 @@ partial class ZodSchemaGenerator
 			{
 				method.WriteLine("var result = Validate(value);");
 
-				method.Block("if (result.IsSuccess)", ifBody => ifBody.WriteLine("return result;"));
+				method.WriteBlock(
+					"if (result.IsSuccess)",
+					ifBody => ifBody.WriteLine("return result;")
+				);
 
 				method.NewLine();
 
-				method.Block(
+				method.WriteBlock(
 					"if (alternativeValidation(value))",
 					ifBody => ifBody.WriteLine($"return {validationResultType}.Success(value);")
 				);
@@ -1334,7 +1370,7 @@ partial class ZodSchemaGenerator
 			"Equivalent to Zod's .refine() semantics applied to a value."
 		);
 
-		writer.Block(
+		writer.WriteBlock(
 			$"public static {validationResultType} ApplyRefine("
 				+ $"{fullTypeName} value, "
 				+ $"global::System.Func<{fullTypeName}, bool> refinement, "
@@ -1343,14 +1379,14 @@ partial class ZodSchemaGenerator
 			{
 				method.WriteLine("var result = Validate(value);");
 
-				method.Block(
+				method.WriteBlock(
 					"if (!result.IsSuccess)",
 					ifBody => ifBody.WriteLine("return result;")
 				);
 
 				method.NewLine();
 
-				method.Block(
+				method.WriteBlock(
 					"if (!refinement(value))",
 					ifBody =>
 						WriteFailure(ifBody, $"Refinement validation failed for {classSymbol.Name}")

@@ -53,13 +53,13 @@ partial class ZodSchemaGenerator
 			CodeGenHelpers.Quote(maximumDisplay)
 		);
 
-		using (generationContext.CodeWriter.Block())
+		using (generationContext.CodeWriter.OpenBlockScope())
 		{
 			generationContext.CodeWriter.WriteLine(
 				$"var {propertyValueName} = value.{propertyName};"
 			);
 			using (
-				generationContext.CodeWriter.Block(
+				generationContext.CodeWriter.OpenBlockScope(
 					$"if ({propertyValueName} {minComparison} {GetRangeMinimumFieldName(propertyName)} || {propertyValueName} {maxComparison} {GetRangeMaximumFieldName(propertyName)})"
 				)
 			)

@@ -33,7 +33,7 @@ partial class ZodSchemaGenerator
 				$"global::System.String.Format(global::System.Globalization.CultureInfo.CurrentCulture, {CodeGenHelpers.Quote(emailAttribute.ValidationAttributeData.ErrorMessage ?? "Field '{0}' must be a valid email address")}, {CodeGenHelpers.Quote(GetDisplayName(property))})";
 
 			using (
-				generationContext.CodeWriter.Block(
+				generationContext.CodeWriter.OpenBlockScope(
 					$"if (!global::ZodSharp.Rules.EmailRule.EmailRegex.IsMatch(value.{propertyName}))"
 				)
 			)
@@ -71,13 +71,13 @@ partial class ZodSchemaGenerator
 				CodeGenHelpers.Quote(regularExpressionAttribute.Pattern ?? string.Empty)
 			);
 
-			using (generationContext.CodeWriter.Block())
+			using (generationContext.CodeWriter.OpenBlockScope())
 			{
 				generationContext.CodeWriter.WriteLine(
 					$"var {propertyValueName} = value.{propertyName};"
 				);
 				using (
-					generationContext.CodeWriter.Block(
+					generationContext.CodeWriter.OpenBlockScope(
 						$"if ({propertyValueName}.Length != 0 && !{GetRegexFieldName(propertyName)}.IsMatch({propertyValueName}))"
 					)
 				)
@@ -130,13 +130,13 @@ partial class ZodSchemaGenerator
 			CodeGenHelpers.Quote($"Field '{displayName}' must be a valid URL.")
 		);
 
-		using (generationContext.CodeWriter.Block())
+		using (generationContext.CodeWriter.OpenBlockScope())
 		{
 			generationContext.CodeWriter.WriteLine(
 				$"var {propertyValueName} = value.{propertyName};"
 			);
 			using (
-				generationContext.CodeWriter.Block(
+				generationContext.CodeWriter.OpenBlockScope(
 					$"if ({propertyValueName}.Length != 0 && !new global::ZodSharp.Rules.UrlRule().IsValid({propertyValueName}))"
 				)
 			)
@@ -177,13 +177,13 @@ partial class ZodSchemaGenerator
 			CodeGenHelpers.Quote($"Field '{displayName}' must be a valid phone number.")
 		);
 
-		using (generationContext.CodeWriter.Block())
+		using (generationContext.CodeWriter.OpenBlockScope())
 		{
 			generationContext.CodeWriter.WriteLine(
 				$"var {propertyValueName} = value.{propertyName};"
 			);
 			using (
-				generationContext.CodeWriter.Block(
+				generationContext.CodeWriter.OpenBlockScope(
 					$"if ({propertyValueName}.Length != 0 && !new global::ZodSharp.Rules.PhoneRule().IsValid({propertyValueName}))"
 				)
 			)
@@ -224,13 +224,13 @@ partial class ZodSchemaGenerator
 			CodeGenHelpers.Quote($"Field '{displayName}' must be a valid credit card number.")
 		);
 
-		using (generationContext.CodeWriter.Block())
+		using (generationContext.CodeWriter.OpenBlockScope())
 		{
 			generationContext.CodeWriter.WriteLine(
 				$"var {propertyValueName} = value.{propertyName};"
 			);
 			using (
-				generationContext.CodeWriter.Block(
+				generationContext.CodeWriter.OpenBlockScope(
 					$"if ({propertyValueName}.Length != 0 && !new global::ZodSharp.Rules.CreditCardRule().IsValid({propertyValueName}))"
 				)
 			)
@@ -271,13 +271,13 @@ partial class ZodSchemaGenerator
 			CodeGenHelpers.Quote($"Field '{displayName}' must be a valid Base64 string.")
 		);
 
-		using (generationContext.CodeWriter.Block())
+		using (generationContext.CodeWriter.OpenBlockScope())
 		{
 			generationContext.CodeWriter.WriteLine(
 				$"var {propertyValueName} = value.{propertyName};"
 			);
 			using (
-				generationContext.CodeWriter.Block(
+				generationContext.CodeWriter.OpenBlockScope(
 					$"if ({propertyValueName}.Length != 0 && !new global::ZodSharp.Rules.Base64StringRule().IsValid({propertyValueName}))"
 				)
 			)
@@ -328,7 +328,7 @@ partial class ZodSchemaGenerator
 				);
 			else
 			{
-				using (generationContext.CodeWriter.Block())
+				using (generationContext.CodeWriter.OpenBlockScope())
 				{
 					var tooSmallMessage = BuildMessageExpression(
 						logger,
@@ -357,14 +357,16 @@ partial class ZodSchemaGenerator
 						$"var {propertyValueName} = value.{propertyName};"
 					);
 					using (
-						generationContext.CodeWriter.Block($"if ({propertyValueName} is not null)")
+						generationContext.CodeWriter.OpenBlockScope(
+							$"if ({propertyValueName} is not null)"
+						)
 					)
 					{
 						generationContext.CodeWriter.WriteLine(
 							$"var {propertyLengthName} = {propertyValueName}.Length;"
 						);
 						using (
-							generationContext.CodeWriter.Block(
+							generationContext.CodeWriter.OpenBlockScope(
 								$"if ({propertyLengthName} < {lengthAttr.MinimumLength})"
 							)
 						)
@@ -380,7 +382,7 @@ partial class ZodSchemaGenerator
 						}
 
 						using (
-							generationContext.CodeWriter.Block(
+							generationContext.CodeWriter.OpenBlockScope(
 								$"else if ({propertyLengthName} > {lengthAttr.MaximumLength})"
 							)
 						)
@@ -407,7 +409,7 @@ partial class ZodSchemaGenerator
 		);
 		if (stringLengthAttr.Exists)
 		{
-			using (generationContext.CodeWriter.Block())
+			using (generationContext.CodeWriter.OpenBlockScope())
 			{
 				var tooSmallMessage = BuildMessageExpression(
 					logger,
@@ -441,7 +443,7 @@ partial class ZodSchemaGenerator
 				if (stringLengthAttr.MinimumLength > 0)
 				{
 					using (
-						generationContext.CodeWriter.Block(
+						generationContext.CodeWriter.OpenBlockScope(
 							$"if ({propertyLengthName} < {stringLengthAttr.MinimumLength})"
 						)
 					)
@@ -458,7 +460,7 @@ partial class ZodSchemaGenerator
 				}
 
 				using (
-					generationContext.CodeWriter.Block(
+					generationContext.CodeWriter.OpenBlockScope(
 						$"if ({propertyLengthName} > {stringLengthAttr.MaximumLength})"
 					)
 				)
@@ -483,7 +485,7 @@ partial class ZodSchemaGenerator
 		);
 		if (minLengthAttr.Exists && minLengthAttr.Length > 0)
 		{
-			using (generationContext.CodeWriter.Block())
+			using (generationContext.CodeWriter.OpenBlockScope())
 			{
 				var messageExpression = BuildMessageExpression(
 					logger,
@@ -503,7 +505,7 @@ partial class ZodSchemaGenerator
 					$"var {propertyLengthName} = {propertyValueName}.Length;"
 				);
 				using (
-					generationContext.CodeWriter.Block(
+					generationContext.CodeWriter.OpenBlockScope(
 						$"if ({propertyLengthName} < {minLengthAttr.Length})"
 					)
 				)
@@ -528,7 +530,7 @@ partial class ZodSchemaGenerator
 		);
 		if (maxLengthAttr.Exists && maxLengthAttr.Length >= 0)
 		{
-			using (generationContext.CodeWriter.Block())
+			using (generationContext.CodeWriter.OpenBlockScope())
 			{
 				var messageExpression = BuildMessageExpression(
 					logger,
@@ -548,7 +550,7 @@ partial class ZodSchemaGenerator
 					$"var {propertyLengthName} = {propertyValueName}.Length;"
 				);
 				using (
-					generationContext.CodeWriter.Block(
+					generationContext.CodeWriter.OpenBlockScope(
 						$"if ({propertyLengthName} > {maxLengthAttr.Length})"
 					)
 				)

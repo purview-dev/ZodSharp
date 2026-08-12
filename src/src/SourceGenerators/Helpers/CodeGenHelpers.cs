@@ -79,23 +79,22 @@ static class CodeGenHelpers
 		string errorMessage
 	)
 	{
-		using (writer.Block($"if ({comparison})"))
+		using (writer.OpenBlockScope($"if ({comparison})"))
 		{
 			writer.WriteLine(
 				$"errors ??= new {TypeLibrary.Collections.List.MakeGeneric(TypeLibrary.ValidationError)}();"
 			);
-			using (
-				writer.Block(
-					$"errors.Add(new {TypeLibrary.ValidationError}",
-					separator: "(",
-					closingSeparator: "));"
-				)
-			)
-			{
-				writer.WriteIndent().Quote(errorCode).WriteLine(",");
-				writer.WriteIndent().Quote(errorMessage).WriteLine(",");
-				writer.WriteLine($"new[] {{ \"{propertyName}\" }}");
-			}
+			writer.OpenDelimitedBlock(
+				$"errors.Add(new {TypeLibrary.ValidationError}",
+				"(",
+				"));",
+				bodyWriter =>
+				{
+					bodyWriter.Write(errorCode.Surround()).WriteLine(",");
+					bodyWriter.Write(errorMessage.Surround()).WriteLine(",");
+					bodyWriter.WriteLine($"new[] {{ \"{propertyName}\" }}");
+				}
+			);
 		}
 
 		return writer.NewLine();

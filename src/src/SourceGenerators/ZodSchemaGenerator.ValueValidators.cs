@@ -93,13 +93,13 @@ partial class ZodSchemaGenerator
 			CodeGenHelpers.Quote(displayValues)
 		);
 
-		using (generationContext.CodeWriter.Block())
+		using (generationContext.CodeWriter.OpenBlockScope())
 		{
 			generationContext.CodeWriter.WriteLine(
 				$"var {propertyValueName} = value.{propertyName};"
 			);
 			using (
-				generationContext.CodeWriter.Block(
+				generationContext.CodeWriter.OpenBlockScope(
 					$"if (!({comparisonExpression.Replace("propertyValue", propertyValueName)}))"
 				)
 			)
@@ -171,13 +171,13 @@ partial class ZodSchemaGenerator
 			CodeGenHelpers.Quote(displayValues)
 		);
 
-		using (generationContext.CodeWriter.Block())
+		using (generationContext.CodeWriter.OpenBlockScope())
 		{
 			generationContext.CodeWriter.WriteLine(
 				$"var {propertyValueName} = value.{propertyName};"
 			);
 			using (
-				generationContext.CodeWriter.Block(
+				generationContext.CodeWriter.OpenBlockScope(
 					$"if ({comparisonExpression.Replace("propertyValue", propertyValueName)})"
 				)
 			)
