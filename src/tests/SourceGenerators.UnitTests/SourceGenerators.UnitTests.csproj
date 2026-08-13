@@ -11,7 +11,6 @@
 			ReferenceOutputAssembly="false"
 			PrivateAssets="all"
 		/>
-		<Reference Include="..\..\src\SourceGenerators\bin\$(Configuration)\netstandard2.0\ZodSharp.SourceGeneration.dll" />
 	</ItemGroup>
 
 	<!--
