@@ -49,10 +49,7 @@ public class ZodNumber : ZodType<double>
 	/// Adds an integer validation (must be a whole number).
 	/// </summary>
 	/// <returns>This schema for method chaining</returns>
-	[System.Diagnostics.CodeAnalysis.SuppressMessage(
-		"Naming",
-		"CA1720:Identifier contains type name"
-	)]
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1720:Identifier contains type name")]
 	public ZodNumber Int()
 	{
 		AddRule(new IntRule());

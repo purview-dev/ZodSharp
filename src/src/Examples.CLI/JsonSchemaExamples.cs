@@ -87,9 +87,7 @@ public static class JsonSchemaExamples
 		};
 
 		var invalidResult = productSchema.Validate(invalidProduct);
-		Console.WriteLine(
-			$"Invalid product (missing price): {(invalidResult.IsSuccess ? "PASSED" : "FAILED")}"
-		);
+		Console.WriteLine($"Invalid product (missing price): {(invalidResult.IsSuccess ? "PASSED" : "FAILED")}");
 		if (!invalidResult.IsSuccess)
 		{
 			foreach (var error in invalidResult.Errors)
@@ -108,17 +106,11 @@ public static class JsonSchemaExamples
 		Console.WriteLine("--- Roundtrip: ZodSharp -> JSON Schema -> ZodSharp ---");
 
 		// Original ZodSharp schema
-		var originalSchema = Z.Object()
-			.Field("id", Z.String().Uuid())
-			.Field("count", Z.Number().Min(0).Int())
-			.Build();
+		var originalSchema = Z.Object().Field("id", Z.String().Uuid()).Field("count", Z.Number().Min(0).Int()).Build();
 
 		// Convert to JSON Schema
 		var jsonSchema = Z.ToJsonSchema(originalSchema);
-		var jsonString = JsonConvert.SerializeObject(
-			jsonSchema,
-			JsonSchemaSerializerOptions.Default
-		);
+		var jsonString = JsonConvert.SerializeObject(jsonSchema, JsonSchemaSerializerOptions.Default);
 
 		// Parse back to ZodSharp schema
 		var parsedSchema = Z.FromJsonSchema(jsonString);
@@ -133,12 +125,8 @@ public static class JsonSchemaExamples
 		var originalResult = originalSchema.Validate(testData);
 		var parsedResult = parsedSchema.Validate(testData);
 
-		Console.WriteLine(
-			$"Original schema result: {(originalResult.IsSuccess ? "PASSED" : "FAILED")}"
-		);
-		Console.WriteLine(
-			$"Parsed schema result: {(parsedResult.IsSuccess ? "PASSED" : "FAILED")}"
-		);
+		Console.WriteLine($"Original schema result: {(originalResult.IsSuccess ? "PASSED" : "FAILED")}");
+		Console.WriteLine($"Parsed schema result: {(parsedResult.IsSuccess ? "PASSED" : "FAILED")}");
 		Console.WriteLine($"Results match: {originalResult.IsSuccess == parsedResult.IsSuccess}");
 		Console.WriteLine();
 	}

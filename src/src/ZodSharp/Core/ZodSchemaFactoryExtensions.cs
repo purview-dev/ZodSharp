@@ -13,10 +13,7 @@ public static class ZodSchemaFactoryExtensions
 	/// Generated validators are expected to live in the same namespace as the target type and be named
 	/// <c>{TypeName}SchemaValidator</c>.
 	/// </summary>
-	public static IZodSchemaFactory RegisterFromAssembly(
-		this IZodSchemaFactory factory,
-		Assembly assembly
-	)
+	public static IZodSchemaFactory RegisterFromAssembly(this IZodSchemaFactory factory, Assembly assembly)
 	{
 		if (factory is null)
 			throw new ArgumentNullException(nameof(factory));

@@ -27,15 +27,11 @@ public record class DriverRunResult(
 	/// </summary>
 	public void EnsureValid()
 	{
-		var generationExceptions = Result
-			.Results.Select(r => r.Exception)
-			.Where(e => e != null)
-			.ToList();
+		var generationExceptions = Result.Results.Select(r => r.Exception).Where(e => e != null).ToList();
 		if (generationExceptions.Count > 0)
 		{
 			throw new InvalidOperationException(
-				"Generator threw exceptions:\n"
-					+ string.Join("\n", generationExceptions.Select(e => e!.ToString()))
+				"Generator threw exceptions:\n" + string.Join("\n", generationExceptions.Select(e => e!.ToString()))
 			);
 		}
 
@@ -46,20 +42,14 @@ public record class DriverRunResult(
 		if (compilationErrors.Count > 0)
 		{
 			throw new InvalidOperationException(
-				"Compilation errors:\n"
-					+ string.Join("\n", compilationErrors.Select(d => d.ToString()))
+				"Compilation errors:\n" + string.Join("\n", compilationErrors.Select(d => d.ToString()))
 			);
 		}
 
-		var logErrors = LogEntries
-			.Where(e => e.Type == OutputType.Error)
-			.Select(e => e.Message)
-			.ToList();
+		var logErrors = LogEntries.Where(e => e.Type == OutputType.Error).Select(e => e.Message).ToList();
 		if (logErrors.Count > 0)
 		{
-			throw new InvalidOperationException(
-				"Generator logged errors:\n" + string.Join("\n", logErrors)
-			);
+			throw new InvalidOperationException("Generator logged errors:\n" + string.Join("\n", logErrors));
 		}
 	}
 
@@ -78,7 +68,5 @@ public record class DriverRunResult(
 	/// <param name="filePathSuffix">The suffix to match.</param>
 	/// <returns>The matching syntax tree, or <see langword="null"/> if none is found.</returns>
 	public SyntaxTree? GetGeneratedTree(string filePathSuffix) =>
-		GeneratedTrees.FirstOrDefault(tree =>
-			tree.FilePath.EndsWith(filePathSuffix, StringComparison.Ordinal)
-		);
+		GeneratedTrees.FirstOrDefault(tree => tree.FilePath.EndsWith(filePathSuffix, StringComparison.Ordinal));
 }

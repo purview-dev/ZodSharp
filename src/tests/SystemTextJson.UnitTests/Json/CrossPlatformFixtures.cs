@@ -35,9 +35,7 @@ public sealed class CrossPlatformUserSchema : IZodSchema<CrossPlatformUser, Cros
 
 		if (string.IsNullOrEmpty(value.Name) || value.Name.Trim().Length == 0)
 		{
-			errors.Add(
-				new ValidationError("too_small", "name must be at least 1 character", ["name"])
-			);
+			errors.Add(new ValidationError("too_small", "name must be at least 1 character", ["name"]));
 		}
 
 		if (value.Age < 0)
@@ -52,9 +50,7 @@ public sealed class CrossPlatformUserSchema : IZodSchema<CrossPlatformUser, Cros
 
 		if (value.Email != null && !IsValidEmail(value.Email))
 		{
-			errors.Add(
-				new ValidationError("invalid_string", "email must be a valid email", ["email"])
-			);
+			errors.Add(new ValidationError("invalid_string", "email must be a valid email", ["email"]));
 		}
 
 		if (value.Tags == null)
@@ -73,8 +69,7 @@ public sealed class CrossPlatformUserSchema : IZodSchema<CrossPlatformUser, Cros
 	) => new(Validate(value));
 
 	static bool IsValidEmail(string email) =>
-		email.Contains('@', StringComparison.Ordinal)
-		&& email.Contains('.', StringComparison.Ordinal);
+		email.Contains('@', StringComparison.Ordinal) && email.Contains('.', StringComparison.Ordinal);
 }
 
 /// <summary>

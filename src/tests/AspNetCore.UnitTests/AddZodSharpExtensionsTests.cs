@@ -34,9 +34,7 @@ public class AddZodSharpExtensionsTests
 	public async Task AddZodSharp_AutoRegistersGeneratedValidators_FromConfiguredAssemblies()
 	{
 		var services = new ServiceCollection();
-		services.AddZodSharp(static opts =>
-			opts.ScanAssemblies.Add(typeof(AddZodSharpExtensionsTests).Assembly)
-		);
+		services.AddZodSharp(static opts => opts.ScanAssemblies.Add(typeof(AddZodSharpExtensionsTests).Assembly));
 		var provider = services.BuildServiceProvider();
 		var factory = provider.GetRequiredService<IZodSchemaFactory>();
 		await Assert.That(factory.IsRegistered<SampleDiDto>()).IsTrue();

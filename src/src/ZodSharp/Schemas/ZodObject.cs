@@ -48,9 +48,7 @@ public class ZodObject(
 	/// </summary>
 	/// <param name="value">The value to validate</param>
 	/// <returns>A validation result</returns>
-	protected override ValidationResult<Dictionary<string, object?>> ParseInternal(
-		Dictionary<string, object?> value
-	)
+	protected override ValidationResult<Dictionary<string, object?>> ParseInternal(Dictionary<string, object?> value)
 	{
 		if (value == null)
 		{
@@ -68,13 +66,7 @@ public class ZodObject(
 			if (!value.TryGetValue(key, out var propertyValue))
 			{
 				if (!IsOptional(key))
-					errors.Add(
-						new ValidationError(
-							"missing_field",
-							$"Required field '{key}' is missing",
-							[key]
-						)
-					);
+					errors.Add(new ValidationError("missing_field", $"Required field '{key}' is missing", [key]));
 				continue;
 			}
 
@@ -130,13 +122,7 @@ public class ZodObject(
 						validatedObject[key] = propertyValue;
 						break;
 					case UnknownKeyPolicy.Strict:
-						errors.Add(
-							new ValidationError(
-								"unrecognized_key",
-								$"Unrecognized key '{key}'",
-								[key]
-							)
-						);
+						errors.Add(new ValidationError("unrecognized_key", $"Unrecognized key '{key}'", [key]));
 						break;
 					default:
 						break;
@@ -245,8 +231,7 @@ public class ZodObject(
 	/// Creates a new <see cref="ZodObject"/> that keeps unknown keys in the output.
 	/// Equivalent to Zod's <c>.passthrough()</c>.
 	/// </summary>
-	public ZodObject Passthrough() =>
-		new(shape, UnknownKeyPolicy.Passthrough, optionalKeys, catchallSchema);
+	public ZodObject Passthrough() => new(shape, UnknownKeyPolicy.Passthrough, optionalKeys, catchallSchema);
 
 	/// <summary>
 	/// Creates a new <see cref="ZodObject"/> that rejects unknown keys with an error.

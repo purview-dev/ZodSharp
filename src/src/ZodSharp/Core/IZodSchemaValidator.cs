@@ -31,8 +31,5 @@ public interface IZodSchemaValidator<T> : IZodSchemaValidator, IZodSchema<T>
 	/// <param name="value">The value to validate.</param>
 	/// <param name="cancellationToken"></param>
 	/// <returns>A task that completes with a validation result.</returns>
-	new ValueTask<ValidationResult<T>> ValidateAsync(
-		T value,
-		CancellationToken cancellationToken = default
-	);
+	new ValueTask<ValidationResult<T>> ValidateAsync(T value, CancellationToken cancellationToken = default);
 }

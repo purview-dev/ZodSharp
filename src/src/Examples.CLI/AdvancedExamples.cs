@@ -102,9 +102,7 @@ static class AdvancedExamples
 		var doubleResult = doubleSchema.Validate(5.0);
 		Console.WriteLine($"Transform number (double): {doubleResult.Value}");
 
-		var chainSchema = Z.String()
-			.Transform(static s => s.Trim())
-			.Transform(static s => s.ToLowerInvariant());
+		var chainSchema = Z.String().Transform(static s => s.Trim()).Transform(static s => s.ToLowerInvariant());
 		var chainResult = chainSchema.Validate("  HELLO  ");
 		Console.WriteLine($"Chained transforms: '{chainResult.Value}'");
 
@@ -143,10 +141,7 @@ static class AdvancedExamples
 			.Field("permissions", Z.Array(Z.String()))
 			.Build();
 
-		var union = Z.DiscriminatedUnion("type")
-			.Option("user", userSchema)
-			.Option("admin", adminSchema)
-			.Build();
+		var union = Z.DiscriminatedUnion("type").Option("user", userSchema).Option("admin", adminSchema).Build();
 
 		var userData = new Dictionary<string, object?> { { "type", "user" }, { "name", "John" } };
 
@@ -162,10 +157,7 @@ static class AdvancedExamples
 
 		ZodLazy<Dictionary<string, object?>>? categorySchema = null;
 		categorySchema = Z.Lazy(() =>
-			Z.Object()
-				.Field("name", Z.String())
-				.Field("subcategories", Z.Array(categorySchema!))
-				.Build()
+			Z.Object().Field("name", Z.String()).Field("subcategories", Z.Array(categorySchema!)).Build()
 		);
 
 		var categoryData = new Dictionary<string, object?>
@@ -235,10 +227,7 @@ static class AdvancedExamples
 	{
 		Console.WriteLine("--- JSON Integration Examples ---");
 
-		var schema = Z.Object()
-			.Field("name", Z.String().Min(1))
-			.Field("age", Z.Number().Min(0))
-			.Build();
+		var schema = Z.Object().Field("name", Z.String().Min(1)).Field("age", Z.Number().Min(0)).Build();
 
 		var json = /*lang=json,strict*/
 			"""{"name": "John", "age": 30}""";
@@ -251,9 +240,10 @@ static class AdvancedExamples
 
 		try
 		{
-			var deserialized = Newtonsoft.Json.JsonConvert.DeserializeObject<
-				Dictionary<string, object?>
-			>(json, settings);
+			var deserialized = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, object?>>(
+				json,
+				settings
+			);
 			Console.WriteLine($"JSON converter result: {deserialized != null}");
 		}
 		catch (Exception ex)
@@ -285,8 +275,7 @@ static class AdvancedExamples
 
 		var schema = SchemaCache.GetOrCreate(
 			"user",
-			static () =>
-				Z.Object().Field("name", Z.String().Min(1)).Field("age", Z.Number().Min(0)).Build()
+			static () => Z.Object().Field("name", Z.String().Min(1)).Field("age", Z.Number().Min(0)).Build()
 		);
 
 		if (SchemaCache.TryGet("user", out ZodObject cachedSchema))

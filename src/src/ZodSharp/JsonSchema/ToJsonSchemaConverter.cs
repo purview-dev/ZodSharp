@@ -40,10 +40,7 @@ public static class ToJsonSchemaConverter
 	/// <param name="schema">The ZodSharp schema to convert</param>
 	/// <param name="options">Conversion options</param>
 	/// <returns>A JSON Schema definition</returns>
-	public static JsonSchemaDefinition Convert<T>(
-		IZodSchema<T, T> schema,
-		ToJsonSchemaOptions? options = null
-	)
+	public static JsonSchemaDefinition Convert<T>(IZodSchema<T, T> schema, ToJsonSchemaOptions? options = null)
 	{
 		options ??= new ToJsonSchemaOptions();
 		var context = new ConversionContext();
@@ -135,8 +132,7 @@ public static class ToJsonSchemaConverter
 					case nameof(MinLengthRule):
 						var minLengthField = ruleType.GetField(
 							"_minLength",
-							System.Reflection.BindingFlags.NonPublic
-								| System.Reflection.BindingFlags.Instance
+							System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
 						);
 						if (minLengthField?.GetValue(rule) is int minLength)
 							result.MinLength = minLength;
@@ -145,8 +141,7 @@ public static class ToJsonSchemaConverter
 					case nameof(MaxLengthRule):
 						var maxLengthField = ruleType.GetField(
 							"_maxLength",
-							System.Reflection.BindingFlags.NonPublic
-								| System.Reflection.BindingFlags.Instance
+							System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
 						);
 						if (maxLengthField?.GetValue(rule) is int maxLength)
 							result.MaxLength = maxLength;
@@ -167,13 +162,9 @@ public static class ToJsonSchemaConverter
 					case nameof(RegexRule):
 						var patternField = ruleType.GetField(
 							"_pattern",
-							System.Reflection.BindingFlags.NonPublic
-								| System.Reflection.BindingFlags.Instance
+							System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
 						);
-						if (
-							patternField?.GetValue(rule)
-							is System.Text.RegularExpressions.Regex regex
-						)
+						if (patternField?.GetValue(rule) is System.Text.RegularExpressions.Regex regex)
 							result.Pattern = regex.ToString();
 						break;
 				}
@@ -211,8 +202,7 @@ public static class ToJsonSchemaConverter
 				{
 					var minValueField = ruleType.GetField(
 						"_minValue",
-						System.Reflection.BindingFlags.NonPublic
-							| System.Reflection.BindingFlags.Instance
+						System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
 					);
 					if (minValueField?.GetValue(rule) is double minValue)
 						result.Minimum = minValue;
@@ -221,8 +211,7 @@ public static class ToJsonSchemaConverter
 				{
 					var maxValueField = ruleType.GetField(
 						"_maxValue",
-						System.Reflection.BindingFlags.NonPublic
-							| System.Reflection.BindingFlags.Instance
+						System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
 					);
 					if (maxValueField?.GetValue(rule) is double maxValue)
 						result.Maximum = maxValue;
@@ -235,8 +224,7 @@ public static class ToJsonSchemaConverter
 				{
 					var divisorField = ruleType.GetField(
 						"_divisor",
-						System.Reflection.BindingFlags.NonPublic
-							| System.Reflection.BindingFlags.Instance
+						System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
 					);
 					if (divisorField?.GetValue(rule) is double divisor)
 						result.MultipleOf = divisor;
@@ -270,10 +258,7 @@ public static class ToJsonSchemaConverter
 
 		if (
 			shapeField?.GetValue(schema)
-			is System.Collections.Immutable.ImmutableDictionary<
-				string,
-				IZodSchema<object, object>
-			> shape
+			is System.Collections.Immutable.ImmutableDictionary<string, IZodSchema<object, object>> shape
 		)
 		{
 			foreach (var (key, propSchema) in shape)
@@ -375,8 +360,7 @@ public static class ToJsonSchemaConverter
 					{
 						var minField = ruleType.GetField(
 							"_minItems",
-							System.Reflection.BindingFlags.NonPublic
-								| System.Reflection.BindingFlags.Instance
+							System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
 						);
 						if (minField?.GetValue(rule) is int min)
 							result.MinItems = min;
@@ -385,8 +369,7 @@ public static class ToJsonSchemaConverter
 					{
 						var maxField = ruleType.GetField(
 							"_maxItems",
-							System.Reflection.BindingFlags.NonPublic
-								| System.Reflection.BindingFlags.Instance
+							System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
 						);
 						if (maxField?.GetValue(rule) is int max)
 							result.MaxItems = max;
@@ -434,10 +417,7 @@ public static class ToJsonSchemaConverter
 			if (innerField?.GetValue(schema) is object innerSchema)
 			{
 				var inner = ConvertSchema(innerSchema, ctx);
-				return new JsonSchemaDefinition
-				{
-					AnyOf = [inner, new JsonSchemaDefinition { Type = "null" }],
-				};
+				return new JsonSchemaDefinition { AnyOf = [inner, new JsonSchemaDefinition { Type = "null" }] };
 			}
 		}
 

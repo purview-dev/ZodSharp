@@ -12,23 +12,17 @@ public sealed partial class ZodSchemaGenerator : IIncrementalGenerator
 {
 	public void Initialize(IncrementalGeneratorInitializationContext context)
 	{
+		context.RegisterEmbeddedAttribute(AssemblyInfo.AssemblyName, AssemblyInfo.Version);
+
 		context.RegisterPostInitializationOutput(static ctx =>
 		{
-			// Adds the EmbeddedAttribute definition to the compilation if not already present
-			// ensuring that internal generated code doesn't cause visibility issues in referenced
-			// assemblies where InternalVisibleTo is set.
-			ctx.AddEmbeddedAttributeDefinition();
-
-			ctx.AddSource(
-				$"{nameof(TypeLibrary.ZodSchemaAttribute)}.g.cs",
-				EmbeddedResources.Load(nameof(TypeLibrary.ZodSchemaAttribute))
-			);
+			foreach (var (HintName, SourceText) in AttributeGenHelper.GenerateMarkers())
+			{
+				ctx.AddSource($"{HintName}.g.cs", SourceText);
+			}
 		});
 
-		var generationValueProviders = SourceGenLibrary.GetGeneratorValueProviders(
-			context,
-			_logger
-		);
+		var generationValueProviders = SourceGenLibrary.GetGeneratorValueProviders(context, _logger);
 
 		// Register source outputs
 		context.RegisterSourceOutput(

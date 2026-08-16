@@ -13,11 +13,7 @@ namespace ZodSharp.Schemas;
 /// <param name="baseSchema">The base schema</param>
 /// <param name="refinement">The refinement function</param>
 /// <param name="message">Optional error message</param>
-public class ZodRefinement<T>(
-	IZodSchema<T> baseSchema,
-	Func<T, bool> refinement,
-	string? message = null
-) : ZodType<T>
+public class ZodRefinement<T>(IZodSchema<T> baseSchema, Func<T, bool> refinement, string? message = null) : ZodType<T>
 {
 	/// <summary>
 	/// Parses and validates the value with refinement.

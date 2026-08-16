@@ -21,15 +21,8 @@ partial class ZodSchemaGenerator
 
 	static LengthAccessor ClassifyLengthAccessor(ITypeSymbol propertyType)
 	{
-		if (
-			propertyType.SpecialType == SpecialType.System_String
-			|| propertyType is IArrayTypeSymbol
-		)
-			return new(
-				"propertyValue.Length",
-				propertyType is IArrayTypeSymbol ? "array" : "string",
-				true
-			);
+		if (propertyType.SpecialType == SpecialType.System_String || propertyType is IArrayTypeSymbol)
+			return new("propertyValue.Length", propertyType is IArrayTypeSymbol ? "array" : "string", true);
 
 		if (TypeHelpers.HasAccessibleCountProperty(propertyType))
 			return new("propertyValue.Count", "collection", true);
@@ -216,9 +209,7 @@ partial class ZodSchemaGenerator
 	static string GetRangeMaximumFieldName(string propertyName) => $"RangeMaximum_{propertyName}";
 
 	static string GetFullyQualifiedTypeName(ITypeSymbol type) =>
-		TypeHelpers
-			.UnwrapNullableType(type)
-			.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+		TypeHelpers.UnwrapNullableType(type).ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
 
 	[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0072:Add missing cases")]
 	static bool TryBuildTypedConstantExpression(
@@ -253,27 +244,17 @@ partial class ZodSchemaGenerator
 
 		expression = targetType.SpecialType switch
 		{
-			SpecialType.System_String when constant.Value is string value => CodeGenHelpers.Quote(
-				value
-			),
-			SpecialType.System_Char when constant.Value is char value => CodeGenHelpers.QuoteChar(
-				value
-			),
-			SpecialType.System_Boolean when constant.Value is bool value => value
-				? "true"
-				: "false",
-			SpecialType.System_Byte when constant.Value is byte value => value.ToString(
-				CultureInfo.InvariantCulture
-			),
+			SpecialType.System_String when constant.Value is string value => CodeGenHelpers.Quote(value),
+			SpecialType.System_Char when constant.Value is char value => CodeGenHelpers.QuoteChar(value),
+			SpecialType.System_Boolean when constant.Value is bool value => value ? "true" : "false",
+			SpecialType.System_Byte when constant.Value is byte value => value.ToString(CultureInfo.InvariantCulture),
 			SpecialType.System_SByte when constant.Value is sbyte value =>
 				$"(sbyte){value.ToString(CultureInfo.InvariantCulture)}",
 			SpecialType.System_Int16 when constant.Value is short value =>
 				$"(short){value.ToString(CultureInfo.InvariantCulture)}",
 			SpecialType.System_UInt16 when constant.Value is ushort value =>
 				$"(ushort){value.ToString(CultureInfo.InvariantCulture)}",
-			SpecialType.System_Int32 when constant.Value is int value => value.ToString(
-				CultureInfo.InvariantCulture
-			),
+			SpecialType.System_Int32 when constant.Value is int value => value.ToString(CultureInfo.InvariantCulture),
 			SpecialType.System_UInt32 when constant.Value is uint value =>
 				$"{value.ToString(CultureInfo.InvariantCulture)}U",
 			SpecialType.System_Int64 when constant.Value is long value =>

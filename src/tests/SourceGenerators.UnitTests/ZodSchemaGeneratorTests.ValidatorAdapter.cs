@@ -5,9 +5,7 @@ namespace ZodSharp.SourceGenerators;
 partial class ZodSchemaGeneratorTests
 {
 	[Test]
-	public async Task Generate_GivenZodSchema_AlsoEmitsValidatorAdapter(
-		CancellationToken cancellationToken
-	)
+	public async Task Generate_GivenZodSchema_AlsoEmitsValidatorAdapter(CancellationToken cancellationToken)
 	{
 		const string source =
 			@"
@@ -30,9 +28,7 @@ namespace Testing
 	}
 
 	[Test]
-	public async Task Generate_GivenZodSchema_EmitsModuleAttribute(
-		CancellationToken cancellationToken
-	)
+	public async Task Generate_GivenZodSchema_EmitsModuleAttribute(CancellationToken cancellationToken)
 	{
 		const string source =
 			@"
@@ -42,10 +38,7 @@ namespace Testing
     public class Gadget { }
 }";
 		var driverResult = await GenerateZodAsync(source, cancellationToken);
-		var allGenerated = string.Join(
-			"\n",
-			driverResult.SyntaxTrees.Select(static t => t.GetText().ToString())
-		);
+		var allGenerated = string.Join("\n", driverResult.SyntaxTrees.Select(static t => t.GetText().ToString()));
 
 		await Assert.That(allGenerated).Contains("ZodSchemaGenerated");
 		await Assert.That(allGenerated).Contains("Gadget");
@@ -129,9 +122,6 @@ namespace Testing
 
 		void CallResult() => ((dynamic)valueTaskResult).GetAwaiter().GetResult();
 
-		await Assert
-			.That(CallResult)
-			.Throws<Exception>()
-			.WithMessage(rnd, StringComparison.Ordinal);
+		await Assert.That(CallResult).Throws<Exception>().WithMessage(rnd, StringComparison.Ordinal);
 	}
 }

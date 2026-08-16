@@ -18,9 +18,7 @@ public static class ProblemDetailsExtensions
 	)
 	{
 		if (result.IsSuccess)
-			throw new InvalidOperationException(
-				"Cannot create ProblemDetails from a successful validation result."
-			);
+			throw new InvalidOperationException("Cannot create ProblemDetails from a successful validation result.");
 
 		var errors = new Dictionary<string, string[]>(StringComparer.Ordinal);
 		var groupedMessages = new Dictionary<string, List<string>>(StringComparer.Ordinal);
@@ -133,10 +131,7 @@ public sealed class ValidationIssue
 	/// <summary>
 	/// The issue path segments.
 	/// </summary>
-	[System.Diagnostics.CodeAnalysis.SuppressMessage(
-		"Performance",
-		"CA1819:Properties should not return arrays"
-	)]
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1819:Properties should not return arrays")]
 	public required string[] Path { get; init; }
 
 	/// <summary>

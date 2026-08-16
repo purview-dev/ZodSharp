@@ -53,10 +53,7 @@ partial class ZodSchemaGenerator
 			1
 		);
 
-		var allowedValues = AllowedValuesAttributeData.FromAttributeData(
-			attributes,
-			out var attributeData
-		);
+		var allowedValues = AllowedValuesAttributeData.FromAttributeData(attributes, out var attributeData);
 		if (!allowedValues.Exists)
 			return;
 
@@ -86,18 +83,14 @@ partial class ZodSchemaGenerator
 			attributeData,
 			displayName,
 			allowedValues.ValidationAttribute,
-			CodeGenHelpers.Quote(
-				$"Field '{displayName}' must be one of the following values: {displayValues}."
-			),
+			CodeGenHelpers.Quote($"Field '{displayName}' must be one of the following values: {displayValues}."),
 			CodeGenHelpers.Quote(displayName),
 			CodeGenHelpers.Quote(displayValues)
 		);
 
 		using (generationContext.CodeWriter.OpenBlockScope())
 		{
-			generationContext.CodeWriter.WriteLine(
-				$"var {propertyValueName} = value.{propertyName};"
-			);
+			generationContext.CodeWriter.WriteLine($"var {propertyValueName} = value.{propertyName};");
 			using (
 				generationContext.CodeWriter.OpenBlockScope(
 					$"if (!({comparisonExpression.Replace("propertyValue", propertyValueName)}))"
@@ -131,10 +124,7 @@ partial class ZodSchemaGenerator
 			1
 		);
 
-		var deniedValues = DeniedValuesAttributeData.FromAttributeData(
-			attributes,
-			out var attributeData
-		);
+		var deniedValues = DeniedValuesAttributeData.FromAttributeData(attributes, out var attributeData);
 		if (!deniedValues.Exists)
 			return;
 
@@ -164,18 +154,14 @@ partial class ZodSchemaGenerator
 			attributeData,
 			displayName,
 			deniedValues.ValidationAttribute,
-			CodeGenHelpers.Quote(
-				$"Field '{displayName}' contains a denied value. Disallowed values: {displayValues}."
-			),
+			CodeGenHelpers.Quote($"Field '{displayName}' contains a denied value. Disallowed values: {displayValues}."),
 			CodeGenHelpers.Quote(displayName),
 			CodeGenHelpers.Quote(displayValues)
 		);
 
 		using (generationContext.CodeWriter.OpenBlockScope())
 		{
-			generationContext.CodeWriter.WriteLine(
-				$"var {propertyValueName} = value.{propertyName};"
-			);
+			generationContext.CodeWriter.WriteLine($"var {propertyValueName} = value.{propertyName};");
 			using (
 				generationContext.CodeWriter.OpenBlockScope(
 					$"if ({comparisonExpression.Replace("propertyValue", propertyValueName)})"
@@ -218,15 +204,7 @@ partial class ZodSchemaGenerator
 
 		for (var i = 0; i < values.Length; i++)
 		{
-			if (
-				!TryBuildTypedConstantExpression(
-					values[i],
-					propertyType,
-					propertyCanBeNull,
-					out var expression,
-					out _
-				)
-			)
+			if (!TryBuildTypedConstantExpression(values[i], propertyType, propertyCanBeNull, out var expression, out _))
 			{
 				AddUnsupportedDataAnnotationsDiagnostic(
 					diagnostics,
@@ -244,9 +222,7 @@ partial class ZodSchemaGenerator
 				return false;
 			}
 
-			comparisons.Add(
-				BuildEqualityComparisonExpression(propertyType, "propertyValue", expression)
-			);
+			comparisons.Add(BuildEqualityComparisonExpression(propertyType, "propertyValue", expression));
 		}
 
 		comparisonExpression = comparisons.Count == 0 ? "false" : string.Join(" || ", comparisons);

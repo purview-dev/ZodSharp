@@ -5,9 +5,7 @@ namespace ZodSharp.SourceGenerators;
 partial class ZodSchemaGeneratorTests
 {
 	[Test]
-	public async Task Generate_GivenPrivateNestedClass_GeneratesCompilingSchema(
-		CancellationToken cancellationToken
-	)
+	public async Task Generate_GivenPrivateNestedClass_GeneratesCompilingSchema(CancellationToken cancellationToken)
 	{
 		const string source =
 			@"
@@ -32,9 +30,7 @@ namespace Testing
 	}
 
 	[Test]
-	public async Task Generate_GivenMultiLevelNestedClass_GeneratesCompilingSchema(
-		CancellationToken cancellationToken
-	)
+	public async Task Generate_GivenMultiLevelNestedClass_GeneratesCompilingSchema(CancellationToken cancellationToken)
 	{
 		const string source =
 			@"

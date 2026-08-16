@@ -48,19 +48,9 @@ public sealed class SourceGeneratorTestRunner<TGenerator>
 		if (options.CompileToAssembly)
 			assembly = await CompileToAssemblyAsync(outputCompilation, cancellationToken);
 
-		var nonAttributeTrees = ExcludeGeneratedAttributes(
-			result,
-			options.ExcludeGeneratedAttributes
-		);
+		var nonAttributeTrees = ExcludeGeneratedAttributes(result, options.ExcludeGeneratedAttributes);
 
-		return new(
-			result,
-			outputCompilation,
-			assembly,
-			result.GeneratedTrees,
-			nonAttributeTrees,
-			logEntries
-		);
+		return new(result, outputCompilation, assembly, result.GeneratedTrees, nonAttributeTrees, logEntries);
 	}
 
 	static string PrepareSource(string source, SourceGeneratorTestOptions options)
@@ -93,9 +83,7 @@ public sealed class SourceGeneratorTestRunner<TGenerator>
 		var builder = ImmutableArray.CreateBuilder<MetadataReference>();
 		builder.AddRange(TrustedAssemblies.Select(static p => MetadataReference.CreateFromFile(p)));
 		builder.AddRange(
-			options.AdditionalAssemblyTypes.Select(static a =>
-				MetadataReference.CreateFromFile(a.Assembly.Location)
-			)
+			options.AdditionalAssemblyTypes.Select(static a => MetadataReference.CreateFromFile(a.Assembly.Location))
 		);
 		builder.AddRange(options.AdditionalReferences);
 
@@ -109,17 +97,12 @@ public sealed class SourceGeneratorTestRunner<TGenerator>
 		GeneratorDriver driver = CSharpGeneratorDriver.Create(generator);
 
 		var analyzerOptions = new Dictionary<string, string>(options.AnalyzerConfigOptions);
-		if (
-			options.DisableSourceGeneratorPropertyName is not null
-			&& options.DisableSourceGeneratorValue is not null
-		)
+		if (options.DisableSourceGeneratorPropertyName is not null && options.DisableSourceGeneratorValue is not null)
 			analyzerOptions[options.DisableSourceGeneratorPropertyName] =
 				options.DisableSourceGeneratorValue.Value.ToString();
 
 		if (analyzerOptions.Count > 0)
-			driver = driver.WithUpdatedAnalyzerConfigOptions(
-				new TestAnalyzerConfigOptionsProvider(analyzerOptions)
-			);
+			driver = driver.WithUpdatedAnalyzerConfigOptions(new TestAnalyzerConfigOptionsProvider(analyzerOptions));
 
 		return driver;
 	}
@@ -142,10 +125,7 @@ public sealed class SourceGeneratorTestRunner<TGenerator>
 			return;
 		}
 
-		var logSupportType = generator
-			.GetType()
-			.GetInterfaces()
-			.FirstOrDefault(i => i.Name == "ILogSupport");
+		var logSupportType = generator.GetType().GetInterfaces().FirstOrDefault(i => i.Name == "ILogSupport");
 		var setLogOutput = logSupportType?.GetMethod("SetLogOutput");
 		if (setLogOutput is null)
 			return;
@@ -167,10 +147,7 @@ public sealed class SourceGeneratorTestRunner<TGenerator>
 		setLogOutput.Invoke(generator, [action]);
 	}
 
-	static async Task<Assembly?> CompileToAssemblyAsync(
-		Compilation compilation,
-		CancellationToken cancellationToken
-	)
+	static async Task<Assembly?> CompileToAssemblyAsync(Compilation compilation, CancellationToken cancellationToken)
 	{
 		await using var assemblyStream = new MemoryStream();
 		var emitResult = compilation.Emit(assemblyStream, cancellationToken: cancellationToken);
@@ -194,10 +171,7 @@ public sealed class SourceGeneratorTestRunner<TGenerator>
 	}
 }
 
-sealed class LogActionFactory<TOutputType>(
-	SourceGeneratorTestOptions options,
-	List<(string, OutputType)> logEntries
-)
+sealed class LogActionFactory<TOutputType>(SourceGeneratorTestOptions options, List<(string, OutputType)> logEntries)
 {
 	public void Action(string message, TOutputType type)
 	{

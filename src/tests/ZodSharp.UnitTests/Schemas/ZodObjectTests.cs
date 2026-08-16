@@ -28,9 +28,7 @@ public class ZodObjectTests
 		var result = schema.Validate(data);
 
 		await Assert.That(result.IsSuccess).IsFalse();
-		await Assert
-			.That(result.Errors.Any(static error => error.Code == "missing_field"))
-			.IsTrue();
+		await Assert.That(result.Errors.Any(static error => error.Code == "missing_field")).IsTrue();
 	}
 
 	[Test]

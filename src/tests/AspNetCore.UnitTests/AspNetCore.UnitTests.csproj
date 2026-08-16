@@ -4,12 +4,21 @@
 		<ProjectReference Include="..\..\src\ZodSharp\ZodSharp.csproj" />
 	</ItemGroup>
 	<ItemGroup>
-		<!-- Ensure the source generator runs in the test project so [ZodSchema] fixtures are processed -->
+		<!-- Runs the generator against the test project.
+         This makes generated attributes/types available to test source code. -->
 		<ProjectReference
 			Include="..\..\src\SourceGenerators\SourceGenerators.csproj"
-			PrivateAssets="all"
 			OutputItemType="Analyzer"
 			ReferenceOutputAssembly="false"
+			PrivateAssets="all"
+		/>
+
+		<!-- References the generator assembly normally.
+         This lets tests pass HostKitGenerator to the testing framework. -->
+		<ProjectReference
+			Include="..\..\src\SourceGenerators\SourceGenerators.csproj"
+			ReferenceOutputAssembly="true"
+			PrivateAssets="all"
 		/>
 	</ItemGroup>
 </Project>

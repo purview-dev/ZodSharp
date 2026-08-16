@@ -9,11 +9,7 @@ namespace ZodSharp.Json;
 /// </summary>
 sealed class ZodJsonConverter<T>(IZodSchema<T, T> schema) : JsonConverter<T>
 {
-	public override T Read(
-		ref Utf8JsonReader reader,
-		Type typeToConvert,
-		JsonSerializerOptions options
-	)
+	public override T Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
 	{
 		// Buffer the current token so we can re-read it after extracting the value.
 		using var document = JsonDocument.ParseValue(ref reader);

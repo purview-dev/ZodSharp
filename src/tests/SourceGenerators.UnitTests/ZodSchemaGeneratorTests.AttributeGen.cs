@@ -10,9 +10,7 @@ namespace ZodSharp.SourceGenerators;
 partial class ZodSchemaGeneratorTests
 {
 	[Test]
-	public async Task Generate_GivenEmptySource_GeneratesAttributesOnly(
-		CancellationToken cancellationToken
-	)
+	public async Task Generate_GivenEmptySource_GeneratesAttributesOnly(CancellationToken cancellationToken)
 	{
 		// Arrange
 		const string source =
@@ -31,9 +29,7 @@ namespace Testing
 	}
 
 	[Test]
-	public async Task Generate_GivenAttributeFiles_ContainsGenerateZodAttributes(
-		CancellationToken cancellationToken
-	)
+	public async Task Generate_GivenAttributeFiles_ContainsGenerateZodAttributes(CancellationToken cancellationToken)
 	{
 		// Arrange
 		const string source =
@@ -49,9 +45,7 @@ namespace Testing
 		var assembly = await Assert.That(driverResult.Assembly).IsNotNull();
 
 		// Assert — attribute files are generated
-		var attributeSources = driverResult
-			.GeneratedTrees.Select(static t => t.GetText().ToString())
-			.ToList();
+		var attributeSources = driverResult.GeneratedTrees.Select(static t => t.GetText().ToString()).ToList();
 
 		await Assert.That(attributeSources).Count().IsEqualTo(ExpectedFileCount);
 

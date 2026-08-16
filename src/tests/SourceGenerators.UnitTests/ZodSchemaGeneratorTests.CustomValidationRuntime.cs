@@ -5,9 +5,7 @@ namespace ZodSharp.SourceGenerators;
 partial class ZodSchemaGeneratorTests
 {
 	[Test]
-	public async Task CustomValidation_Runtime_SyncErrorsRemainPresent(
-		CancellationToken cancellationToken
-	)
+	public async Task CustomValidation_Runtime_SyncErrorsRemainPresent(CancellationToken cancellationToken)
 	{
 		var source =
 			@"
@@ -45,16 +43,11 @@ namespace Testing
 		var isSuccessProp = result.GetType().GetProperty("IsSuccess")!;
 		var isSuccess = (bool)isSuccessProp.GetValue(result)!;
 
-		await Assert
-			.That(isSuccess)
-			.IsFalse()
-			.Because("Sync validation should fail for short name");
+		await Assert.That(isSuccess).IsFalse().Because("Sync validation should fail for short name");
 	}
 
 	[Test]
-	public async Task CustomValidation_Runtime_CustomErrorAddedToSyncErrors(
-		CancellationToken cancellationToken
-	)
+	public async Task CustomValidation_Runtime_CustomErrorAddedToSyncErrors(CancellationToken cancellationToken)
 	{
 		var source =
 			@"
@@ -107,9 +100,7 @@ namespace Testing
 	}
 
 	[Test]
-	public async Task CustomValidation_Runtime_BothSuccess_ProducesSuccess(
-		CancellationToken cancellationToken
-	)
+	public async Task CustomValidation_Runtime_BothSuccess_ProducesSuccess(CancellationToken cancellationToken)
 	{
 		var source =
 			@"
@@ -156,9 +147,7 @@ namespace Testing
 	}
 
 	[Test]
-	public async Task CustomValidation_Runtime_CancellationTokenPassed(
-		CancellationToken cancellationToken
-	)
+	public async Task CustomValidation_Runtime_CancellationTokenPassed(CancellationToken cancellationToken)
 	{
 		var source =
 			@"

@@ -9,9 +9,7 @@ partial class ZodSchemaGeneratorTests
 	static readonly int[] SingleInventoryValue = [1];
 
 	[Test]
-	public async Task GeneratedValidate_GivenUserWithValidData_ReturnsSuccess(
-		CancellationToken cancellationToken
-	)
+	public async Task GeneratedValidate_GivenUserWithValidData_ReturnsSuccess(CancellationToken cancellationToken)
 	{
 		var driverResult = await GenerateZodAsync(UserSource, cancellationToken);
 		var assembly = await Assert.That(driverResult.Assembly).IsNotNull();
@@ -20,9 +18,7 @@ partial class ZodSchemaGeneratorTests
 
 		var result = InvokeValidate(assembly, user);
 
-		await Assert
-			.That((bool)result.GetType().GetProperty("IsSuccess")!.GetValue(result)!)
-			.IsTrue();
+		await Assert.That((bool)result.GetType().GetProperty("IsSuccess")!.GetValue(result)!).IsTrue();
 	}
 
 	[Test]
@@ -54,16 +50,12 @@ partial class ZodSchemaGeneratorTests
 		var errors = (System.Collections.Immutable.ImmutableArray<Core.ValidationError>)
 			result.GetType().GetProperty("Errors")!.GetValue(result)!;
 
-		await Assert
-			.That((bool)result.GetType().GetProperty("IsSuccess")!.GetValue(result)!)
-			.IsFalse();
+		await Assert.That((bool)result.GetType().GetProperty("IsSuccess")!.GetValue(result)!).IsFalse();
 		await Assert.That(errors.Any(error => error.Path.Contains(expectedPath))).IsTrue();
 	}
 
 	[Test]
-	public async Task GeneratedParse_GivenInvalidUser_ThrowsZodException(
-		CancellationToken cancellationToken
-	)
+	public async Task GeneratedParse_GivenInvalidUser_ThrowsZodException(CancellationToken cancellationToken)
 	{
 		var driverResult = await GenerateZodAsync(UserSource, cancellationToken);
 		var assembly = await Assert.That(driverResult.Assembly).IsNotNull();
@@ -95,9 +87,7 @@ partial class ZodSchemaGeneratorTests
 		await Assert.That(generatedSource).Contains("nameLength > 50");
 		await Assert.That(generatedSource).Contains("static readonly int RangeMinimum_Age = 0;");
 		await Assert.That(generatedSource).Contains("static readonly int RangeMaximum_Age = 120;");
-		await Assert
-			.That(generatedSource)
-			.Contains("ageValue < RangeMinimum_Age || ageValue > RangeMaximum_Age");
+		await Assert.That(generatedSource).Contains("ageValue < RangeMinimum_Age || ageValue > RangeMaximum_Age");
 		await Assert.That(generatedSource).Contains("EmailRegex.IsMatch(value.Email)");
 	}
 
@@ -141,9 +131,7 @@ namespace Testing
 
 		await Assert.That(generatedSource).Contains("propertyValue.Length");
 		await Assert.That(generatedSource).Contains("propertyValue.Count");
-		await Assert
-			.That(generatedSource)
-			.Contains("CollectionCountHelper.GetCount(propertyValue)");
+		await Assert.That(generatedSource).Contains("CollectionCountHelper.GetCount(propertyValue)");
 		await Assert.That(generatedSource).Contains("else if");
 	}
 
@@ -182,15 +170,9 @@ namespace Testing
 
 		await Assert
 			.That(generatedSource)
-			.Contains(
-				"static readonly global::System.Text.RegularExpressions.Regex Regex_CountryCode"
-			);
-		await Assert
-			.That(generatedSource)
-			.Contains("EqualityComparer<string>.Default.Equals(statusValue, \"open\")");
-		await Assert
-			.That(generatedSource)
-			.Contains("EqualityComparer<int>.Default.Equals(codeValue, 13)");
+			.Contains("static readonly global::System.Text.RegularExpressions.Regex Regex_CountryCode");
+		await Assert.That(generatedSource).Contains("EqualityComparer<string>.Default.Equals(statusValue, \"open\")");
+		await Assert.That(generatedSource).Contains("EqualityComparer<int>.Default.Equals(codeValue, 13)");
 		await Assert.That(generatedSource).Contains("static readonly decimal RangeMinimum_Price");
 		await Assert.That(generatedSource).Contains("Decimal.Parse(\"1.5\"");
 	}
@@ -235,11 +217,7 @@ namespace Testing
 			result.GetType().GetProperty("Errors")!.GetValue(result)!;
 
 		await Assert
-			.That(
-				errors.Any(static error =>
-					error.Message == "Password field must be at least 5 characters long."
-				)
-			)
+			.That(errors.Any(static error => error.Message == "Password field must be at least 5 characters long."))
 			.IsTrue();
 
 		modelType.GetProperty("Password")!.SetValue(model, "abcde");
@@ -248,9 +226,7 @@ namespace Testing
 			result.GetType().GetProperty("Errors")!.GetValue(result)!;
 
 		await Assert
-			.That(
-				errors.Any(static error => error.Message == "Password field must include a symbol.")
-			)
+			.That(errors.Any(static error => error.Message == "Password field must include a symbol."))
 			.IsTrue();
 	}
 
@@ -286,9 +262,7 @@ namespace Testing
 		var errors = (System.Collections.Immutable.ImmutableArray<Core.ValidationError>)
 			result.GetType().GetProperty("Errors")!.GetValue(result)!;
 
-		await Assert
-			.That((bool)result.GetType().GetProperty("IsSuccess")!.GetValue(result)!)
-			.IsFalse();
+		await Assert.That((bool)result.GetType().GetProperty("IsSuccess")!.GetValue(result)!).IsFalse();
 		await Assert.That(errors).HasSingleItem();
 		await Assert.That(errors[0].Code).IsEqualTo("too_small");
 		await Assert.That(errors[0].Origin).IsEqualTo("array");
@@ -339,29 +313,15 @@ namespace Testing
 		var errors = (System.Collections.Immutable.ImmutableArray<Core.ValidationError>)
 			result.GetType().GetProperty("Errors")!.GetValue(result)!;
 
+		await Assert.That((bool)result.GetType().GetProperty("IsSuccess")!.GetValue(result)!).IsFalse();
 		await Assert
-			.That((bool)result.GetType().GetProperty("IsSuccess")!.GetValue(result)!)
-			.IsFalse();
-		await Assert
-			.That(
-				errors.Any(static error =>
-					error.Path.Contains("Status") && error.Code == "invalid_value"
-				)
-			)
+			.That(errors.Any(static error => error.Path.Contains("Status") && error.Code == "invalid_value"))
 			.IsTrue();
 		await Assert
-			.That(
-				errors.Any(static error =>
-					error.Path.Contains("Code") && error.Code == "invalid_value"
-				)
-			)
+			.That(errors.Any(static error => error.Path.Contains("Code") && error.Code == "invalid_value"))
 			.IsTrue();
 		await Assert
-			.That(
-				errors.Any(static error =>
-					error.Path.Contains("Price") && error.Code == "invalid_range"
-				)
-			)
+			.That(errors.Any(static error => error.Path.Contains("Price") && error.Code == "invalid_range"))
 			.IsTrue();
 		await Assert.That(errors.Any(static error => error.Path.Contains("CountryCode"))).IsFalse();
 	}
@@ -432,10 +392,7 @@ namespace Testing
 		var result = InvokeValidate(assembly, model, "Testing.FullAttributeCoverageModelSchema");
 		var errors = (System.Collections.Immutable.ImmutableArray<Core.ValidationError>)
 			result.GetType().GetProperty("Errors")!.GetValue(result)!;
-		var codesByPath = errors.ToDictionary(
-			static error => error.Path[0],
-			static error => error.Code
-		);
+		var codesByPath = errors.ToDictionary(static error => error.Path[0], static error => error.Code);
 
 		await Assert.That(codesByPath["Name"]).IsEqualTo("missing_field");
 		await Assert.That(codesByPath["Value"]).IsEqualTo("too_small");
@@ -469,19 +426,13 @@ namespace Testing
 }
 ";
 
-		var driverResult = await GenerateZodAsync(
-			source,
-			GenerationDriverContext.IgnoreDiagnostic,
-			cancellationToken
-		);
+		var driverResult = await GenerateZodAsync(source, GenerationDriverContext.IgnoreDiagnostic, cancellationToken);
 
 		await Assert.That(driverResult).HasDiagnostic(GeneratorDiagnostics.InvalidLengthAttribute);
 	}
 
 	[Test]
-	public async Task Generate_GivenUnsupportedLengthTarget_ReportsDiagnostic(
-		CancellationToken cancellationToken
-	)
+	public async Task Generate_GivenUnsupportedLengthTarget_ReportsDiagnostic(CancellationToken cancellationToken)
 	{
 		const string source =
 			@"
@@ -498,14 +449,8 @@ namespace Testing
 }
 ";
 
-		var driverResult = await GenerateZodAsync(
-			source,
-			GenerationDriverContext.IgnoreDiagnostic,
-			cancellationToken
-		);
-		await Assert
-			.That(driverResult)
-			.HasDiagnostic(GeneratorDiagnostics.UnsupportedLengthAttributeTarget);
+		var driverResult = await GenerateZodAsync(source, GenerationDriverContext.IgnoreDiagnostic, cancellationToken);
+		await Assert.That(driverResult).HasDiagnostic(GeneratorDiagnostics.UnsupportedLengthAttributeTarget);
 	}
 
 	[Test]
@@ -532,11 +477,7 @@ namespace Testing
 }
 ";
 
-		var driverResult = await GenerateZodAsync(
-			source,
-			GenerationDriverContext.IgnoreDiagnostic,
-			cancellationToken
-		);
+		var driverResult = await GenerateZodAsync(source, GenerationDriverContext.IgnoreDiagnostic, cancellationToken);
 
 		await Assert
 			.That(driverResult.Result.Diagnostics.Count(static d => d.Id == "ZODSGEN006"))
@@ -544,9 +485,7 @@ namespace Testing
 	}
 
 	[Test]
-	public async Task Generate_GivenInvalidResourceConfiguration_ReportsDiagnostic(
-		CancellationToken cancellationToken
-	)
+	public async Task Generate_GivenInvalidResourceConfiguration_ReportsDiagnostic(CancellationToken cancellationToken)
 	{
 		const string source =
 			@"
@@ -563,15 +502,9 @@ namespace Testing
 }
 ";
 
-		var driverResult = await GenerateZodAsync(
-			source,
-			GenerationDriverContext.IgnoreDiagnostic,
-			cancellationToken
-		);
+		var driverResult = await GenerateZodAsync(source, GenerationDriverContext.IgnoreDiagnostic, cancellationToken);
 
-		await Assert
-			.That(driverResult)
-			.HasDiagnostic(GeneratorDiagnostics.InvalidDataAnnotationsErrorMessage);
+		await Assert.That(driverResult).HasDiagnostic(GeneratorDiagnostics.InvalidDataAnnotationsErrorMessage);
 	}
 
 	[Test]
@@ -611,12 +544,8 @@ namespace Testing
 		var driverResult = await GenerateZodAsync(source, cancellationToken);
 		var generatedSource = GetSchemaGeneratedSource(driverResult, "StringFormatModelSchema");
 
-		await Assert
-			.That(generatedSource)
-			.Contains("new global::ZodSharp.Rules.UrlRule().IsValid(websiteValue)");
-		await Assert
-			.That(generatedSource)
-			.Contains("new global::ZodSharp.Rules.PhoneRule().IsValid(phoneNumberValue)");
+		await Assert.That(generatedSource).Contains("new global::ZodSharp.Rules.UrlRule().IsValid(websiteValue)");
+		await Assert.That(generatedSource).Contains("new global::ZodSharp.Rules.PhoneRule().IsValid(phoneNumberValue)");
 		await Assert
 			.That(generatedSource)
 			.Contains("new global::ZodSharp.Rules.CreditCardRule().IsValid(cardNumberValue)");
@@ -625,9 +554,7 @@ namespace Testing
 			.Contains("new global::ZodSharp.Rules.Base64StringRule().IsValid(encodedValue)");
 		await Assert
 			.That(generatedSource)
-			.Contains(
-				"EqualityComparer<object>.Default.Equals(value.ConfirmPassword, value.Password)"
-			);
+			.Contains("EqualityComparer<object>.Default.Equals(value.ConfirmPassword, value.Password)");
 	}
 
 	[Test]
@@ -680,9 +607,7 @@ namespace Testing
 		var errors = (System.Collections.Immutable.ImmutableArray<Core.ValidationError>)
 			result.GetType().GetProperty("Errors")!.GetValue(result)!;
 
-		await Assert
-			.That((bool)result.GetType().GetProperty("IsSuccess")!.GetValue(result)!)
-			.IsFalse();
+		await Assert.That((bool)result.GetType().GetProperty("IsSuccess")!.GetValue(result)!).IsFalse();
 		await Assert.That(errors.Any(e => e.Path.Contains("Website"))).IsTrue();
 		await Assert.That(errors.Any(e => e.Path.Contains("PhoneNumber"))).IsTrue();
 		await Assert.That(errors.Any(e => e.Path.Contains("CardNumber"))).IsTrue();
@@ -737,9 +662,7 @@ namespace Testing
 		modelType.GetProperty("ConfirmPassword")!.SetValue(model, "secret");
 
 		var result = InvokeValidate(assembly, model, "Testing.StringFormatValidModelSchema");
-		await Assert
-			.That((bool)result.GetType().GetProperty("IsSuccess")!.GetValue(result)!)
-			.IsTrue();
+		await Assert.That((bool)result.GetType().GetProperty("IsSuccess")!.GetValue(result)!).IsTrue();
 	}
 
 	[Test]
@@ -771,15 +694,9 @@ namespace Testing
 }
 ";
 
-		var driverResult = await GenerateZodAsync(
-			source,
-			GenerationDriverContext.IgnoreDiagnostic,
-			cancellationToken
-		);
+		var driverResult = await GenerateZodAsync(source, GenerationDriverContext.IgnoreDiagnostic, cancellationToken);
 
-		await Assert
-			.That(driverResult.Result.Diagnostics.Count(static d => d.Id == "ZODSGEN006"))
-			.IsEqualTo(4);
+		await Assert.That(driverResult.Result.Diagnostics.Count(static d => d.Id == "ZODSGEN006")).IsEqualTo(4);
 	}
 
 	[Test]
@@ -802,11 +719,7 @@ namespace Testing
 }
 ";
 
-		var driverResult = await GenerateZodAsync(
-			source,
-			GenerationDriverContext.IgnoreDiagnostic,
-			cancellationToken
-		);
+		var driverResult = await GenerateZodAsync(source, GenerationDriverContext.IgnoreDiagnostic, cancellationToken);
 
 		await Assert.That(driverResult).HasDiagnostic(GeneratorDiagnostics.ComparePropertyNotFound);
 	}
@@ -843,11 +756,7 @@ namespace Testing
 		return user;
 	}
 
-	static object InvokeValidate(
-		Assembly assembly,
-		object user,
-		string schemaTypeName = "Testing.UserSchema"
-	)
+	static object InvokeValidate(Assembly assembly, object user, string schemaTypeName = "Testing.UserSchema")
 	{
 		var schemaType = assembly.GetType(schemaTypeName)!;
 		return schemaType.GetMethod("Validate")!.Invoke(null, [user])!;

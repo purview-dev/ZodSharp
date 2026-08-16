@@ -2,47 +2,28 @@
 	<PropertyGroup>
 		<CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
 		<!--
-			Keep compiler-facing Roslyn packages aligned with the minimum required by
-			Purview.SourceGeneratorFramework (Microsoft.CodeAnalysis 4.13.0.0). Consumers can still
-			compile net8.0 projects, but they need a build SDK that ships Roslyn 4.13+.
+			Keep compiler-facing Roslyn packages aligned with the minimum supported by
+			Purview.SourceGeneratorFramework. Roslyn 4.13 uses the .NET 8 Immutable baseline,
+			allowing the generator assembly to be referenced by net8.0-net10.0 test projects.
 		-->
-		<!--
-			Minimum Roslyn version that ships the APIs used by the source generator
-			(e.g. IncrementalGeneratorPostInitializationContext.AddEmbeddedAttributeDefinition).
-			Consumers can still target net8.0, but the build SDK must be .NET 10+.
-		-->
-		<RoslynCompilerVersion>[5.0.0,)</RoslynCompilerVersion>
+		<RoslynCompilerVersion>4.13.0</RoslynCompilerVersion>
 		<RoslynAnalyzersVersion>[5.6.0,)</RoslynAnalyzersVersion>
 		<TUnitVersion>1.61.0</TUnitVersion>
-		<PurviewSourceGenFramework>[1.0.0-prerelease.13,)</PurviewSourceGenFramework>
+		<PurviewSourceGenFramework>[1.0.0-prerelease.18,)</PurviewSourceGenFramework>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageVersion Include="Bogus" Version="35.6.5" />
-		<PackageVersion
-			Include="Microsoft.Extensions.DependencyInjection.Abstractions"
-			Version="10.0.9"
-		/>
+		<PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.9" />
 		<PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.300" />
-		<PackageVersion
-			Include="Microsoft.CodeAnalysis.CSharp"
-			Version="$(RoslynCompilerVersion)"
-		/>
-		<PackageVersion
-			Include="Microsoft.CodeAnalysis.Analyzers"
-			Version="$(RoslynAnalyzersVersion)"
-		/>
+		<PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="$(RoslynCompilerVersion)" />
+		<PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="$(RoslynAnalyzersVersion)" />
 		<PackageVersion Include="TUnit" Version="$(TUnitVersion)" />
 		<PackageVersion Include="TUnit.Mocks" Version="$(TUnitVersion)" />
-		<PackageVersion Include="System.Collections.Immutable" Version="10.0.9" />
-		<PackageVersion Include="System.ComponentModel.Annotations" Version="5.0.0" />
 		<PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
 		<PackageVersion Include="System.Text.Json" Version="10.0.9" />
 		<PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
 		<PackageVersion Include="BenchmarkDotNet" Version="0.15.8" />
-		<PackageVersion
-			Include="Purview.SourceGeneratorFramework"
-			Version="$(PurviewSourceGenFramework)"
-		/>
+		<PackageVersion Include="Purview.SourceGeneratorFramework" Version="$(PurviewSourceGenFramework)" />
 		<PackageVersion
 			Include="Purview.SourceGeneratorFramework.Testing.TUnit"
 			Version="$(PurviewSourceGenFramework)"

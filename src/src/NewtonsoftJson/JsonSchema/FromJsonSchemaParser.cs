@@ -27,8 +27,7 @@ public static class FromJsonSchemaParser
 	/// <param name="schema">The JSON Schema definition</param>
 	/// <param name="options">Parsing options</param>
 	/// <returns>A ZodSharp schema that validates according to the JSON Schema</returns>
-	public static IZodSchema<object, object> Parse(
-		JsonSchemaDefinition schema,
+	public static IZodSchema<object, object> Parse(JsonSchemaDefinition schema,
 #pragma warning disable IDE0060 // Remove unused parameter
 		FromJsonSchemaOptions? options = null
 #pragma warning restore IDE0060 // Remove unused parameter
@@ -50,10 +49,7 @@ public static class FromJsonSchemaParser
 	/// <param name="jsonSchema">The JSON Schema as a string</param>
 	/// <param name="options">Parsing options</param>
 	/// <returns>A ZodSharp schema that validates according to the JSON Schema</returns>
-	public static IZodSchema<object, object> Parse(
-		string jsonSchema,
-		FromJsonSchemaOptions? options = null
-	)
+	public static IZodSchema<object, object> Parse(string jsonSchema, FromJsonSchemaOptions? options = null)
 	{
 		var schema = JsonConvert.DeserializeObject<JsonSchemaDefinition>(
 			jsonSchema,
@@ -61,17 +57,11 @@ public static class FromJsonSchemaParser
 		);
 
 		return schema == null
-			? throw new ArgumentException(
-				"Invalid JSON Schema: could not parse JSON",
-				nameof(jsonSchema)
-			)
+			? throw new ArgumentException("Invalid JSON Schema: could not parse JSON", nameof(jsonSchema))
 			: Parse(schema, options);
 	}
 
-	sealed class ConversionContext(
-		JsonSchemaDefinition rootSchema,
-		Dictionary<string, JsonSchemaDefinition> defs
-	)
+	sealed class ConversionContext(JsonSchemaDefinition rootSchema, Dictionary<string, JsonSchemaDefinition> defs)
 	{
 		public JsonSchemaDefinition RootSchema { get; } = rootSchema;
 
@@ -82,10 +72,7 @@ public static class FromJsonSchemaParser
 		public HashSet<string> Processing { get; } = [];
 	}
 
-	static IZodSchema<object, object> ConvertSchema(
-		JsonSchemaDefinition schema,
-		ConversionContext ctx
-	)
+	static IZodSchema<object, object> ConvertSchema(JsonSchemaDefinition schema, ConversionContext ctx)
 	{
 		// Handle $ref
 		if (schema.Ref != null)
@@ -198,10 +185,7 @@ public static class FromJsonSchemaParser
 		"Performance",
 		"CA1859:Use concrete types when possible for improved performance"
 	)]
-	static IZodSchema<object, object> ConvertNumberSchema(
-		JsonSchemaDefinition schema,
-		bool isInteger
-	)
+	static IZodSchema<object, object> ConvertNumberSchema(JsonSchemaDefinition schema, bool isInteger)
 	{
 		var numberSchema = Z.Number();
 
@@ -233,10 +217,7 @@ public static class FromJsonSchemaParser
 		"Performance",
 		"CA1859:Use concrete types when possible for improved performance"
 	)]
-	static IZodSchema<object, object> ConvertObjectSchema(
-		JsonSchemaDefinition schema,
-		ConversionContext ctx
-	)
+	static IZodSchema<object, object> ConvertObjectSchema(JsonSchemaDefinition schema, ConversionContext ctx)
 	{
 		var builder = Z.Object();
 		var requiredSet = new HashSet<string>(schema.Required ?? []);
@@ -266,13 +247,9 @@ public static class FromJsonSchemaParser
 		"Performance",
 		"CA1859:Use concrete types when possible for improved performance"
 	)]
-	static IZodSchema<object, object> ConvertArraySchema(
-		JsonSchemaDefinition schema,
-		ConversionContext ctx
-	)
+	static IZodSchema<object, object> ConvertArraySchema(JsonSchemaDefinition schema, ConversionContext ctx)
 	{
-		var elementSchema =
-			schema.Items != null ? ConvertSchema(schema.Items, ctx) : new AnySchema();
+		var elementSchema = schema.Items != null ? ConvertSchema(schema.Items, ctx) : new AnySchema();
 
 		return new ArraySchemaWrapper(elementSchema, schema.MinItems, schema.MaxItems);
 	}
@@ -281,9 +258,7 @@ public static class FromJsonSchemaParser
 	{
 		if (!refPath.StartsWith('#'))
 		{
-			throw new NotSupportedException(
-				"External $ref is not supported, only local refs (#/...) are allowed"
-			);
+			throw new NotSupportedException("External $ref is not supported, only local refs (#/...) are allowed");
 		}
 
 		// Check if already resolved
@@ -420,10 +395,7 @@ public static class FromJsonSchemaParser
 				num = l;
 			else if (value is float f)
 				num = f;
-			else if (
-				value is JToken jt
-				&& (jt.Type == JTokenType.Integer || jt.Type == JTokenType.Float)
-			)
+			else if (value is JToken jt && (jt.Type == JTokenType.Integer || jt.Type == JTokenType.Float))
 			{
 				num = jt.Value<double>();
 			}
@@ -495,11 +467,7 @@ public static class FromJsonSchemaParser
 			if (value != null && !(value is JToken jt && jt.Type == JTokenType.Null))
 			{
 				return ValidationResult<object>.Failure(
-					new ValidationError(
-						"invalid_type",
-						$"Expected null, but got {value.GetType().Name}",
-						[]
-					)
+					new ValidationError("invalid_type", $"Expected null, but got {value.GetType().Name}", [])
 				);
 			}
 
@@ -604,22 +572,14 @@ public static class FromJsonSchemaParser
 			if (minItems.HasValue && items.Count < minItems.Value)
 			{
 				return ValidationResult<object>.Failure(
-					new ValidationError(
-						"too_small",
-						$"Array must contain at least {minItems.Value} items",
-						[]
-					)
+					new ValidationError("too_small", $"Array must contain at least {minItems.Value} items", [])
 				);
 			}
 
 			if (maxItems.HasValue && items.Count > maxItems.Value)
 			{
 				return ValidationResult<object>.Failure(
-					new ValidationError(
-						"too_big",
-						$"Array must contain at most {maxItems.Value} items",
-						[]
-					)
+					new ValidationError("too_big", $"Array must contain at most {maxItems.Value} items", [])
 				);
 			}
 
@@ -641,9 +601,7 @@ public static class FromJsonSchemaParser
 						var path = new string[error.Path.Length + 1];
 						path[0] = i.ToString(CultureInfo.InvariantCulture);
 						error.Path.CopyTo(0, path, 1, error.Path.Length);
-						errors.Add(
-							new ValidationError(error.Code, error.Message, path, error.Parameters)
-						);
+						errors.Add(new ValidationError(error.Code, error.Message, path, error.Parameters));
 					}
 				}
 			}
@@ -732,11 +690,7 @@ public static class FromJsonSchemaParser
 			if (!matches)
 			{
 				return ValidationResult<object>.Failure(
-					new ValidationError(
-						"invalid_literal",
-						$"Expected literal value '{_value}', but got '{value}'",
-						[]
-					)
+					new ValidationError("invalid_literal", $"Expected literal value '{_value}', but got '{value}'", [])
 				);
 			}
 
@@ -752,8 +706,7 @@ public static class FromJsonSchemaParser
 
 	class AnySchema : IZodSchema<object, object>
 	{
-		public ValidationResult<object> Validate(object value) =>
-			ValidationResult<object>.Success(value);
+		public ValidationResult<object> Validate(object value) => ValidationResult<object>.Success(value);
 
 		public ValueTask<ValidationResult<object>> ValidateAsync(
 			object value,

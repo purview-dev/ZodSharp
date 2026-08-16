@@ -22,9 +22,7 @@ public class ZodRecord<TValue>(IZodSchema<TValue, TValue> valueSchema)
 	/// </summary>
 	/// <param name="value">The dictionary to validate.</param>
 	/// <returns>A validation result.</returns>
-	protected override ValidationResult<Dictionary<string, TValue>> ParseInternal(
-		Dictionary<string, TValue> value
-	)
+	protected override ValidationResult<Dictionary<string, TValue>> ParseInternal(Dictionary<string, TValue> value)
 	{
 		if (value == null)
 		{

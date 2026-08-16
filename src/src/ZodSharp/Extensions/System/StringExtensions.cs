@@ -12,8 +12,7 @@ public static class StringExtensions
 	/// </summary>
 	/// <param name="value">The string to check.</param>
 	/// <returns>The original string if it is not null or empty; otherwise, null.</returns>
-	public static string? OrNull(this string? value) =>
-		string.IsNullOrWhiteSpace(value) ? null : value;
+	public static string? OrNull(this string? value) => string.IsNullOrWhiteSpace(value) ? null : value;
 
 	/// <summary>
 	/// Returns the string if it is not null or empty; otherwise, returns the specified default value.

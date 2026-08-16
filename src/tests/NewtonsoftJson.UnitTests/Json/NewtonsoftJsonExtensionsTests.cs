@@ -46,10 +46,7 @@ public class NewtonsoftJsonExtensionsTests
 	public async Task CreateValidatingConverter_GivenValidJson_DeserializesSuccessfully()
 	{
 		var schema = new TestUserSchema();
-		var settings = new JsonSerializerSettings
-		{
-			Converters = { schema.CreateValidatingConverter() },
-		};
+		var settings = new JsonSerializerSettings { Converters = { schema.CreateValidatingConverter() } };
 
 		var deserialized = JsonConvert.DeserializeObject<TestUser>(
 			/*lang=json,strict*/"""{"name":"John","age":30}""",
@@ -64,10 +61,7 @@ public class NewtonsoftJsonExtensionsTests
 	public async Task CreateValidatingConverter_GivenInvalidData_ThrowsJsonSerializationException()
 	{
 		var schema = new TestUserSchema();
-		var settings = new JsonSerializerSettings
-		{
-			Converters = { schema.CreateValidatingConverter() },
-		};
+		var settings = new JsonSerializerSettings { Converters = { schema.CreateValidatingConverter() } };
 
 		var exception = Assert.Throws<JsonSerializationException>(() =>
 			JsonConvert.DeserializeObject<TestUser>( /*lang=json,strict*/
@@ -104,20 +98,12 @@ public class NewtonsoftJsonExtensionsTests
 
 			if (string.IsNullOrWhiteSpace(value.Name))
 			{
-				errors.Add(
-					new ValidationError("too_small", "Name is required", [nameof(TestUser.Name)])
-				);
+				errors.Add(new ValidationError("too_small", "Name is required", [nameof(TestUser.Name)]));
 			}
 
 			if (value.Age < 0)
 			{
-				errors.Add(
-					new ValidationError(
-						"too_small",
-						"Age must be non-negative",
-						[nameof(TestUser.Age)]
-					)
-				);
+				errors.Add(new ValidationError("too_small", "Age must be non-negative", [nameof(TestUser.Age)]));
 			}
 
 			return errors.Count == 0

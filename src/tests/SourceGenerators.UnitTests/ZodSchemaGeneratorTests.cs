@@ -5,8 +5,7 @@ using ZodSharp.SourceGenerators.Infra;
 namespace ZodSharp.SourceGenerators;
 
 [Retry(3)]
-public partial class ZodSchemaGeneratorTests
-	: IncrementalSourceGeneratorTestBase<ZodSchemaGenerator>
+public partial class ZodSchemaGeneratorTests : IncrementalSourceGeneratorTestBase<ZodSchemaGenerator>
 {
 	static string GetSchemaGeneratedSource(DriverRunResult driverRunResults) =>
 		GetSchemaGeneratedSource(driverRunResults.Result);

@@ -11,10 +11,7 @@ public sealed class ZodSchemaFactoryOptions
 	/// <summary>
 	/// Assemblies to scan for <see cref="ZodSchemaGeneratedAttribute"/> and auto-register generated validators.
 	/// </summary>
-	[System.Diagnostics.CodeAnalysis.SuppressMessage(
-		"Design",
-		"CA1002:Do not expose generic lists"
-	)]
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1002:Do not expose generic lists")]
 	public List<Assembly> ScanAssemblies { get; } = [];
 
 	/// <summary>

@@ -75,6 +75,5 @@ public sealed class GenerationLogger(Action<string, OutputType> logger)
 	}
 
 	static string GetSpacing(int tabs, string message) =>
-		(tabs <= 0 ? string.Empty : SpacingCache.GetOrAdd(tabs, static t => new string(' ', t)))
-		+ message;
+		(tabs <= 0 ? string.Empty : SpacingCache.GetOrAdd(tabs, static t => new string(' ', t))) + message;
 }

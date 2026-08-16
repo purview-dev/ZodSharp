@@ -33,11 +33,7 @@ public static class NewtonsoftJsonExtensions
 			var deserialized = JsonConvert.DeserializeObject<T>(json, settings);
 			return deserialized == null
 				? ValidationResult<T>.Failure(
-					new ValidationError(
-						"deserialization_failed",
-						"Failed to deserialize JSON",
-						EmptyPath
-					)
+					new ValidationError("deserialization_failed", "Failed to deserialize JSON", EmptyPath)
 				)
 				: schema.Validate(deserialized);
 		}
@@ -98,11 +94,7 @@ public static class NewtonsoftJsonExtensions
 			var deserialized = token.ToObject<T>(serializer ?? JsonSerializer.CreateDefault());
 			return deserialized == null
 				? ValidationResult<T>.Failure(
-					new ValidationError(
-						"deserialization_failed",
-						"Failed to deserialize JSON",
-						EmptyPath
-					)
+					new ValidationError("deserialization_failed", "Failed to deserialize JSON", EmptyPath)
 				)
 				: schema.Validate(deserialized);
 		}
@@ -118,9 +110,7 @@ public static class NewtonsoftJsonExtensions
 	/// Creates a custom JsonConverter that validates using a Zod schema.
 	/// </summary>
 	public static JsonConverter CreateValidatingConverter<T>(this IZodSchema<T, T> schema) =>
-		schema == null
-			? throw new ArgumentNullException(nameof(schema))
-			: new ZodJsonConverter<T>(schema);
+		schema == null ? throw new ArgumentNullException(nameof(schema)) : new ZodJsonConverter<T>(schema);
 
 	/// <summary>
 	/// Validates a value and serializes it to a JSON string.
@@ -169,12 +159,7 @@ public static class NewtonsoftJsonExtensions
 #if NETSTANDARD2_1_OR_GREATER
 		using StreamWriter writer = new(output, new UTF8Encoding(false), 1024, leaveOpen: true);
 #else
-		await using StreamWriter writer = new(
-			output,
-			new UTF8Encoding(false),
-			1024,
-			leaveOpen: true
-		);
+		await using StreamWriter writer = new(output, new UTF8Encoding(false), 1024, leaveOpen: true);
 #endif
 		using JsonWriter jsonWriter = new JsonTextWriter(writer) { CloseOutput = false };
 		serializer.Serialize(jsonWriter, result.Value);

@@ -24,10 +24,7 @@ public interface IZodSchema<TOutput, TInput>
 	/// <param name="value">The value to validate</param>
 	/// <param name="cancellationToken"></param>
 	/// <returns>A task that completes with a validation result</returns>
-	ValueTask<ValidationResult<TOutput>> ValidateAsync(
-		TInput value,
-		CancellationToken cancellationToken = default
-	);
+	ValueTask<ValidationResult<TOutput>> ValidateAsync(TInput value, CancellationToken cancellationToken = default);
 }
 
 /// <summary>

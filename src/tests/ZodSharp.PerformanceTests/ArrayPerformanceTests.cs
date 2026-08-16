@@ -35,30 +35,22 @@ public class ArrayPerformanceTests
 	}
 
 	[Benchmark]
-	public ValidationResult<string[]> ValidateSmallArray() =>
-		_smallArraySchema.Validate(_smallArray);
+	public ValidationResult<string[]> ValidateSmallArray() => _smallArraySchema.Validate(_smallArray);
 
 	[Benchmark]
-	public ValidationResult<string[]> ValidateMediumArray() =>
-		_mediumArraySchema.Validate(_mediumArray);
+	public ValidationResult<string[]> ValidateMediumArray() => _mediumArraySchema.Validate(_mediumArray);
 
 	[Benchmark]
-	public ValidationResult<string[]> ValidateLargeArray() =>
-		_largeArraySchema.Validate(_largeArray);
+	public ValidationResult<string[]> ValidateLargeArray() => _largeArraySchema.Validate(_largeArray);
 
 	[Benchmark]
-	public ValidationResult<double[]> ValidateNumberArray() =>
-		_numberArraySchema.Validate(_numberArray);
+	public ValidationResult<double[]> ValidateNumberArray() => _numberArraySchema.Validate(_numberArray);
 
 	[Benchmark]
 	public ValidationResult<string[]> ValidateLargeArrayWithComplexSchema()
 	{
 		var schema = Z.Array(
-			Z.String()
-				.Min(5)
-				.Max(100)
-				.Email()
-				.Regex(@"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
+			Z.String().Min(5).Max(100).Email().Regex(@"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
 		);
 		return schema.Validate(_mediumArray);
 	}

@@ -32,10 +32,7 @@ public class ZodCatch<T> : ZodType<T>
 	/// </summary>
 	/// <param name="innerSchema">The inner schema.</param>
 	/// <param name="fallbackFactory">A function producing the fallback value from the input and the errors.</param>
-	public ZodCatch(
-		IZodSchema<T, T> innerSchema,
-		Func<T, ImmutableArray<ValidationError>, T> fallbackFactory
-	)
+	public ZodCatch(IZodSchema<T, T> innerSchema, Func<T, ImmutableArray<ValidationError>, T> fallbackFactory)
 	{
 		_innerSchema = innerSchema;
 		_fallbackFactory = fallbackFactory;

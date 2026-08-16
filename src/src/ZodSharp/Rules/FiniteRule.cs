@@ -29,6 +29,5 @@ public readonly record struct FiniteRule : Core.IValidationRule<double>
 	/// </summary>
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
-	public string GetErrorMessage(in double value) =>
-		_message ?? $"Number must be finite, but got {value}";
+	public string GetErrorMessage(in double value) => _message ?? $"Number must be finite, but got {value}";
 }

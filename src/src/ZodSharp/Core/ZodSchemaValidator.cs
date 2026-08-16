@@ -11,8 +11,6 @@ public sealed class ZodSchemaValidator<T>(IZodSchema<T, T> schema) : IZodSchemaV
 	public ValidationResult<T> Validate(T value) => _schema.Validate(value);
 
 	/// <inheritdoc/>
-	public ValueTask<ValidationResult<T>> ValidateAsync(
-		T value,
-		CancellationToken cancellationToken = default
-	) => _schema.ValidateAsync(value, cancellationToken);
+	public ValueTask<ValidationResult<T>> ValidateAsync(T value, CancellationToken cancellationToken = default) =>
+		_schema.ValidateAsync(value, cancellationToken);
 }

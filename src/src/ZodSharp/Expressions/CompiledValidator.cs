@@ -13,8 +13,7 @@ public static class CompiledValidator
 	/// Compiles a validator function from a schema using Expression Trees.
 	/// This creates a highly optimized delegate that can be cached and reused.
 	/// </summary>
-	public static Func<T, ValidationResult<T>> Compile<T>(IZodSchema<T, T> schema) =>
-		CompileStandard(schema);
+	public static Func<T, ValidationResult<T>> Compile<T>(IZodSchema<T, T> schema) => CompileStandard(schema);
 
 	/// <summary>
 	/// Standard compilation that calls Validate method.

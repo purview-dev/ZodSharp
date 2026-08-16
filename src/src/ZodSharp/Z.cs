@@ -13,10 +13,7 @@ public static class Z
 	/// <summary>
 	/// Creates a string schema.
 	/// </summary>
-	[System.Diagnostics.CodeAnalysis.SuppressMessage(
-		"Naming",
-		"CA1720:Identifier contains type name"
-	)]
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1720:Identifier contains type name")]
 	public static ZodString String() => new();
 
 	/// <summary>
@@ -54,10 +51,7 @@ public static class Z
 	/// <summary>
 	/// Creates an object schema builder.
 	/// </summary>
-	[System.Diagnostics.CodeAnalysis.SuppressMessage(
-		"Naming",
-		"CA1720:Identifier contains type name"
-	)]
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1720:Identifier contains type name")]
 	public static ZodObjectBuilder Object() => new();
 
 	/// <summary>
@@ -73,10 +67,8 @@ public static class Z
 	/// <typeparam name="T2">The second option's type.</typeparam>
 	/// <param name="option1">The first option schema.</param>
 	/// <param name="option2">The second option schema.</param>
-	public static ZodTypedUnion<T1, T2> Union<T1, T2>(
-		IZodSchema<T1, T1> option1,
-		IZodSchema<T2, T2> option2
-	) => new(option1, option2);
+	public static ZodTypedUnion<T1, T2> Union<T1, T2>(IZodSchema<T1, T1> option1, IZodSchema<T2, T2> option2) =>
+		new(option1, option2);
 
 	/// <summary>
 	/// Creates an intersection schema requiring both <paramref name="left"/> and
@@ -86,10 +78,7 @@ public static class Z
 	/// <typeparam name="T">The validated type.</typeparam>
 	/// <param name="left">The first schema.</param>
 	/// <param name="right">The second schema.</param>
-	public static ZodIntersection<T> Intersection<T>(
-		IZodSchema<T, T> left,
-		IZodSchema<T, T> right
-	) => new(left, right);
+	public static ZodIntersection<T> Intersection<T>(IZodSchema<T, T> left, IZodSchema<T, T> right) => new(left, right);
 
 	/// <summary>
 	/// Creates a literal schema.
@@ -105,8 +94,7 @@ public static class Z
 	/// <summary>
 	/// Creates a discriminated union builder.
 	/// </summary>
-	public static ZodDiscriminatedUnionBuilder DiscriminatedUnion(string discriminator) =>
-		new(discriminator);
+	public static ZodDiscriminatedUnionBuilder DiscriminatedUnion(string discriminator) => new(discriminator);
 
 	/// <summary>
 	/// Creates a string enum schema that validates against a set of allowed values.
@@ -130,8 +118,7 @@ public static class Z
 	/// </summary>
 	/// <typeparam name="TValue">The value type.</typeparam>
 	/// <param name="valueSchema">The schema for all values.</param>
-	public static ZodRecord<TValue> Record<TValue>(IZodSchema<TValue, TValue> valueSchema) =>
-		new(valueSchema);
+	public static ZodRecord<TValue> Record<TValue>(IZodSchema<TValue, TValue> valueSchema) => new(valueSchema);
 
 	/// <summary>
 	/// Creates a two-element tuple schema. Equivalent to Zod's
@@ -139,10 +126,8 @@ public static class Z
 	/// </summary>
 	/// <typeparam name="T1">The first element type.</typeparam>
 	/// <typeparam name="T2">The second element type.</typeparam>
-	public static ZodTuple<T1, T2> Tuple<T1, T2>(
-		IZodSchema<T1, T1> schema1,
-		IZodSchema<T2, T2> schema2
-	) => new(schema1, schema2);
+	public static ZodTuple<T1, T2> Tuple<T1, T2>(IZodSchema<T1, T1> schema1, IZodSchema<T2, T2> schema2) =>
+		new(schema1, schema2);
 
 	/// <summary>
 	/// Creates a three-element tuple schema. Equivalent to Zod's
@@ -161,8 +146,6 @@ public static class Z
 	/// Converts a ZodSharp schema to JSON Schema (Draft 2020-12).
 	/// Enables cross-platform schema sharing with TypeScript Zod.
 	/// </summary>
-	public static JsonSchemaDefinition ToJsonSchema<T>(
-		IZodSchema<T, T> schema,
-		ToJsonSchemaOptions? options = null
-	) => ToJsonSchemaConverter.Convert(schema, options);
+	public static JsonSchemaDefinition ToJsonSchema<T>(IZodSchema<T, T> schema, ToJsonSchemaOptions? options = null) =>
+		ToJsonSchemaConverter.Convert(schema, options);
 }

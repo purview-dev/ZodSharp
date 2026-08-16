@@ -9,17 +9,7 @@ namespace ZodSharp.Json;
 /// </summary>
 public class SystemTextCrossPlatformTests
 {
-	static readonly string FixturesDir = Path.Combine(
-		"..",
-		"..",
-		"..",
-		"..",
-		"..",
-		"..",
-		"src",
-		"ts",
-		"fixtures"
-	);
+	static readonly string FixturesDir = Path.Combine("..", "..", "..", "..", "..", "..", "src", "ts", "fixtures");
 	static readonly string OutputDir = Path.Combine(
 		"..",
 		"..",
@@ -34,10 +24,7 @@ public class SystemTextCrossPlatformTests
 	);
 	static readonly string ManifestPath = Path.Combine(FixturesDir, "manifest.json");
 
-	static readonly JsonSerializerOptions CamelCase = new()
-	{
-		PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-	};
+	static readonly JsonSerializerOptions CamelCase = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
 	static readonly string[] InvalidKeys =
 	[
@@ -49,10 +36,7 @@ public class SystemTextCrossPlatformTests
 	];
 	static readonly string[] ValidKeys = ["valid", "validMinimal", "validMaxAge"];
 
-	static readonly JsonSerializerOptions ManifestOptions = new()
-	{
-		PropertyNameCaseInsensitive = true,
-	};
+	static readonly JsonSerializerOptions ManifestOptions = new() { PropertyNameCaseInsensitive = true };
 
 	static CrossPlatformManifest LoadManifest()
 	{
@@ -120,9 +104,7 @@ public class SystemTextCrossPlatformTests
 	}
 
 	[Test]
-	public async Task SystemText_SerializesValidData_CanBeParsedByTS_Zod(
-		CancellationToken cancellationToken
-	)
+	public async Task SystemText_SerializesValidData_CanBeParsedByTS_Zod(CancellationToken cancellationToken)
 	{
 		// Serialize valid data using System.Text.Json, write to output dir for TS tests to consume
 		var schema = new CrossPlatformUserSchema();
@@ -149,14 +131,9 @@ public class SystemTextCrossPlatformTests
 	}
 
 	[Test]
-	public async Task SystemText_RoundTrip_TSFixture_ToCSharp_ToJSON_BackToCSharp(
-		CancellationToken cancellationToken
-	)
+	public async Task SystemText_RoundTrip_TSFixture_ToCSharp_ToJSON_BackToCSharp(CancellationToken cancellationToken)
 	{
-		var originalJson = await File.ReadAllTextAsync(
-			Path.Combine(FixturesDir, "valid.json"),
-			cancellationToken
-		);
+		var originalJson = await File.ReadAllTextAsync(Path.Combine(FixturesDir, "valid.json"), cancellationToken);
 		var schema = new CrossPlatformUserSchema();
 
 		var firstResult = schema.DeserializeAndValidate(originalJson, CamelCase);

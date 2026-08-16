@@ -11,14 +11,12 @@ static class CodeGenHelpers
 
 	const string EmbedAttributesHashDefineName = "ZODSHARP_ATTRIBUTES";
 
-	const string GeneratedCodeConstant =
-		"System.CodeDom.Compiler.GeneratedCodeAttribute(\"{0}\", \"{1}\")";
+	const string GeneratedCodeConstant = "System.CodeDom.Compiler.GeneratedCodeAttribute(\"{0}\", \"{1}\")";
 	const string ConditionalConstant = "System.Diagnostics.ConditionalAttribute(\"{0}\")";
 	const string CompilerGeneratedConstant = "System.Runtime.CompilerServices.CompilerGenerated";
 
 	const string EmbeddedConstant = "Microsoft.CodeAnalysis.EmbeddedAttribute";
-	const string ExcludeFromCodeCoverageConstant =
-		"System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute";
+	const string ExcludeFromCodeCoverageConstant = "System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute";
 
 	static readonly Lazy<string> GeneratedCodeAttribute = new(static () =>
 		string.Format(
@@ -30,20 +28,11 @@ static class CodeGenHelpers
 	);
 
 	static readonly Lazy<string> ConditionalAttribute = new(static () =>
-		string.Format(
-			CultureInfo.InvariantCulture,
-			ConditionalConstant,
-			EmbedAttributesHashDefineName
-		)
+		string.Format(CultureInfo.InvariantCulture, ConditionalConstant, EmbedAttributesHashDefineName)
 	);
 
 	static readonly Lazy<string[]> GenAttributes = new(static () =>
-		[
-			EmbeddedConstant,
-			ExcludeFromCodeCoverageConstant,
-			CompilerGeneratedConstant,
-			GeneratedCodeAttribute.Value,
-		]
+		[EmbeddedConstant, ExcludeFromCodeCoverageConstant, CompilerGeneratedConstant, GeneratedCodeAttribute.Value]
 	);
 
 	static readonly Lazy<string[]> GenAttribAttributes = new(static () =>
@@ -61,8 +50,7 @@ static class CodeGenHelpers
 	);
 
 	static readonly ConcurrentDictionary<int, string> GeneratedCodeAttributesByTabs = new();
-	static readonly ConcurrentDictionary<int, string> AttributeGeneratedCodeAttributesByTabs =
-		new();
+	static readonly ConcurrentDictionary<int, string> AttributeGeneratedCodeAttributesByTabs = new();
 	static readonly ConcurrentDictionary<int, string> NonClassGeneratedCodeAttributesByTabs = new();
 
 	public const string NewLine = "\n";
@@ -152,8 +140,7 @@ static class CodeGenHelpers
 			? suffix
 			: char.ToLowerInvariant(propertyName[0]) + propertyName.Substring(1) + suffix;
 
-	public static string Quote(string value) =>
-		$"\"{value.Replace("\\", "\\\\").Replace("\"", "\\\"")}\"";
+	public static string Quote(string value) => $"\"{value.Replace("\\", "\\\\").Replace("\"", "\\\"")}\"";
 
 	public static string QuoteChar(char value)
 	{

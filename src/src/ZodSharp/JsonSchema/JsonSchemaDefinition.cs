@@ -5,10 +5,7 @@ namespace ZodSharp.JsonSchema;
 /// Based on Draft 2020-12 specification.
 /// </summary>
 [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1002:Do not expose generic lists")]
-[System.Diagnostics.CodeAnalysis.SuppressMessage(
-	"Usage",
-	"CA2227:Collection properties should be read only"
-)]
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2227:Collection properties should be read only")]
 public class JsonSchemaDefinition
 {
 	/// <summary>$schema - The JSON Schema version URI</summary>

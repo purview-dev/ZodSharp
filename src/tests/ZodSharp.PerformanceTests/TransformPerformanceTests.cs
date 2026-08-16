@@ -34,8 +34,7 @@ public class TransformPerformanceTests
 	public ValidationResult<string> TransformTrim() => _trimSchema.Validate("  hello world  ");
 
 	[Benchmark]
-	public ValidationResult<string> TransformChained() =>
-		_chainedTransformSchema.Validate("  HELLO WORLD  ");
+	public ValidationResult<string> TransformChained() => _chainedTransformSchema.Validate("  HELLO WORLD  ");
 
 	[Benchmark]
 	public ValidationResult<string> TransformWithValidation()

@@ -89,8 +89,7 @@ public class ZodSuperRefinementTests
 	public async Task SuperRefine_GivenIssueWithPath_ReturnsPathedIssue()
 	{
 		// Arrange
-		var schema = Z.String()
-			.SuperRefine(static ctx => ctx.AddIssue("bad", "no good", ["nested"]));
+		var schema = Z.String().SuperRefine(static ctx => ctx.AddIssue("bad", "no good", ["nested"]));
 
 		// Act
 		var result = schema.Validate("anything");

@@ -19,11 +19,7 @@ public abstract class IncrementalSourceGeneratorTestBase<TGenerator>(bool throwO
 		typeof(System.Text.RegularExpressions.Regex),
 	];
 
-	public static readonly string[] GeneratedAttributes =
-	[
-		"EmbeddedAttribute.cs",
-		"ZodSchemaAttribute.g.cs",
-	];
+	public static readonly string[] GeneratedAttributes = ["EmbeddedAttribute.cs", "ZodSchemaAttribute.g.cs"];
 
 	public static readonly int ExpectedFileCount = GeneratedAttributes.Length;
 	public static readonly int ExpectedFileCountPlusGen = ExpectedFileCount + 1;
@@ -31,10 +27,8 @@ public abstract class IncrementalSourceGeneratorTestBase<TGenerator>(bool throwO
 	public const int HintNameHashHexLength = 16;
 	public const string GeneratedSourceFileSuffix = ".g.cs";
 
-	protected async Task<DriverRunResult> GenerateZodAsync(
-		string source,
-		CancellationToken cancellationToken
-	) => await GenerateZodAsync(source, GenerationDriverContext.Default, cancellationToken);
+	protected async Task<DriverRunResult> GenerateZodAsync(string source, CancellationToken cancellationToken) =>
+		await GenerateZodAsync(source, GenerationDriverContext.Default, cancellationToken);
 
 	protected override async Task OnAfterRunAsync(
 		DriverRunResult result,
@@ -65,8 +59,7 @@ public abstract class IncrementalSourceGeneratorTestBase<TGenerator>(bool throwO
 			ThrowOnGenerationException = driverContext.ThrowOnGenerationException,
 			CompileToAssembly = driverContext.CompileToAssembly,
 			ThrowOnLogError = throwOnLogError,
-			DisableSourceGeneratorPropertyName =
-				PropertyLibrary.DisableZodSharpSourceGeneratorProperty,
+			DisableSourceGeneratorPropertyName = PropertyLibrary.DisableZodSharpSourceGeneratorProperty,
 			DisableSourceGeneratorValue = driverContext.DisableSourceGenerator,
 			PreprocessReferences = driverContext.PreprocessReferences,
 			ExcludeGeneratedAttributes = ImmutableArray.Create(GeneratedAttributes),

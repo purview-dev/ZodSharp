@@ -15,8 +15,7 @@ namespace ZodSharp.Schemas;
 /// </remarks>
 /// <param name="baseSchema">The base schema.</param>
 /// <param name="refinement">The context-aware refinement callback.</param>
-public class ZodSuperRefinement<T>(IZodSchema<T> baseSchema, Action<RefineCtx<T>> refinement)
-	: ZodType<T>
+public class ZodSuperRefinement<T>(IZodSchema<T> baseSchema, Action<RefineCtx<T>> refinement) : ZodType<T>
 {
 	static readonly ImmutableArray<string> EmptyPath = [];
 

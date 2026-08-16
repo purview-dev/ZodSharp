@@ -9,8 +9,7 @@ static class TypeHelpersExtensions
 	extension(TypeHelpers)
 	{
 		public static LengthAccessKind GetLengthAccessKind(ITypeSymbol propertyType) =>
-			propertyType.SpecialType == SpecialType.System_String
-			|| propertyType is IArrayTypeSymbol
+			propertyType.SpecialType == SpecialType.System_String || propertyType is IArrayTypeSymbol
 				? LengthAccessKind.Length
 			: HasAccessibleCountProperty(propertyType) ? LengthAccessKind.Count
 			: LengthAccessKind.Enumerable;
@@ -80,20 +79,14 @@ static class TypeHelpersExtensions
 				return false;
 
 			// Check if the type has the ZodSchema attribute
-			return namedType
-				.GetAttributes()
-				.Any(a => TypeLibrary.ZodSchemaAttribute.Equals(a.AttributeClass));
+			return namedType.GetAttributes().Any(a => TypeLibrary.ZodSchemaAttribute.Equals(a.AttributeClass));
 		}
 
 #pragma warning disable format
 		public static bool CanBeNull(ITypeSymbol typeSymbol) =>
 			typeSymbol.IsReferenceType
 			|| typeSymbol.NullableAnnotation == NullableAnnotation.Annotated
-			|| typeSymbol
-				is INamedTypeSymbol
-				{
-					OriginalDefinition.SpecialType: SpecialType.System_Nullable_T
-				};
+			|| typeSymbol is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T };
 #pragma warning restore format
 
 		public static bool IsNumericType(ITypeSymbol type) =>
@@ -112,11 +105,7 @@ static class TypeHelpersExtensions
 
 #pragma warning disable format
 		public static ITypeSymbol UnwrapNullableType(ITypeSymbol type) =>
-			type
-				is INamedTypeSymbol
-				{
-					OriginalDefinition.SpecialType: SpecialType.System_Nullable_T
-				} nullableType
+			type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T } nullableType
 				? nullableType.TypeArguments[0]
 				: type;
 
@@ -124,11 +113,7 @@ static class TypeHelpersExtensions
 			UnwrapNullableType(type).WithNullableAnnotation(NullableAnnotation.None);
 #pragma warning restore format
 
-		public static bool IsSameType(
-			ITypeSymbol left,
-			ITypeSymbol? right,
-			SymbolEqualityComparer? comparer = null
-		)
+		public static bool IsSameType(ITypeSymbol left, ITypeSymbol? right, SymbolEqualityComparer? comparer = null)
 		{
 			if (right is null)
 				return false;
@@ -141,22 +126,16 @@ static class TypeHelpersExtensions
 		{
 			type = UnwrapNullableType(type);
 			return type is INamedTypeSymbol namedType
-				&& string.Equals(
-					namedType.ToDisplayString(),
-					fullyQualifiedMetadataName,
-					StringComparison.Ordinal
-				);
+				&& string.Equals(namedType.ToDisplayString(), fullyQualifiedMetadataName, StringComparison.Ordinal);
 		}
 
-		public static bool HasAttribute(
-			IEnumerable<AttributeData> attributes,
-			TypeValueObject attribute
-		) => attributes.Any(attribute.Equals);
+		public static bool HasAttribute(IEnumerable<AttributeData> attributes, TypeValueObject attribute) =>
+			attributes.Any(attribute.Equals);
 
 		public static bool IsOrImplements(ITypeSymbol type, TypeValueObject interfaceType)
 		{
 			var unwrapped = StripNullableAnnotations(type);
-			return TypeHelpers.IsNamedType(unwrapped, interfaceType.SymbolFullName)
+			return TypeHelpers.IsNamedType(unwrapped, interfaceType.MetadataFullName)
 				|| TypeHelpers.Implements(unwrapped, interfaceType);
 		}
 	}

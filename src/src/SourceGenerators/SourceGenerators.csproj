@@ -1,18 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFrameworks></TargetFrameworks>
-		<TargetFramework>netstandard2.0</TargetFramework>
-		<EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
-		<DisableSourceLink>true</DisableSourceLink>
-		<CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
 		<IsRoslynComponent>true</IsRoslynComponent>
-		<!-- snupkg requires standard build output, which this analyzer package suppresses. -->
-		<SymbolPackageFormat>symbols.nupkg</SymbolPackageFormat>
-		<TargetsForTfmSpecificDebugSymbolsInPackage>$(TargetsForTfmSpecificDebugSymbolsInPackage);PackSourceGeneratorSymbols</TargetsForTfmSpecificDebugSymbolsInPackage>
-		<!-- Exclude Purview.Telemetry.SourceGenerator since this is a netstandard2.0 analyzer project -->
-		<ExcludePurviewTelemetry>true</ExcludePurviewTelemetry>
 		<AssemblyName>ZodSharp.SourceGeneration</AssemblyName>
-		<IncludeBuildOutput>false</IncludeBuildOutput>
 		<!--<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>-->
 	</PropertyGroup>
 
@@ -21,15 +10,9 @@
 		<AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
 	</ItemGroup>
 
-	<ItemGroup Label="Template/ Source Files">
-		<Compile Remove="Templates\**\*.cs" />
-		<EmbeddedResource Include="Templates\**\*.cs" />
-	</ItemGroup>
-
 	<ItemGroup>
 		<PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
 		<PackageReference Include="Microsoft.CodeAnalysis.Analyzers" PrivateAssets="all" />
 		<PackageReference Include="Purview.SourceGeneratorFramework" PrivateAssets="all" />
-		<PackageReference Include="System.ComponentModel.Annotations" PrivateAssets="all" />
 	</ItemGroup>
 </Project>

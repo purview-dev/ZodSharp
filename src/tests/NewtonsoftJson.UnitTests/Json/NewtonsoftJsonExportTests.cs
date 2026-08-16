@@ -40,9 +40,7 @@ public class NewtonsoftJsonExportTests
 	{
 		IZodSchema<TestUser, TestUser> schema = null!;
 
-		var exception = Assert.Throws<ArgumentNullException>(() =>
-			schema.ValidateAndSerialize(new TestUser())
-		);
+		var exception = Assert.Throws<ArgumentNullException>(() => schema.ValidateAndSerialize(new TestUser()));
 
 		await Assert.That(exception!.ParamName).IsEqualTo("schema");
 	}
@@ -52,10 +50,7 @@ public class NewtonsoftJsonExportTests
 	{
 		var schema = new TestUserSchema();
 		var user = new TestUser { Name = "Jane", Age = 25 };
-		var settings = new JsonSerializerSettings
-		{
-			ContractResolver = new CamelCasePropertyNamesContractResolver(),
-		};
+		var settings = new JsonSerializerSettings { ContractResolver = new CamelCasePropertyNamesContractResolver() };
 
 		var result = schema.ValidateAndSerialize(user, settings);
 
@@ -173,20 +168,12 @@ public class NewtonsoftJsonExportTests
 
 			if (string.IsNullOrWhiteSpace(value.Name))
 			{
-				errors.Add(
-					new ValidationError("too_small", "Name is required", [nameof(TestUser.Name)])
-				);
+				errors.Add(new ValidationError("too_small", "Name is required", [nameof(TestUser.Name)]));
 			}
 
 			if (value.Age < 0)
 			{
-				errors.Add(
-					new ValidationError(
-						"too_small",
-						"Age must be non-negative",
-						[nameof(TestUser.Age)]
-					)
-				);
+				errors.Add(new ValidationError("too_small", "Age must be non-negative", [nameof(TestUser.Age)]));
 			}
 
 			return errors.Count == 0

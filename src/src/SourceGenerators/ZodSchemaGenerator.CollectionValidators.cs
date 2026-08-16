@@ -21,14 +21,8 @@ partial class ZodSchemaGenerator
 		var displayName = GetDisplayName(property);
 		var lengthAccessor = ClassifyLengthAccessor(propertyType);
 		var lengthAttr = LengthAttributeData.FromAttributeData(attributes, out var lengthAttrData);
-		var minLengthAttr = MinLengthAttributeData.FromAttributeData(
-			attributes,
-			out var minLengthAttrData
-		);
-		var maxLengthAttr = MaxLengthAttributeData.FromAttributeData(
-			attributes,
-			out var maxLengthAttrData
-		);
+		var minLengthAttr = MinLengthAttributeData.FromAttributeData(attributes, out var minLengthAttrData);
+		var maxLengthAttr = MaxLengthAttributeData.FromAttributeData(attributes, out var maxLengthAttrData);
 
 		if (!lengthAttr.Exists && !minLengthAttr.Exists && !maxLengthAttr.Exists)
 			return;
@@ -37,12 +31,7 @@ partial class ZodSchemaGenerator
 		{
 			if (lengthAttr.Exists)
 			{
-				AddUnsupportedLengthTargetDiagnostic(
-					diagnostics,
-					lengthAttrData,
-					propertyName,
-					propertyType
-				);
+				AddUnsupportedLengthTargetDiagnostic(diagnostics, lengthAttrData, propertyName, propertyType);
 			}
 
 			return;
@@ -70,9 +59,7 @@ partial class ZodSchemaGenerator
 		using (generationContext.CodeWriter.OpenBlockScope($"if ({propertyValueName} is not null)"))
 		{
 			generationContext.CodeWriter.WriteLine($"var propertyValue = {propertyValueName};");
-			generationContext.CodeWriter.WriteLine(
-				$"var {propertyLengthName} = {lengthAccessor.LengthExpression};"
-			);
+			generationContext.CodeWriter.WriteLine($"var {propertyLengthName} = {lengthAccessor.LengthExpression};");
 
 			if (
 				lengthAttr.Exists
@@ -150,9 +137,7 @@ partial class ZodSchemaGenerator
 				);
 
 				using (
-					generationContext.CodeWriter.OpenBlockScope(
-						$"if ({propertyLengthName} < {minLengthAttr.Length})"
-					)
+					generationContext.CodeWriter.OpenBlockScope($"if ({propertyLengthName} < {minLengthAttr.Length})")
 				)
 				{
 					WriteValidationError(
@@ -180,9 +165,7 @@ partial class ZodSchemaGenerator
 				);
 
 				using (
-					generationContext.CodeWriter.OpenBlockScope(
-						$"if ({propertyLengthName} > {maxLengthAttr.Length})"
-					)
+					generationContext.CodeWriter.OpenBlockScope($"if ({propertyLengthName} > {maxLengthAttr.Length})")
 				)
 				{
 					WriteValidationError(

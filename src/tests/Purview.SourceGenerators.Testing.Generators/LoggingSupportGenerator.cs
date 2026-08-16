@@ -37,10 +37,7 @@ public sealed class LoggingSupportGenerator : IIncrementalGenerator
 		);
 	}
 
-	static ClassInfo? GetGeneratorClassInfo(
-		GeneratorSyntaxContext context,
-		CancellationToken cancellationToken
-	)
+	static ClassInfo? GetGeneratorClassInfo(GeneratorSyntaxContext context, CancellationToken cancellationToken)
 	{
 		var classSyntax = (ClassDeclarationSyntax)context.Node;
 		var symbol = context.SemanticModel.GetDeclaredSymbol(classSyntax, cancellationToken);
@@ -56,9 +53,7 @@ public sealed class LoggingSupportGenerator : IIncrementalGenerator
 		if (!isGenerator)
 			return null;
 
-		var hasLogSupport = interfaces.Any(static i =>
-			i.ToDisplayString() == LogSupportInterfaceName
-		);
+		var hasLogSupport = interfaces.Any(static i => i.ToDisplayString() == LogSupportInterfaceName);
 
 		if (hasLogSupport)
 			return null;
@@ -66,9 +61,7 @@ public sealed class LoggingSupportGenerator : IIncrementalGenerator
 		// If we reach this point, the class is a non-abstract, non-static class that implements
 		// IIncrementalGenerator or ISourceGenerator but does not implement ILogSupport. We can generate the logging support for it.
 		return new(
-			typeSymbol.ContainingNamespace.IsGlobalNamespace
-				? null
-				: typeSymbol.ContainingNamespace.ToDisplayString(),
+			typeSymbol.ContainingNamespace.IsGlobalNamespace ? null : typeSymbol.ContainingNamespace.ToDisplayString(),
 			typeSymbol.Name,
 			classSyntax.Modifiers.Any(SyntaxKind.PartialKeyword)
 		);
@@ -115,8 +108,7 @@ partial class {classInfo.Name} : global::Purview.SourceGenerators.Testing.Abstra
 		context.AddSource($"{classInfo.Name}.LogSupport.g.cs", source);
 	}
 
-	readonly struct ClassInfo(string? @namespace, string name, bool isPartial)
-		: IEquatable<ClassInfo>
+	readonly struct ClassInfo(string? @namespace, string name, bool isPartial) : IEquatable<ClassInfo>
 	{
 		public string? Namespace { get; } = @namespace;
 

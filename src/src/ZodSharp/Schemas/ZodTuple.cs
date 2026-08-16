@@ -15,8 +15,7 @@ namespace ZodSharp.Schemas;
 /// </remarks>
 /// <param name="schema1">The schema for the first element.</param>
 /// <param name="schema2">The schema for the second element.</param>
-public class ZodTuple<T1, T2>(IZodSchema<T1, T1> schema1, IZodSchema<T2, T2> schema2)
-	: ZodType<(T1, T2), object?[]>
+public class ZodTuple<T1, T2>(IZodSchema<T1, T1> schema1, IZodSchema<T2, T2> schema2) : ZodType<(T1, T2), object?[]>
 {
 	static readonly string[] EmptyPath = [];
 
@@ -88,15 +87,9 @@ public class ZodTuple<T1, T2>(IZodSchema<T1, T1> schema1, IZodSchema<T2, T2> sch
 /// <typeparam name="T1">The first element type.</typeparam>
 /// <typeparam name="T2">The second element type.</typeparam>
 /// <typeparam name="T3">The third element type.</typeparam>
-[System.Diagnostics.CodeAnalysis.SuppressMessage(
-	"Design",
-	"CA1005:Avoid excessive parameters on generic types"
-)]
-public class ZodTuple<T1, T2, T3>(
-	IZodSchema<T1, T1> schema1,
-	IZodSchema<T2, T2> schema2,
-	IZodSchema<T3, T3> schema3
-) : ZodType<(T1, T2, T3), object?[]>
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1005:Avoid excessive parameters on generic types")]
+public class ZodTuple<T1, T2, T3>(IZodSchema<T1, T1> schema1, IZodSchema<T2, T2> schema2, IZodSchema<T3, T3> schema3)
+	: ZodType<(T1, T2, T3), object?[]>
 {
 	static readonly string[] EmptyPath = [];
 

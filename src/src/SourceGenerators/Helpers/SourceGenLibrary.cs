@@ -17,16 +17,17 @@ static class SourceGenLibrary
 			context,
 			PropertyLibrary.DisableZodSharpSourceGeneratorProperty
 		);
-		var generationContext = IncrementalPipeline.GenerationContextValueProvider(
+		var generationContext = IncrementalPipeline.GenerationContextValueProvider<SchemaGenerationContext>(
 			context,
-			(compilation, _) => new SchemaGenerationContext(compilation),
+			typeof(ZodSchemaGenerator).FullName,
+			AssemblyInfo.Version,
+			(compilation, generatorName, generatorVersion, _) => new(compilation, generatorName, generatorVersion),
 			logger
 		);
 		var zodSchemas = IncrementalPipeline.ForAttributeWithMetadataName(
 			context,
 			TypeLibrary.ZodSchemaAttribute,
-			predicate: (s, _) =>
-				s is ClassDeclarationSyntax or StructDeclarationSyntax or RecordDeclarationSyntax,
+			predicate: (s, _) => s is ClassDeclarationSyntax or StructDeclarationSyntax or RecordDeclarationSyntax,
 			transform: (ctx, ct) => GetZodSchemaTargetForGeneration(ctx, logger, ct)
 		);
 
@@ -67,10 +68,7 @@ static class SourceGenLibrary
 		logger?.Debug($"Processing target node: {context.TargetNode.GetType().Name}");
 
 		var declaration = (TypeDeclarationSyntax)context.TargetNode;
-		if (
-			context.SemanticModel.GetDeclaredSymbol(declaration, cancellationToken)
-			is not INamedTypeSymbol symbol
-		)
+		if (context.SemanticModel.GetDeclaredSymbol(declaration, cancellationToken) is not INamedTypeSymbol symbol)
 			return GeneratorResult<ZodSchemaDescriptor>.Empty;
 
 		ZodSchemaDescriptor result = new(symbol, new(symbol), GetZodProperties(symbol));

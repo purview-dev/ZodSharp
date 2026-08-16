@@ -29,9 +29,7 @@ public class TypeValueObjectTests
 
 		var generic = type.MakeGeneric("string", "int");
 
-		await Assert
-			.That(generic.RenderFullName)
-			.IsEqualTo("global::MyNamespace.MyType<string, int>");
+		await Assert.That(generic.RenderFullName).IsEqualTo("global::MyNamespace.MyType<string, int>");
 	}
 
 	[Test]
@@ -41,9 +39,7 @@ public class TypeValueObjectTests
 
 		var generic = type.MakeGenericXml("string", "int");
 
-		await Assert
-			.That(generic.RenderFullName)
-			.IsEqualTo("global::MyNamespace.MyType{string, int}");
+		await Assert.That(generic.RenderFullName).IsEqualTo("global::MyNamespace.MyType{string, int}");
 	}
 
 	[Test]

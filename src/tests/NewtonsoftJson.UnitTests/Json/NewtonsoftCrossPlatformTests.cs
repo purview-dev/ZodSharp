@@ -24,17 +24,7 @@ public class NewtonsoftCrossPlatformTests
 		PropertyNameCaseInsensitive = true,
 	};
 
-	static readonly string FixturesDir = Path.Combine(
-		"..",
-		"..",
-		"..",
-		"..",
-		"..",
-		"..",
-		"src",
-		"ts",
-		"fixtures"
-	);
+	static readonly string FixturesDir = Path.Combine("..", "..", "..", "..", "..", "..", "src", "ts", "fixtures");
 	static readonly string OutputDir = Path.Combine(
 		"..",
 		"..",
@@ -65,10 +55,7 @@ public class NewtonsoftCrossPlatformTests
 	static CrossPlatformManifest LoadManifest()
 	{
 		var json = File.ReadAllText(ManifestPath);
-		return System.Text.Json.JsonSerializer.Deserialize<CrossPlatformManifest>(
-			json,
-			ManifestOptions
-		)!;
+		return System.Text.Json.JsonSerializer.Deserialize<CrossPlatformManifest>(json, ManifestOptions)!;
 	}
 
 	/// <summary>
@@ -134,9 +121,7 @@ public class NewtonsoftCrossPlatformTests
 	}
 
 	[Test]
-	public async Task Newtonsoft_SerializesValidData_CanBeParsedByTS_Zod(
-		CancellationToken cancellationToken
-	)
+	public async Task Newtonsoft_SerializesValidData_CanBeParsedByTS_Zod(CancellationToken cancellationToken)
 	{
 		// Serialize valid data using Newtonsoft with camelCase, write to output dir for TS tests to consume
 		var schema = new CrossPlatformUserSchema();
@@ -163,15 +148,10 @@ public class NewtonsoftCrossPlatformTests
 	}
 
 	[Test]
-	public async Task Newtonsoft_RoundTrip_TSFixture_ToCSharp_ToJSON_BackToCSharp(
-		CancellationToken cancellationToken
-	)
+	public async Task Newtonsoft_RoundTrip_TSFixture_ToCSharp_ToJSON_BackToCSharp(CancellationToken cancellationToken)
 	{
 		// Read TS fixture -> deserialize in C# -> re-serialize in C# -> re-deserialize in C#
-		var originalJson = await File.ReadAllTextAsync(
-			Path.Combine(FixturesDir, "valid.json"),
-			cancellationToken
-		);
+		var originalJson = await File.ReadAllTextAsync(Path.Combine(FixturesDir, "valid.json"), cancellationToken);
 		var schema = new CrossPlatformUserSchema();
 
 		var firstResult = schema.DeserializeAndValidate(originalJson);

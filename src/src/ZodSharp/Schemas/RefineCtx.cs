@@ -51,10 +51,7 @@ public sealed class RefineCtx<T>(T value, ImmutableArray<string> path)
 		if (string.IsNullOrWhiteSpace(code))
 			throw new ArgumentException("Issue code must not be null or whitespace.", nameof(code));
 		if (string.IsNullOrWhiteSpace(message))
-			throw new ArgumentException(
-				"Issue message must not be null or whitespace.",
-				nameof(message)
-			);
+			throw new ArgumentException("Issue message must not be null or whitespace.", nameof(message));
 
 		var fullPath = BuildPath(Path, path);
 		_issues.Add(new ValidationError(code, message, fullPath));
@@ -66,8 +63,7 @@ public sealed class RefineCtx<T>(T value, ImmutableArray<string> path)
 	/// </summary>
 	/// <param name="message">The human-readable issue message.</param>
 	/// <param name="path">An optional relative path appended to <see cref="Path"/>.</param>
-	public void AddIssue(string message, string[]? path = null) =>
-		AddIssue("refinement_failed", message, path);
+	public void AddIssue(string message, string[]? path = null) => AddIssue("refinement_failed", message, path);
 
 	static string[] BuildPath(ImmutableArray<string> basePath, string[]? relativePath)
 	{

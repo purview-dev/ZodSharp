@@ -87,8 +87,7 @@ public class HeavyPerformanceTests
 		_wideObjectSchema.Validate(_wideObject);
 
 	[Benchmark]
-	public ValidationResult<string[][]> ValidateNestedArray() =>
-		_nestedArraySchema.Validate(_nestedArray);
+	public ValidationResult<string[][]> ValidateNestedArray() => _nestedArraySchema.Validate(_nestedArray);
 
 	[Benchmark]
 	public ValidationResult<string> ValidateStringWithManyRefinements()

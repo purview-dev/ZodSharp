@@ -91,10 +91,7 @@ partial class ZodSchemaGenerator
 			candidates = c;
 		}
 
-		var invocationKind = SymbolEqualityComparer.Default.Equals(
-			validationMethodClassSymbol,
-			classSymbol
-		)
+		var invocationKind = SymbolEqualityComparer.Default.Equals(validationMethodClassSymbol, classSymbol)
 			? CustomValidationInvocationKind.StaticOnModelType
 			: CustomValidationInvocationKind.DefinedOnSchemaValidator;
 
@@ -104,11 +101,7 @@ partial class ZodSchemaGenerator
 
 		foreach (var candidate in candidates)
 		{
-			var (isValid, candidateDiagnostics) = ValidateMethodSignature(
-				candidate,
-				classSymbol,
-				invocationKind
-			);
+			var (isValid, candidateDiagnostics) = ValidateMethodSignature(candidate, classSymbol, invocationKind);
 			diagnostics.AddRange(candidateDiagnostics);
 			if (isValid)
 				validCandidates.Add(candidate);
@@ -139,9 +132,7 @@ partial class ZodSchemaGenerator
 				[
 					DiagnosticInfo.Create(
 						GeneratorDiagnostics.CustomValidationAmbiguousOverloads,
-						validCandidates[0].Locations.Length > 0
-							? validCandidates[0].Locations[0]
-							: null,
+						validCandidates[0].Locations.Length > 0 ? validCandidates[0].Locations[0] : null,
 						methodName,
 						classSymbol.Name
 					),
@@ -166,12 +157,8 @@ partial class ZodSchemaGenerator
 	)
 	{
 		var schemaSymbol = classSymbol.ContainingType is not null
-			? classSymbol
-				.ContainingType.GetTypeMembers($"{classSymbol.Name}SchemaValidator")
-				.FirstOrDefault()
-			: classSymbol
-				.ContainingNamespace.GetTypeMembers($"{classSymbol.Name}SchemaValidator")
-				.FirstOrDefault();
+			? classSymbol.ContainingType.GetTypeMembers($"{classSymbol.Name}SchemaValidator").FirstOrDefault()
+			: classSymbol.ContainingNamespace.GetTypeMembers($"{classSymbol.Name}SchemaValidator").FirstOrDefault();
 		if (schemaSymbol == null)
 			return (null, []);
 
@@ -186,10 +173,7 @@ partial class ZodSchemaGenerator
 		);
 	}
 
-	static Location? GetAttributeLocation(
-		AttributeData? attributeData,
-		INamedTypeSymbol classSymbol
-	)
+	static Location? GetAttributeLocation(AttributeData? attributeData, INamedTypeSymbol classSymbol)
 	{
 		if (attributeData?.ApplicationSyntaxReference?.GetSyntax() is { } syntax)
 			return syntax.GetLocation();
@@ -348,9 +332,7 @@ partial class ZodSchemaGenerator
 		// Return type must be ValueTask<ValidationResult<T>>.
 		var expectedReturnType = GetExpectedReturnType(classSymbol);
 		var expectedReturnTypeName = expectedReturnType.ToString();
-		var actualReturnTypeName = method.ReturnType.ToDisplayString(
-			SymbolDisplayFormat.FullyQualifiedFormat
-		);
+		var actualReturnTypeName = method.ReturnType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
 		if (!string.Equals(expectedReturnTypeName, actualReturnTypeName, StringComparison.Ordinal))
 		{
 			diagnostics.Add(

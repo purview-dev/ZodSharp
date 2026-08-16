@@ -14,8 +14,7 @@ public class ZodSchemaGeneratedAttributeTests
 	[Test]
 	public async Task Attribute_AllowMultipleAndNotInherited()
 	{
-		var usage =
-			typeof(ZodSchemaGeneratedAttribute).GetCustomAttribute<AttributeUsageAttribute>()!;
+		var usage = typeof(ZodSchemaGeneratedAttribute).GetCustomAttribute<AttributeUsageAttribute>()!;
 		await Assert.That(usage.AllowMultiple).IsTrue();
 		await Assert.That(usage.Inherited).IsFalse();
 	}
@@ -23,12 +22,9 @@ public class ZodSchemaGeneratedAttributeTests
 	[Test]
 	public async Task Attribute_ValidOn_ModuleClassAssembly()
 	{
-		var usage =
-			typeof(ZodSchemaGeneratedAttribute).GetCustomAttribute<AttributeUsageAttribute>()!;
+		var usage = typeof(ZodSchemaGeneratedAttribute).GetCustomAttribute<AttributeUsageAttribute>()!;
 		await Assert
 			.That(usage.ValidOn)
-			.IsEqualTo(
-				AttributeTargets.Module | AttributeTargets.Class | AttributeTargets.Assembly
-			);
+			.IsEqualTo(AttributeTargets.Module | AttributeTargets.Class | AttributeTargets.Assembly);
 	}
 }

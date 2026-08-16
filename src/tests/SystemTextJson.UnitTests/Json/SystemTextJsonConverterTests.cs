@@ -14,10 +14,7 @@ public class SystemTextJsonConverterTests
 		var schema = new TestUserSchema();
 		var options = CreateOptions(schema);
 
-		var deserialized = JsonSerializer.Deserialize<TestUser>(
-			"""{"Name":"John","Age":30}""",
-			options
-		);
+		var deserialized = JsonSerializer.Deserialize<TestUser>("""{"Name":"John","Age":30}""", options);
 
 		await Assert.That(deserialized).IsNotNull();
 		await Assert.That(deserialized!.Name).IsEqualTo("John");
@@ -82,9 +79,7 @@ public class SystemTextJsonConverterTests
 	{
 		IZodSchema<TestUser, TestUser> schema = null!;
 
-		var exception = Assert.Throws<ArgumentNullException>(() =>
-			schema.CreateValidatingConverter()
-		);
+		var exception = Assert.Throws<ArgumentNullException>(() => schema.CreateValidatingConverter());
 
 		await Assert.That(exception!.ParamName).IsEqualTo("schema");
 	}
@@ -110,20 +105,12 @@ public class SystemTextJsonConverterTests
 
 			if (string.IsNullOrWhiteSpace(value.Name))
 			{
-				errors.Add(
-					new ValidationError("too_small", "Name is required", [nameof(TestUser.Name)])
-				);
+				errors.Add(new ValidationError("too_small", "Name is required", [nameof(TestUser.Name)]));
 			}
 
 			if (value.Age < 0)
 			{
-				errors.Add(
-					new ValidationError(
-						"too_small",
-						"Age must be non-negative",
-						[nameof(TestUser.Age)]
-					)
-				);
+				errors.Add(new ValidationError("too_small", "Age must be non-negative", [nameof(TestUser.Age)]));
 			}
 
 			return errors.Count == 0

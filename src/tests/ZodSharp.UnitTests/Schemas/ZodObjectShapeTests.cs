@@ -17,9 +17,7 @@ public class ZodObjectShapeTests
 
 		// Act
 		var extended = baseObj.Extend("age", Z.Number().Min(0));
-		var result = extended.Validate(
-			new Dictionary<string, object?> { ["name"] = "John", ["age"] = 30.0 }
-		);
+		var result = extended.Validate(new Dictionary<string, object?> { ["name"] = "John", ["age"] = 30.0 });
 
 		// Assert
 		await Assert.That(result.IsSuccess).IsTrue();
@@ -49,9 +47,7 @@ public class ZodObjectShapeTests
 
 		// Act
 		var merged = a.Merge(b);
-		var result = merged.Validate(
-			new Dictionary<string, object?> { ["name"] = "John", ["age"] = 30.0 }
-		);
+		var result = merged.Validate(new Dictionary<string, object?> { ["name"] = "John", ["age"] = 30.0 });
 
 		// Assert
 		await Assert.That(result.IsSuccess).IsTrue();
@@ -117,9 +113,7 @@ public class ZodObjectShapeTests
 		var schema = CreateUserSchema().Partial();
 
 		// Act — age is present but invalid (negative).
-		var result = schema.Validate(
-			new Dictionary<string, object?> { ["name"] = "John", ["age"] = -5.0 }
-		);
+		var result = schema.Validate(new Dictionary<string, object?> { ["name"] = "John", ["age"] = -5.0 });
 
 		// Assert
 		await Assert.That(result.IsSuccess).IsFalse();
@@ -146,9 +140,7 @@ public class ZodObjectShapeTests
 		var schema = Z.Object().Field("name", Z.String()).Build().Strict();
 
 		// Act
-		var result = schema.Validate(
-			new Dictionary<string, object?> { ["name"] = "John", ["extra"] = "unknown" }
-		);
+		var result = schema.Validate(new Dictionary<string, object?> { ["name"] = "John", ["extra"] = "unknown" });
 
 		// Assert
 		await Assert.That(result.IsSuccess).IsFalse();
@@ -162,9 +154,7 @@ public class ZodObjectShapeTests
 		var schema = Z.Object().Field("name", Z.String()).Build().Passthrough();
 
 		// Act
-		var result = schema.Validate(
-			new Dictionary<string, object?> { ["name"] = "John", ["extra"] = "kept" }
-		);
+		var result = schema.Validate(new Dictionary<string, object?> { ["name"] = "John", ["extra"] = "kept" });
 
 		// Assert
 		await Assert.That(result.IsSuccess).IsTrue();
@@ -178,9 +168,7 @@ public class ZodObjectShapeTests
 		var schema = Z.Object().Field("name", Z.String()).Build().Strip();
 
 		// Act
-		var result = schema.Validate(
-			new Dictionary<string, object?> { ["name"] = "John", ["extra"] = "dropped" }
-		);
+		var result = schema.Validate(new Dictionary<string, object?> { ["name"] = "John", ["extra"] = "dropped" });
 
 		// Assert
 		await Assert.That(result.IsSuccess).IsTrue();
@@ -191,18 +179,11 @@ public class ZodObjectShapeTests
 	public async Task Catchall_GivenUnknownKey_ValidatesAndIncludesIt()
 	{
 		// Arrange — catchall requires strings; an int extra should fail.
-		var schema = Z.Object()
-			.Field("name", Z.String())
-			.Build()
-			.Catchall(new FieldSchemaWrapper<string>(Z.String()));
+		var schema = Z.Object().Field("name", Z.String()).Build().Catchall(new FieldSchemaWrapper<string>(Z.String()));
 
 		// Act
-		var validExtra = schema.Validate(
-			new Dictionary<string, object?> { ["name"] = "John", ["extra"] = "ok" }
-		);
-		var invalidExtra = schema.Validate(
-			new Dictionary<string, object?> { ["name"] = "John", ["extra"] = 42 }
-		);
+		var validExtra = schema.Validate(new Dictionary<string, object?> { ["name"] = "John", ["extra"] = "ok" });
+		var invalidExtra = schema.Validate(new Dictionary<string, object?> { ["name"] = "John", ["extra"] = 42 });
 
 		// Assert
 		await Assert.That(validExtra.IsSuccess).IsTrue();

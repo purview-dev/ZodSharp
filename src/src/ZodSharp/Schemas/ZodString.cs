@@ -191,10 +191,7 @@ public class ZodString : ZodType<string>
 	/// Transforms the string to lowercase.
 	/// </summary>
 	/// <returns>A new schema that transforms the value</returns>
-	[System.Diagnostics.CodeAnalysis.SuppressMessage(
-		"Globalization",
-		"CA1308:Normalize strings to uppercase"
-	)]
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Globalization", "CA1308:Normalize strings to uppercase")]
 	public ZodString ToLower()
 	{
 		var transform = Transform(static s => s.ToLowerInvariant());
@@ -223,7 +220,6 @@ public class ZodString : ZodType<string>
 
 	class ZodStringWrapper(ZodTransform<string, string> transform) : ZodString
 	{
-		protected override ValidationResult<string> ParseInternal(string value) =>
-			transform.Validate(value);
+		protected override ValidationResult<string> ParseInternal(string value) => transform.Validate(value);
 	}
 }

@@ -54,6 +54,5 @@ public readonly record struct PhoneRule : Core.IValidationRule<string>
 	/// </summary>
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
-	public string GetErrorMessage(in string value) =>
-		_message ?? $"Invalid phone number format: {value}";
+	public string GetErrorMessage(in string value) => _message ?? $"Invalid phone number format: {value}";
 }

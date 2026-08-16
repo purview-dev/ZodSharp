@@ -44,6 +44,5 @@ public readonly record struct Base64StringRule : Core.IValidationRule<string>
 	/// </summary>
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
-	public string GetErrorMessage(in string value) =>
-		_message ?? $"Invalid Base64 string format: {value}";
+	public string GetErrorMessage(in string value) => _message ?? $"Invalid Base64 string format: {value}";
 }

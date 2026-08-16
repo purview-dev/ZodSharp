@@ -23,8 +23,6 @@ partial class TypeLibrary
 
 		public static readonly TypeValueObject IEnumerableT = new(typeof(IEnumerable<>));
 
-		public static readonly TypeValueObject IReadOnlyCollectionT = new(
-			typeof(IReadOnlyCollection<>)
-		);
+		public static readonly TypeValueObject IReadOnlyCollectionT = new(typeof(IReadOnlyCollection<>));
 	}
 }

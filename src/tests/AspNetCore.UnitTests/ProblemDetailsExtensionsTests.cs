@@ -31,14 +31,10 @@ public class ProblemDetailsExtensionsTests
 		var details = result.ToHttpValidationProblemDetails();
 
 		await Assert.That(details.Status).IsEqualTo(StatusCodes.Status400BadRequest);
-		await Assert
-			.That(details.Errors["Items"])
-			.IsEquivalentTo(["Field 'Items' must contain at least 2 elements."]);
+		await Assert.That(details.Errors["Items"]).IsEquivalentTo(["Field 'Items' must contain at least 2 elements."]);
 		await Assert
 			.That(details.Errors["Order.Lines[3].Quantity"])
-			.IsEquivalentTo([
-				"Field 'Order.Lines[3].Quantity' must contain no more than 5 elements.",
-			]);
+			.IsEquivalentTo(["Field 'Order.Lines[3].Quantity' must contain no more than 5 elements."]);
 		await Assert.That(details.Extensions.ContainsKey("issues")).IsTrue();
 	}
 

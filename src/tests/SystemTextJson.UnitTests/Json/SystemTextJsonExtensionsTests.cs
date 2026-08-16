@@ -6,10 +6,7 @@ namespace ZodSharp.Json;
 
 public class SystemTextJsonExtensionsTests
 {
-	static readonly JsonSerializerOptions CamelCase = new()
-	{
-		PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-	};
+	static readonly JsonSerializerOptions CamelCase = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
 	[Test]
 	public async Task DeserializeAndValidate_GivenValidJson_ReturnsSuccess()
@@ -67,9 +64,7 @@ public class SystemTextJsonExtensionsTests
 	{
 		var schema = new TestUserSchema();
 
-		var exception = Assert.Throws<ArgumentNullException>(() =>
-			schema.DeserializeAndValidate(null!)
-		);
+		var exception = Assert.Throws<ArgumentNullException>(() => schema.DeserializeAndValidate(null!));
 
 		await Assert.That(exception!.ParamName).IsEqualTo("json");
 	}
@@ -79,9 +74,7 @@ public class SystemTextJsonExtensionsTests
 	{
 		IZodSchema<TestUser, TestUser> schema = null!;
 
-		var exception = Assert.Throws<ArgumentNullException>(() =>
-			schema.DeserializeAndValidate("{}")
-		);
+		var exception = Assert.Throws<ArgumentNullException>(() => schema.DeserializeAndValidate("{}"));
 
 		await Assert.That(exception!.ParamName).IsEqualTo("schema");
 	}
@@ -174,9 +167,7 @@ public class SystemTextJsonExtensionsTests
 	{
 		IZodSchema<TestUser, TestUser> schema = null!;
 
-		var exception = Assert.Throws<ArgumentNullException>(() =>
-			schema.ValidateAndSerialize(new TestUser())
-		);
+		var exception = Assert.Throws<ArgumentNullException>(() => schema.ValidateAndSerialize(new TestUser()));
 
 		await Assert.That(exception!.ParamName).IsEqualTo("schema");
 	}
@@ -260,20 +251,12 @@ public class SystemTextJsonExtensionsTests
 
 			if (string.IsNullOrWhiteSpace(value.Name))
 			{
-				errors.Add(
-					new ValidationError("too_small", "Name is required", [nameof(TestUser.Name)])
-				);
+				errors.Add(new ValidationError("too_small", "Name is required", [nameof(TestUser.Name)]));
 			}
 
 			if (value.Age < 0)
 			{
-				errors.Add(
-					new ValidationError(
-						"too_small",
-						"Age must be non-negative",
-						[nameof(TestUser.Age)]
-					)
-				);
+				errors.Add(new ValidationError("too_small", "Age must be non-negative", [nameof(TestUser.Age)]));
 			}
 
 			return errors.Count == 0

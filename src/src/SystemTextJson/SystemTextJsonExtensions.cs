@@ -37,11 +37,7 @@ public static class SystemTextJsonExtensions
 			var deserialized = JsonSerializer.Deserialize<T>(json, options);
 			return deserialized == null
 				? ValidationResult<T>.Failure(
-					new ValidationError(
-						"deserialization_failed",
-						"Failed to deserialize JSON",
-						EmptyPath
-					)
+					new ValidationError("deserialization_failed", "Failed to deserialize JSON", EmptyPath)
 				)
 				: schema.Validate(deserialized);
 		}
@@ -77,19 +73,11 @@ public static class SystemTextJsonExtensions
 			var json = await reader.ReadToEndAsync();
 			deserialized = JsonSerializer.Deserialize<T>(json, options);
 #else
-			deserialized = await JsonSerializer.DeserializeAsync<T>(
-				jsonStream,
-				options,
-				cancellationToken
-			);
+			deserialized = await JsonSerializer.DeserializeAsync<T>(jsonStream, options, cancellationToken);
 #endif
 			return deserialized == null
 				? ValidationResult<T>.Failure(
-					new ValidationError(
-						"deserialization_failed",
-						"Failed to deserialize JSON",
-						EmptyPath
-					)
+					new ValidationError("deserialization_failed", "Failed to deserialize JSON", EmptyPath)
 				)
 				: await schema.ValidateAsync(deserialized, cancellationToken);
 		}
@@ -149,7 +137,5 @@ public static class SystemTextJsonExtensions
 	/// Creates a custom JsonConverter that validates using a Zod schema.
 	/// </summary>
 	public static JsonConverter<T> CreateValidatingConverter<T>(this IZodSchema<T, T> schema) =>
-		schema == null
-			? throw new ArgumentNullException(nameof(schema))
-			: new ZodJsonConverter<T>(schema);
+		schema == null ? throw new ArgumentNullException(nameof(schema)) : new ZodJsonConverter<T>(schema);
 }

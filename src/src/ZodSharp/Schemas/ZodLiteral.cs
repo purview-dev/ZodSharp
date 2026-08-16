@@ -24,10 +24,6 @@ public class ZodLiteral<T>(T value) : ZodType<T, T>
 		value.Equals(_value)
 			? ValidationResult<T>.Success(value)
 			: ValidationResult<T>.Failure(
-				new ValidationError(
-					"invalid_literal",
-					$"Expected literal value {_value}, but got {value}",
-					[]
-				)
+				new ValidationError("invalid_literal", $"Expected literal value {_value}, but got {value}", [])
 			);
 }

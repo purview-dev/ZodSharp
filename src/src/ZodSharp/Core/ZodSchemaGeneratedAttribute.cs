@@ -13,5 +13,5 @@ namespace ZodSharp.Core;
 public sealed class ZodSchemaGeneratedAttribute(Type targetType) : Attribute
 {
 	/// <summary>The type that has a generated validator.</summary>
-	public Type TargetType { get; } = targetType;
+	public Type TargetType { get; } = targetType ?? throw new ArgumentNullException(nameof(targetType));
 }

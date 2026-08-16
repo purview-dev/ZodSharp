@@ -3,9 +3,7 @@ namespace ZodSharp.SourceGenerators;
 partial class ZodSchemaGeneratorTests
 {
 	[Test]
-	public async Task CompositionMethods_GeneratedAsApplyNamedOverloads(
-		CancellationToken cancellationToken
-	)
+	public async Task CompositionMethods_GeneratedAsApplyNamedOverloads(CancellationToken cancellationToken)
 	{
 		// Arrange
 		const string source =
@@ -32,9 +30,7 @@ namespace Testing
 	}
 
 	[Test]
-	public async Task CompositionMethods_GivenValidValue_ApplyRefineSucceeds(
-		CancellationToken cancellationToken
-	)
+	public async Task CompositionMethods_GivenValidValue_ApplyRefineSucceeds(CancellationToken cancellationToken)
 	{
 		// Arrange
 		const string source =
@@ -60,10 +56,7 @@ namespace Testing
 		modelType.GetProperty("Age")!.SetValue(instance, 21);
 
 		var refineMethod = schemaType.GetMethod("ApplyRefine")!;
-		var result = refineMethod.Invoke(
-			null,
-			[instance, (Func<dynamic, bool>)(static m => m.Age >= 18), null]
-		)!;
+		var result = refineMethod.Invoke(null, [instance, (Func<dynamic, bool>)(static m => m.Age >= 18), null])!;
 
 		// Assert
 		var isSuccess = (bool)result.GetType().GetProperty("IsSuccess")!.GetValue(result)!;

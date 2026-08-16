@@ -3,9 +3,7 @@ namespace ZodSharp.SourceGenerators;
 partial class ZodSchemaGeneratorTests
 {
 	[Test]
-	public async Task Generate_GivenEmptyZodSchema_OutputCompilationHasNoErrors(
-		CancellationToken cancellationToken
-	)
+	public async Task Generate_GivenEmptyZodSchema_OutputCompilationHasNoErrors(CancellationToken cancellationToken)
 	{
 		// Arrange
 		const string source =

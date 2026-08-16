@@ -3,10 +3,7 @@ using ZodSharp.JsonSchema;
 
 namespace ZodSharp;
 
-[System.Diagnostics.CodeAnalysis.SuppressMessage(
-	"Design",
-	"CA1034:Nested types should not be visible"
-)]
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1034:Nested types should not be visible")]
 #if !NETSTANDARD2_1_OR_GREATER
 [System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
 #endif

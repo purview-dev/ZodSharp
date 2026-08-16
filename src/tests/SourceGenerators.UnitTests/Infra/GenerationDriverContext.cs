@@ -21,9 +21,7 @@ public sealed record GenerationDriverContext(
 
 	public static readonly GenerationDriverContext Disabled = new(DisableSourceGenerator: true);
 
-	public static readonly GenerationDriverContext WithoutCompilingToAssembly = new(
-		CompileToAssembly: false
-	);
+	public static readonly GenerationDriverContext WithoutCompilingToAssembly = new(CompileToAssembly: false);
 
 	public static readonly GenerationDriverContext NoCompileOrThrowOnException = new(
 		ThrowOnGenerationException: false,
@@ -32,7 +30,5 @@ public sealed record GenerationDriverContext(
 
 	public static readonly GenerationDriverContext NoNamespaces = new(IncludeNamespaces: false);
 
-	public static readonly GenerationDriverContext IgnoreDiagnostic = new(
-		ValidateNoErrorDiagnostics: false
-	);
+	public static readonly GenerationDriverContext IgnoreDiagnostic = new(ValidateNoErrorDiagnostics: false);
 }

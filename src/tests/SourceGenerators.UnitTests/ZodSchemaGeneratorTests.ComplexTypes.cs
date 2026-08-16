@@ -48,9 +48,7 @@ namespace Testing
 	}
 
 	[Test]
-	public async Task ComplexType_Runtime_MultiLevelValidation_MergesPaths(
-		CancellationToken cancellationToken
-	)
+	public async Task ComplexType_Runtime_MultiLevelValidation_MergesPaths(CancellationToken cancellationToken)
 	{
 		var source =
 			@"
@@ -170,9 +168,7 @@ namespace Testing
 	}
 
 	[Test]
-	public async Task ArrayElement_Runtime_ValidatesNestedSchema(
-		CancellationToken cancellationToken
-	)
+	public async Task ArrayElement_Runtime_ValidatesNestedSchema(CancellationToken cancellationToken)
 	{
 		var source =
 			@"
@@ -218,9 +214,7 @@ namespace Testing
 	}
 
 	[Test]
-	public async Task ListElement_Runtime_ValidatesNestedSchemaWithIndexPath(
-		CancellationToken cancellationToken
-	)
+	public async Task ListElement_Runtime_ValidatesNestedSchemaWithIndexPath(CancellationToken cancellationToken)
 	{
 		var source =
 			@"
@@ -253,8 +247,7 @@ namespace Testing
 		var childType = assembly.GetType("Testing.Child")!;
 
 		var instance = Activator.CreateInstance(containerType)!;
-		var list = (System.Collections.IList)
-			Activator.CreateInstance(typeof(List<>).MakeGenericType(childType))!;
+		var list = (System.Collections.IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(childType))!;
 		var child = Activator.CreateInstance(childType)!;
 		childType.GetProperty("Name")!.SetValue(child, "A");
 		list.Add(child);
@@ -310,8 +303,7 @@ namespace Testing
 		var childType = assembly.GetType("Testing.Child")!;
 
 		var instance = Activator.CreateInstance(containerType)!;
-		var list = (System.Collections.IList)
-			Activator.CreateInstance(typeof(List<>).MakeGenericType(childType))!;
+		var list = (System.Collections.IList)Activator.CreateInstance(typeof(List<>).MakeGenericType(childType))!;
 		list.Add(null);
 		var child = Activator.CreateInstance(childType)!;
 		childType.GetProperty("Name")!.SetValue(child, "A");

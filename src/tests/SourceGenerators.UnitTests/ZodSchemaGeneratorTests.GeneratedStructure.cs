@@ -3,9 +3,7 @@ namespace ZodSharp.SourceGenerators;
 partial class ZodSchemaGeneratorTests
 {
 	[Test]
-	public async Task Generate_GivenModel_GeneratedSchemaHasExpectedStructure(
-		CancellationToken cancellationToken
-	)
+	public async Task Generate_GivenModel_GeneratedSchemaHasExpectedStructure(CancellationToken cancellationToken)
 	{
 		// Arrange
 		const string source =
@@ -31,9 +29,7 @@ namespace Testing
 	}
 
 	[Test]
-	public async Task Generate_GivenClassWithoutZodSchema_DoesNotGenerateSchema(
-		CancellationToken cancellationToken
-	)
+	public async Task Generate_GivenClassWithoutZodSchema_DoesNotGenerateSchema(CancellationToken cancellationToken)
 	{
 		// Arrange
 		const string source =
@@ -53,9 +49,7 @@ namespace Testing
 	}
 
 	[Test]
-	public async Task Generate_GivenMultipleAnnotatedTypes_GeneratesAllSchemas(
-		CancellationToken cancellationToken
-	)
+	public async Task Generate_GivenMultipleAnnotatedTypes_GeneratesAllSchemas(CancellationToken cancellationToken)
 	{
 		// Arrange
 		const string source =

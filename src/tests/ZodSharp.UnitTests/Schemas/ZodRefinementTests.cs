@@ -21,10 +21,7 @@ public class ZodRefinementTests
 	[Arguments("password123", false)]
 	[Arguments("PASSWORD123", false)]
 	[Arguments("Password", false)]
-	public async Task PasswordRefinement_GivenValue_ReturnsExpectedResult(
-		string value,
-		bool expected
-	)
+	public async Task PasswordRefinement_GivenValue_ReturnsExpectedResult(string value, bool expected)
 	{
 		var schema = Z.String()
 			.Min(8)

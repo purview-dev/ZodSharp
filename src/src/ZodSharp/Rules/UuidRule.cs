@@ -30,8 +30,7 @@ public readonly record struct UuidRule : Core.IValidationRule<string>
 	/// </summary>
 	/// <param name="value">The value to validate</param>
 	/// <returns>True if valid, false otherwise</returns>
-	public bool IsValid(in string value) =>
-		!string.IsNullOrWhiteSpace(value) && UuidRegex.IsMatch(value);
+	public bool IsValid(in string value) => !string.IsNullOrWhiteSpace(value) && UuidRegex.IsMatch(value);
 
 	/// <summary>
 	/// Gets the error message for a failed validation.

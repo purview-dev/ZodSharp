@@ -82,24 +82,12 @@ readonly record struct RangeAttributeData(
 		if (constructorArguments.Length == 2)
 		{
 			// Min + Max
-			ReadNumericRange(
-				constructorArguments,
-				ref kind,
-				ref minimum,
-				ref maximum,
-				ref operandType
-			);
+			ReadNumericRange(constructorArguments, ref kind, ref minimum, ref maximum, ref operandType);
 		}
 		else if (constructorArguments.Length == 3)
 		{
 			// OperandType + Min + Max
-			ReadConvertedRange(
-				constructorArguments,
-				ref kind,
-				ref minimum,
-				ref maximum,
-				ref operandType
-			);
+			ReadConvertedRange(constructorArguments, ref kind, ref minimum, ref maximum, ref operandType);
 		}
 		else
 		{
@@ -107,14 +95,8 @@ readonly record struct RangeAttributeData(
 			return Empty;
 		}
 
-		attributeData.TryGetNamedArgument<bool>(
-			nameof(MinimumIsExclusive),
-			out var minimumIsExclusive
-		);
-		attributeData.TryGetNamedArgument<bool>(
-			nameof(MaximumIsExclusive),
-			out var maximumIsExclusive
-		);
+		attributeData.TryGetNamedArgument<bool>(nameof(MinimumIsExclusive), out var minimumIsExclusive);
+		attributeData.TryGetNamedArgument<bool>(nameof(MaximumIsExclusive), out var maximumIsExclusive);
 		attributeData.TryGetNamedArgument<bool>(
 			nameof(ConvertValueInInvariantCulture),
 			out var convertValueInInvariantCulture
@@ -161,10 +143,7 @@ readonly record struct RangeAttributeData(
 			return;
 		}
 
-		if (
-			minimumArgument.Value is double minimumValueDouble
-			&& maximumArgument.Value is double maximumValueDouble
-		)
+		if (minimumArgument.Value is double minimumValueDouble && maximumArgument.Value is double maximumValueDouble)
 		{
 			kind = RangeAttributeKind.Double;
 			minimum = minimumValueDouble;

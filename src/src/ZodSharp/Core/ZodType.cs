@@ -45,13 +45,7 @@ public abstract class ZodType<TOutput, TInput> : IZodSchema<TOutput, TInput>
 			if (!rule.IsValid(validatedValue))
 			{
 				errors ??= [with(rulesCount)];
-				errors.Add(
-					new ValidationError(
-						"validation_failed",
-						rule.GetErrorMessage(validatedValue),
-						EmptyPath
-					)
-				);
+				errors.Add(new ValidationError("validation_failed", rule.GetErrorMessage(validatedValue), EmptyPath));
 			}
 		}
 
@@ -111,46 +105,30 @@ public abstract class ZodType<TOutput, TInput> : IZodSchema<TOutput, TInput>
 	/// Equivalent to Zod's transform method.
 	/// Only works when TInput == TOutput (most common case).
 	/// </summary>
-	public Schemas.ZodTransform<TOutput, TNewOutput> Transform<TNewOutput>(
-		Func<TOutput, TNewOutput> transform
-	)
+	public Schemas.ZodTransform<TOutput, TNewOutput> Transform<TNewOutput>(Func<TOutput, TNewOutput> transform)
 	{
 		if (typeof(TInput) != typeof(TOutput))
 		{
-			throw new InvalidOperationException(
-				"Transform can only be used when input and output types are the same"
-			);
+			throw new InvalidOperationException("Transform can only be used when input and output types are the same");
 		}
 
 		var adapter = (IZodSchema<TOutput, TOutput>)(object)this;
-		return new Schemas.ZodTransform<TOutput, TNewOutput>(
-			new RefinementAdapter<TOutput>(adapter),
-			transform
-		);
+		return new Schemas.ZodTransform<TOutput, TNewOutput>(new RefinementAdapter<TOutput>(adapter), transform);
 	}
 
 	/// <summary>
 	/// Adds a custom validation refinement.
 	/// Equivalent to Zod's refine method.
 	/// </summary>
-	public Schemas.ZodRefinement<TOutput> Refine(
-		Func<TOutput, bool> refinement,
-		string? message = null
-	)
+	public Schemas.ZodRefinement<TOutput> Refine(Func<TOutput, bool> refinement, string? message = null)
 	{
 		if (typeof(TInput) != typeof(TOutput))
 		{
-			throw new InvalidOperationException(
-				"Refine can only be used when input and output types are the same"
-			);
+			throw new InvalidOperationException("Refine can only be used when input and output types are the same");
 		}
 
 		var adapter = (IZodSchema<TOutput, TOutput>)(object)this;
-		return new Schemas.ZodRefinement<TOutput>(
-			new RefinementAdapter<TOutput>(adapter),
-			refinement,
-			message
-		);
+		return new Schemas.ZodRefinement<TOutput>(new RefinementAdapter<TOutput>(adapter), refinement, message);
 	}
 
 	/// <summary>
@@ -161,16 +139,11 @@ public abstract class ZodType<TOutput, TInput> : IZodSchema<TOutput, TInput>
 	{
 		if (typeof(TInput) != typeof(TOutput))
 		{
-			throw new InvalidOperationException(
-				"Default can only be used when input and output types are the same"
-			);
+			throw new InvalidOperationException("Default can only be used when input and output types are the same");
 		}
 
 		var adapter = (IZodSchema<TOutput, TOutput>)(object)this;
-		return new Schemas.ZodDefault<TOutput>(
-			new RefinementAdapter<TOutput>(adapter),
-			defaultValue
-		);
+		return new Schemas.ZodDefault<TOutput>(new RefinementAdapter<TOutput>(adapter), defaultValue);
 	}
 
 	/// <summary>
@@ -179,9 +152,7 @@ public abstract class ZodType<TOutput, TInput> : IZodSchema<TOutput, TInput>
 	/// </summary>
 	/// <param name="refinement">A callback receiving a <see cref="Schemas.RefineCtx{T}"/>.</param>
 	/// <returns>A new schema that applies the refinement after the base validation.</returns>
-	public Schemas.ZodSuperRefinement<TOutput> SuperRefine(
-		Action<Schemas.RefineCtx<TOutput>> refinement
-	)
+	public Schemas.ZodSuperRefinement<TOutput> SuperRefine(Action<Schemas.RefineCtx<TOutput>> refinement)
 	{
 		if (typeof(TInput) != typeof(TOutput))
 		{
@@ -191,10 +162,7 @@ public abstract class ZodType<TOutput, TInput> : IZodSchema<TOutput, TInput>
 		}
 
 		var adapter = (IZodSchema<TOutput, TOutput>)(object)this;
-		return new Schemas.ZodSuperRefinement<TOutput>(
-			new RefinementAdapter<TOutput>(adapter),
-			refinement
-		);
+		return new Schemas.ZodSuperRefinement<TOutput>(new RefinementAdapter<TOutput>(adapter), refinement);
 	}
 
 	/// <summary>
@@ -206,22 +174,15 @@ public abstract class ZodType<TOutput, TInput> : IZodSchema<TOutput, TInput>
 	/// <typeparam name="TTargetOutput">The output type of <paramref name="target"/>.</typeparam>
 	/// <param name="target">The schema that validates this schema's output.</param>
 	/// <returns>A new <see cref="Schemas.ZodPipe{TSource,TTarget}"/> schema.</returns>
-	public Schemas.ZodPipe<TOutput, TTargetOutput> Pipe<TTargetOutput>(
-		IZodSchema<TTargetOutput, TOutput> target
-	)
+	public Schemas.ZodPipe<TOutput, TTargetOutput> Pipe<TTargetOutput>(IZodSchema<TTargetOutput, TOutput> target)
 	{
 		if (typeof(TInput) != typeof(TOutput))
 		{
-			throw new InvalidOperationException(
-				"Pipe can only be used when input and output types are the same"
-			);
+			throw new InvalidOperationException("Pipe can only be used when input and output types are the same");
 		}
 
 		var adapter = (IZodSchema<TOutput, TOutput>)(object)this;
-		return new Schemas.ZodPipe<TOutput, TTargetOutput>(
-			new RefinementAdapter<TOutput>(adapter),
-			target
-		);
+		return new Schemas.ZodPipe<TOutput, TTargetOutput>(new RefinementAdapter<TOutput>(adapter), target);
 	}
 
 	/// <summary>
@@ -234,9 +195,7 @@ public abstract class ZodType<TOutput, TInput> : IZodSchema<TOutput, TInput>
 	{
 		if (typeof(TInput) != typeof(TOutput))
 		{
-			throw new InvalidOperationException(
-				"Catch can only be used when input and output types are the same"
-			);
+			throw new InvalidOperationException("Catch can only be used when input and output types are the same");
 		}
 
 		var adapter = (IZodSchema<TOutput, TOutput>)(object)this;
@@ -251,22 +210,15 @@ public abstract class ZodType<TOutput, TInput> : IZodSchema<TOutput, TInput>
 	/// A function producing the fallback value from the input and the errors.
 	/// </param>
 	/// <returns>A new <see cref="Schemas.ZodCatch{T}"/> schema.</returns>
-	public Schemas.ZodCatch<TOutput> Catch(
-		Func<TOutput, ImmutableArray<ValidationError>, TOutput> fallbackFactory
-	)
+	public Schemas.ZodCatch<TOutput> Catch(Func<TOutput, ImmutableArray<ValidationError>, TOutput> fallbackFactory)
 	{
 		if (typeof(TInput) != typeof(TOutput))
 		{
-			throw new InvalidOperationException(
-				"Catch can only be used when input and output types are the same"
-			);
+			throw new InvalidOperationException("Catch can only be used when input and output types are the same");
 		}
 
 		var adapter = (IZodSchema<TOutput, TOutput>)(object)this;
-		return new Schemas.ZodCatch<TOutput>(
-			new RefinementAdapter<TOutput>(adapter),
-			fallbackFactory
-		);
+		return new Schemas.ZodCatch<TOutput>(new RefinementAdapter<TOutput>(adapter), fallbackFactory);
 	}
 
 	/// <summary>
@@ -281,16 +233,11 @@ public abstract class ZodType<TOutput, TInput> : IZodSchema<TOutput, TInput>
 	{
 		if (typeof(TInput) != typeof(TOutput))
 		{
-			throw new InvalidOperationException(
-				"Prefault can only be used when input and output types are the same"
-			);
+			throw new InvalidOperationException("Prefault can only be used when input and output types are the same");
 		}
 
 		var adapter = (IZodSchema<TOutput, TOutput>)(object)this;
-		return new Schemas.ZodPrefault<TOutput>(
-			new RefinementAdapter<TOutput>(adapter),
-			prefaultValue
-		);
+		return new Schemas.ZodPrefault<TOutput>(new RefinementAdapter<TOutput>(adapter), prefaultValue);
 	}
 
 	/// <summary>
@@ -303,9 +250,7 @@ public abstract class ZodType<TOutput, TInput> : IZodSchema<TOutput, TInput>
 	{
 		if (typeof(TInput) != typeof(TOutput))
 		{
-			throw new InvalidOperationException(
-				"And can only be used when input and output types are the same"
-			);
+			throw new InvalidOperationException("And can only be used when input and output types are the same");
 		}
 
 		var adapter = (IZodSchema<TOutput, TOutput>)(object)this;
@@ -324,24 +269,17 @@ public abstract class ZodType<TOutput, TInput> : IZodSchema<TOutput, TInput>
 	{
 		if (typeof(TInput) != typeof(TOutput))
 		{
-			throw new InvalidOperationException(
-				"Or can only be used when input and output types are the same"
-			);
+			throw new InvalidOperationException("Or can only be used when input and output types are the same");
 		}
 
 		var adapter = (IZodSchema<TOutput, TOutput>)(object)this;
-		return new Schemas.ZodTypedUnion<TOutput, TOther>(
-			new RefinementAdapter<TOutput>(adapter),
-			other
-		);
+		return new Schemas.ZodTypedUnion<TOutput, TOther>(new RefinementAdapter<TOutput>(adapter), other);
 	}
 
-	sealed class TransformInputAdapter<TAdapterInput, TAdapterOutput>(
-		IZodSchema<TAdapterOutput, TAdapterInput> inner
-	) : IZodSchema<TAdapterOutput, TAdapterInput>
+	sealed class TransformInputAdapter<TAdapterInput, TAdapterOutput>(IZodSchema<TAdapterOutput, TAdapterInput> inner)
+		: IZodSchema<TAdapterOutput, TAdapterInput>
 	{
-		public ValidationResult<TAdapterOutput> Validate(TAdapterInput value) =>
-			inner.Validate(value);
+		public ValidationResult<TAdapterOutput> Validate(TAdapterInput value) => inner.Validate(value);
 
 		public ValueTask<ValidationResult<TAdapterOutput>> ValidateAsync(
 			TAdapterInput value,
@@ -349,7 +287,7 @@ public abstract class ZodType<TOutput, TInput> : IZodSchema<TOutput, TInput>
 		) => inner.ValidateAsync(value, cancellationToken);
 	}
 
-	class RefinementAdapter<TAdapterType>(IZodSchema<TAdapterType, TAdapterType> inner)
+	sealed class RefinementAdapter<TAdapterType>(IZodSchema<TAdapterType, TAdapterType> inner)
 		: IZodSchema<TAdapterType>
 	{
 		public ValidationResult<TAdapterType> Validate(TAdapterType value) => inner.Validate(value);

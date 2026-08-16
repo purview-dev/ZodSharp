@@ -15,8 +15,7 @@ public static class JsonSchemaSerializerOptions
 	{
 		NullValueHandling = NullValueHandling.Ignore,
 		Formatting = Formatting.Indented,
-		ContractResolver =
-			new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver(),
+		ContractResolver = new Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver(),
 	};
 
 	/// <summary>

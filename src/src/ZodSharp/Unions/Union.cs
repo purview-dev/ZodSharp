@@ -291,11 +291,7 @@ public readonly struct Union<T1, T2, T3> : IUnion, IEquatable<Union<T1, T2, T3>>
 	}
 
 	/// <summary>Exhaustively maps the union to a result value.</summary>
-	public TResult Match<TResult>(
-		Func<T1, TResult> case1,
-		Func<T2, TResult> case2,
-		Func<T3, TResult> case3
-	)
+	public TResult Match<TResult>(Func<T1, TResult> case1, Func<T2, TResult> case2, Func<T3, TResult> case3)
 	{
 		if (case1 is null)
 			throw new ArgumentNullException(nameof(case1));
@@ -370,10 +366,8 @@ public readonly struct Union<T1, T2, T3> : IUnion, IEquatable<Union<T1, T2, T3>>
 	public override string ToString() => Value?.ToString() ?? "<uninitialized>";
 
 	/// <summary>Equality operator.</summary>
-	public static bool operator ==(Union<T1, T2, T3> left, Union<T1, T2, T3> right) =>
-		left.Equals(right);
+	public static bool operator ==(Union<T1, T2, T3> left, Union<T1, T2, T3> right) => left.Equals(right);
 
 	/// <summary>Inequality operator.</summary>
-	public static bool operator !=(Union<T1, T2, T3> left, Union<T1, T2, T3> right) =>
-		!left.Equals(right);
+	public static bool operator !=(Union<T1, T2, T3> left, Union<T1, T2, T3> right) => !left.Equals(right);
 }
