@@ -1,15 +1,17 @@
 using Microsoft.CodeAnalysis.Text;
 
+using ZodSharp.SourceGenerators.Models;
+
 namespace ZodSharp.SourceGenerators.Helpers;
 
 static class AttributeGenHelper
 {
 	public static IEnumerable<(string HintName, SourceText SourceText)> GenerateMarkers()
 	{
-		yield return ("ZodSchemaAttribute", ZodSchema());
+		yield return (nameof(ZodSchemaAttribute), ZodSchemaAttribute());
 	}
 
-	static SourceText ZodSchema()
+	static SourceText ZodSchemaAttribute()
 	{
 		CodeWriter writer = new(typeof(ZodSchemaGenerator).FullName, AssemblyInfo.Version);
 
@@ -20,37 +22,25 @@ static class AttributeGenHelper
 				"Attribute to mark a class for automatic schema generation.",
 				"When applied to a class, a zero-allocation validator will be generated at compile time."
 			)
-			.WriteClass(
-				new(TypeLibrary.ZodSchemaAttribute)
-				{
-					Accessibility = TypeDeclarationAccessibility.Internal,
-					BaseType = PurviewTypeLibrary.System.Attribute,
-					Attributes =
-					[
-						new(TypeLibrary.System.AttributeUsageAttribute)
-						{
-							Arguments =
-							[
-								new(
-									$"{TypeLibrary.System.AttributeTargets.Property("Class")} | {TypeLibrary.System.AttributeTargets.Property("Struct")}"
-								),
-								new(false, "AllowMultiple", true),
-								new(false, "Inherited", true),
-							],
-						},
-					],
-				},
+			.WriteAttributeClass(
+				new(TypeLibrary.ZodSchemaAttribute),
+				AttributeTargets.Class | AttributeTargets.Struct,
 				body =>
 				{
 					body.XmlSummary(
 							"Optional name for the generated schema class.",
 							"If not specified, uses \"{ClassName}Schema\"."
 						)
-						.WriteProperty(new("SchemaName", TypeLibrary.System.String.Nullable()) { IsInitOnly = true });
+						.WriteProperty(
+							new(nameof(ZodSchemaAttributeData.SchemaName), PurviewTypeLibrary.System.String.AsTypeReference().Nullable())
+							{
+								IsInitOnly = true,
+							}
+						);
 
 					body.XmlSummary("Whether to generate a static Validate method.", "Default is true.")
 						.WriteProperty(
-							new("GenerateValidateMethod", TypeLibrary.System.Boolean)
+							new(nameof(ZodSchemaAttributeData.GenerateValidateMethod), PurviewTypeLibrary.System.Boolean)
 							{
 								Accessibility = TypeDeclarationAccessibility.Public,
 								IsInitOnly = true,
@@ -63,7 +53,7 @@ static class AttributeGenHelper
 							$"Default is true."
 						)
 						.WriteProperty(
-							new("GenerateParseMethod", TypeLibrary.System.Boolean)
+							new(nameof(ZodSchemaAttributeData.GenerateParseMethod), PurviewTypeLibrary.System.Boolean)
 							{
 								Accessibility = TypeDeclarationAccessibility.Public,
 								IsInitOnly = true,
@@ -76,7 +66,7 @@ static class AttributeGenHelper
 							$"Default is true."
 						)
 						.WriteProperty(
-							new("EnableComposition", TypeLibrary.System.Boolean)
+							new(nameof(ZodSchemaAttributeData.EnableComposition), PurviewTypeLibrary.System.Boolean)
 							{
 								Accessibility = TypeDeclarationAccessibility.Public,
 								IsInitOnly = true,
@@ -93,7 +83,7 @@ static class AttributeGenHelper
 							"No diagnostic is reported when the default name has no matching method."
 						)
 						.WriteProperty(
-							new("CustomValidationMethodName", TypeLibrary.System.String.Nullable())
+							new(nameof(ZodSchemaAttributeData.CustomValidationMethodName), PurviewTypeLibrary.System.String.AsTypeReference().Nullable())
 							{
 								Accessibility = TypeDeclarationAccessibility.Public,
 								IsInitOnly = true,

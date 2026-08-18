@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Globalization;
 using Microsoft.CodeAnalysis;
 using ZodSharp.SourceGenerators.Helpers;
+using ZodSharp.SourceGenerators.Models;
 using ZodSharp.SourceGenerators.Models.DataAttributes;
 
 namespace ZodSharp.SourceGenerators;
@@ -9,8 +10,7 @@ namespace ZodSharp.SourceGenerators;
 partial class ZodSchemaGenerator
 {
 	static void GenerateCollectionValidations(
-		GenerationContext generationContext,
-		GenerationLogger? logger,
+		SchemaGenerationOutputContext outputContext,
 		IPropertySymbol property,
 		ITypeSymbol propertyType,
 		string propertyName,
@@ -55,11 +55,11 @@ partial class ZodSchemaGenerator
 
 		var propertyValueName = CodeGenHelpers.GetLocalIdentifier(propertyName, "Value");
 		var propertyLengthName = CodeGenHelpers.GetLocalIdentifier(propertyName, "Length");
-		generationContext.CodeWriter.WriteLine($"var {propertyValueName} = value.{propertyName};");
-		using (generationContext.CodeWriter.OpenBlockScope($"if ({propertyValueName} is not null)"))
+		outputContext.Writer.WriteLine($"var {propertyValueName} = value.{propertyName};");
+		using (outputContext.Writer.OpenBlockScope($"if ({propertyValueName} is not null)"))
 		{
-			generationContext.CodeWriter.WriteLine($"var propertyValue = {propertyValueName};");
-			generationContext.CodeWriter.WriteLine($"var {propertyLengthName} = {lengthAccessor.LengthExpression};");
+			outputContext.Writer.WriteLine($"var propertyValue = {propertyValueName};");
+			outputContext.Writer.WriteLine($"var {propertyLengthName} = {lengthAccessor.LengthExpression};");
 
 			if (
 				lengthAttr.Exists
@@ -68,7 +68,7 @@ partial class ZodSchemaGenerator
 			)
 			{
 				var tooSmallMessage = BuildMessageExpression(
-					logger,
+					outputContext,
 					diagnostics,
 					lengthAttrData,
 					displayName,
@@ -79,7 +79,7 @@ partial class ZodSchemaGenerator
 					lengthAttr.MinimumLength.ToString(CultureInfo.InvariantCulture)
 				);
 				var tooBigMessage = BuildMessageExpression(
-					logger,
+					outputContext,
 					diagnostics,
 					lengthAttrData,
 					displayName,
@@ -91,13 +91,13 @@ partial class ZodSchemaGenerator
 				);
 
 				using (
-					generationContext.CodeWriter.OpenBlockScope(
+					outputContext.Writer.OpenBlockScope(
 						$"if ({propertyLengthName} < {lengthAttr.MinimumLength})"
 					)
 				)
 				{
 					WriteValidationError(
-						generationContext,
+						outputContext,
 						"too_small",
 						tooSmallMessage,
 						CodeGenHelpers.GetPathFieldName(propertyName),
@@ -107,13 +107,13 @@ partial class ZodSchemaGenerator
 				}
 
 				using (
-					generationContext.CodeWriter.OpenBlockScope(
+					outputContext.Writer.OpenBlockScope(
 						$"else if ({propertyLengthName} > {lengthAttr.MaximumLength})"
 					)
 				)
 				{
 					WriteValidationError(
-						generationContext,
+						outputContext,
 						"too_big",
 						tooBigMessage,
 						CodeGenHelpers.GetPathFieldName(propertyName),
@@ -126,7 +126,7 @@ partial class ZodSchemaGenerator
 			if (minLengthAttr.Exists && minLengthAttr.Length > 0)
 			{
 				var messageExpression = BuildMessageExpression(
-					logger,
+					outputContext,
 					diagnostics,
 					minLengthAttrData,
 					displayName,
@@ -137,11 +137,11 @@ partial class ZodSchemaGenerator
 				);
 
 				using (
-					generationContext.CodeWriter.OpenBlockScope($"if ({propertyLengthName} < {minLengthAttr.Length})")
+					outputContext.Writer.OpenBlockScope($"if ({propertyLengthName} < {minLengthAttr.Length})")
 				)
 				{
 					WriteValidationError(
-						generationContext,
+						outputContext,
 						"too_small",
 						messageExpression,
 						CodeGenHelpers.GetPathFieldName(propertyName),
@@ -154,7 +154,7 @@ partial class ZodSchemaGenerator
 			if (maxLengthAttr.Exists && maxLengthAttr.Length >= 0)
 			{
 				var messageExpression = BuildMessageExpression(
-					logger,
+					outputContext,
 					diagnostics,
 					maxLengthAttrData,
 					displayName,
@@ -165,11 +165,11 @@ partial class ZodSchemaGenerator
 				);
 
 				using (
-					generationContext.CodeWriter.OpenBlockScope($"if ({propertyLengthName} > {maxLengthAttr.Length})")
+					outputContext.Writer.OpenBlockScope($"if ({propertyLengthName} > {maxLengthAttr.Length})")
 				)
 				{
 					WriteValidationError(
-						generationContext,
+						outputContext,
 						"too_big",
 						messageExpression,
 						CodeGenHelpers.GetPathFieldName(propertyName),
@@ -180,6 +180,6 @@ partial class ZodSchemaGenerator
 			}
 		}
 
-		generationContext.CodeWriter.WriteLine();
+		outputContext.Writer.WriteLine();
 	}
 }

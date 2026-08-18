@@ -7,13 +7,13 @@ partial class ZodSchemaGenerator
 	static void ReportDiagnostics(
 		SourceProductionContext context,
 		DiagnosticInfo diagnostic,
-		GenerationLogger? logger
+		ISourceGenLogger? logger
 	) => ReportDiagnostics(context, [diagnostic], logger);
 
 	static void ReportDiagnostics(
 		SourceProductionContext context,
 		IEnumerable<DiagnosticInfo> diagnostics,
-		GenerationLogger? logger
+		ISourceGenLogger? logger
 	)
 	{
 		foreach (var diagnosticInfo in diagnostics)

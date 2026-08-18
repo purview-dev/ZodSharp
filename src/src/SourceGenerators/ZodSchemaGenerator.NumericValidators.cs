@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Globalization;
 using Microsoft.CodeAnalysis;
 using ZodSharp.SourceGenerators.Helpers;
+using ZodSharp.SourceGenerators.Models;
 using ZodSharp.SourceGenerators.Models.DataAttributes;
 
 namespace ZodSharp.SourceGenerators;
@@ -9,8 +10,7 @@ namespace ZodSharp.SourceGenerators;
 partial class ZodSchemaGenerator
 {
 	static void GenerateNumericValidations(
-		GenerationContext generationContext,
-		GenerationLogger? logger,
+		SchemaGenerationOutputContext outputContext,
 		IPropertySymbol property,
 		ITypeSymbol propertyType,
 		string propertyName,
@@ -31,7 +31,7 @@ partial class ZodSchemaGenerator
 		var minimumDisplay = Convert.ToString(rangeAttribute.Minimum, CultureInfo.InvariantCulture) ?? string.Empty;
 		var maximumDisplay = Convert.ToString(rangeAttribute.Maximum, CultureInfo.InvariantCulture) ?? string.Empty;
 		var messageExpression = BuildMessageExpression(
-			logger,
+			outputContext,
 			diagnostics,
 			rangeAttributeData,
 			displayName,
@@ -44,17 +44,17 @@ partial class ZodSchemaGenerator
 			CodeGenHelpers.Quote(maximumDisplay)
 		);
 
-		using (generationContext.CodeWriter.OpenBlockScope())
+		using (outputContext.Writer.OpenBlockScope())
 		{
-			generationContext.CodeWriter.WriteLine($"var {propertyValueName} = value.{propertyName};");
+			outputContext.Writer.WriteLine($"var {propertyValueName} = value.{propertyName};");
 			using (
-				generationContext.CodeWriter.OpenBlockScope(
+				outputContext.Writer.OpenBlockScope(
 					$"if ({propertyValueName} {minComparison} {GetRangeMinimumFieldName(propertyName)} || {propertyValueName} {maxComparison} {GetRangeMaximumFieldName(propertyName)})"
 				)
 			)
 			{
 				WriteValidationError(
-					generationContext,
+					outputContext,
 					"invalid_range",
 					messageExpression,
 					CodeGenHelpers.GetPathFieldName(propertyName)
@@ -62,7 +62,7 @@ partial class ZodSchemaGenerator
 			}
 		}
 
-		generationContext.CodeWriter.WriteLine();
+		outputContext.Writer.WriteLine();
 	}
 
 	static bool TryBuildRangeBoundaryExpressions(

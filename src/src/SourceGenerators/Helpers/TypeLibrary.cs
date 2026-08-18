@@ -26,15 +26,4 @@ static partial class TypeLibrary
 	);
 
 	public static readonly TypeValueObject ValidationError = new(nameof(ValidationError), ZodSharpCoreNamespace);
-
-	public static class System
-	{
-		public static readonly TypeValueObject String = new(Microsoft.CodeAnalysis.SpecialType.System_String);
-
-		public static readonly TypeValueObject Boolean = new(Microsoft.CodeAnalysis.SpecialType.System_Boolean);
-
-		public static readonly TypeValueObject AttributeUsageAttribute = new(typeof(AttributeUsageAttribute));
-
-		public static readonly TypeValueObject AttributeTargets = new(typeof(AttributeTargets));
-	}
 }

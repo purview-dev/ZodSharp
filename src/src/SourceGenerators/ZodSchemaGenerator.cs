@@ -1,5 +1,6 @@
 using Microsoft.CodeAnalysis;
 using ZodSharp.SourceGenerators.Helpers;
+using ZodSharp.SourceGenerators.Models;
 
 namespace ZodSharp.SourceGenerators;
 
@@ -17,27 +18,25 @@ public sealed partial class ZodSchemaGenerator : IIncrementalGenerator
 		context.RegisterPostInitializationOutput(static ctx =>
 		{
 			foreach (var (HintName, SourceText) in AttributeGenHelper.GenerateMarkers())
-			{
 				ctx.AddSource($"{HintName}.g.cs", SourceText);
-			}
 		});
 
-		var generationValueProviders = SourceGenLibrary.GetGeneratorValueProviders(context, _logger);
+		var generationValueProviders = SourceGenLibrary.GetGeneratorValueProviders(context);
 
 		// Register source outputs
 		context.RegisterSourceOutput(
 			generationValueProviders,
-			(spc, source) =>
+			(spc, model) =>
 			{
-				if (source.IsSourceGeneratorEnabled)
+				if (model.GenerationContext.Settings.IsSourceGeneratorDisabled)
 					return;
 
 				var isFatal = false;
-				foreach (var schema in source.ZodSchemas)
+				foreach (var schema in model.ZodSchemas)
 				{
 					if (schema.HasDiagnostics)
 					{
-						ReportDiagnostics(spc, schema.Diagnostics, _logger);
+						ReportDiagnostics(spc, schema.Diagnostics, model.GenerationContext);
 					}
 
 					if (schema.IsFatal)
@@ -47,11 +46,13 @@ public sealed partial class ZodSchemaGenerator : IIncrementalGenerator
 				if (isFatal)
 					return;
 
-				var allSchemas = DiscoverAllSchemas(source.ZodSchemas);
+				SchemaGenerationOutputContext outputContext = new(model.GenerationContext);
+				var allSchemas = DiscoverAllSchemas(model.ZodSchemas);
 				foreach (var (descriptor, isPrimary) in allSchemas)
 				{
-					source.GenerationContext.CreateCodeWriter();
-					BuildSchema(descriptor, source.GenerationContext, _logger, spc, isPrimary);
+					// We'll create a new new code writer for each schema.
+					outputContext.CreateCodeWriter();
+					BuildSchema(descriptor, outputContext, spc, isPrimary);
 				}
 			}
 		);

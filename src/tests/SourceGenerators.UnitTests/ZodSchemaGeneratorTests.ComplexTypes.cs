@@ -195,13 +195,14 @@ namespace Testing
 		var driverResult = await GenerateZodAsync(source, cancellationToken);
 		var assembly = await Assert.That(driverResult.Assembly).IsNotNull();
 
-		var containerType = assembly.GetType("Testing.ArrayContainer")!;
-		var schemaType = assembly.GetType("Testing.ArrayContainerSchema")!;
-		var childType = assembly.GetType("Testing.Child")!;
+		var containerType = await Assert.That(assembly.GetType("Testing.ArrayContainer")).IsNotNull();
+		var schemaType = await Assert.That(assembly.GetType("Testing.ArrayContainerSchema")).IsNotNull();
+		var childType = await Assert.That(assembly.GetType("Testing.Child")).IsNotNull();
 
-		var instance = Activator.CreateInstance(containerType)!;
-		var items = Array.CreateInstance(childType, 1);
-		var child = Activator.CreateInstance(childType)!;
+		var instance = await Assert.That(Activator.CreateInstance(containerType)).IsNotNull();
+		var items = await Assert.That(Array.CreateInstance(childType, 1)).IsNotNull();
+		var child = await Assert.That(Activator.CreateInstance(childType)).IsNotNull();
+
 		childType.GetProperty("Name")!.SetValue(child, "A");
 		items.SetValue(child, 0);
 		containerType.GetProperty("Items")!.SetValue(instance, items);

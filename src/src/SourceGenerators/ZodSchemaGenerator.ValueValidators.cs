@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Globalization;
 using Microsoft.CodeAnalysis;
 using ZodSharp.SourceGenerators.Helpers;
+using ZodSharp.SourceGenerators.Models;
 using ZodSharp.SourceGenerators.Models.DataAttributes;
 
 namespace ZodSharp.SourceGenerators;
@@ -9,8 +10,7 @@ namespace ZodSharp.SourceGenerators;
 partial class ZodSchemaGenerator
 {
 	static void GenerateValueSetValidations(
-		GenerationContext generationContext,
-		GenerationLogger? logger,
+		SchemaGenerationOutputContext outputContext,
 		IPropertySymbol property,
 		ITypeSymbol propertyType,
 		string propertyName,
@@ -19,8 +19,7 @@ partial class ZodSchemaGenerator
 	)
 	{
 		GenerateAllowedValuesValidation(
-			generationContext,
-			logger,
+			outputContext,
 			property,
 			propertyType,
 			propertyName,
@@ -28,8 +27,7 @@ partial class ZodSchemaGenerator
 			diagnostics
 		);
 		GenerateDeniedValuesValidation(
-			generationContext,
-			logger,
+			outputContext,
 			property,
 			propertyType,
 			propertyName,
@@ -39,8 +37,7 @@ partial class ZodSchemaGenerator
 	}
 
 	static void GenerateAllowedValuesValidation(
-		GenerationContext generationContext,
-		GenerationLogger? logger,
+		SchemaGenerationOutputContext outputContext,
 		IPropertySymbol property,
 		ITypeSymbol propertyType,
 		string propertyName,
@@ -48,7 +45,7 @@ partial class ZodSchemaGenerator
 		List<DiagnosticInfo> diagnostics
 	)
 	{
-		logger?.Debug(
+		outputContext.Debug(
 			$"Generating AllowedValues validation for property '{propertyName}' of type '{propertyType.ToDisplayString()}'",
 			1
 		);
@@ -59,7 +56,7 @@ partial class ZodSchemaGenerator
 
 		if (
 			!TryBuildValueSetComparison(
-				logger,
+				outputContext,
 				property.Type,
 				propertyName,
 				allowedValues.Values,
@@ -78,7 +75,7 @@ partial class ZodSchemaGenerator
 		var propertyValueName = CodeGenHelpers.GetLocalIdentifier(propertyName, "Value");
 		var displayName = GetDisplayName(property);
 		var messageExpression = BuildMessageExpression(
-			logger,
+			outputContext,
 			diagnostics,
 			attributeData,
 			displayName,
@@ -88,17 +85,17 @@ partial class ZodSchemaGenerator
 			CodeGenHelpers.Quote(displayValues)
 		);
 
-		using (generationContext.CodeWriter.OpenBlockScope())
+		using (outputContext.Writer.OpenBlockScope())
 		{
-			generationContext.CodeWriter.WriteLine($"var {propertyValueName} = value.{propertyName};");
+			outputContext.Writer.WriteLine($"var {propertyValueName} = value.{propertyName};");
 			using (
-				generationContext.CodeWriter.OpenBlockScope(
+				outputContext.Writer.OpenBlockScope(
 					$"if (!({comparisonExpression.Replace("propertyValue", propertyValueName)}))"
 				)
 			)
 			{
 				WriteValidationError(
-					generationContext,
+					outputContext,
 					"invalid_value",
 					messageExpression,
 					CodeGenHelpers.GetPathFieldName(propertyName)
@@ -106,12 +103,11 @@ partial class ZodSchemaGenerator
 			}
 		}
 
-		generationContext.CodeWriter.WriteLine();
+		outputContext.Writer.WriteLine();
 	}
 
 	static void GenerateDeniedValuesValidation(
-		GenerationContext generationContext,
-		GenerationLogger? logger,
+		SchemaGenerationOutputContext outputContext,
 		IPropertySymbol property,
 		ITypeSymbol propertyType,
 		string propertyName,
@@ -119,7 +115,7 @@ partial class ZodSchemaGenerator
 		List<DiagnosticInfo> diagnostics
 	)
 	{
-		logger?.Debug(
+		outputContext.Debug(
 			$"Generating DeniedValues validation for property '{propertyName}' of type '{propertyType.ToDisplayString()}'",
 			1
 		);
@@ -130,7 +126,7 @@ partial class ZodSchemaGenerator
 
 		if (
 			!TryBuildValueSetComparison(
-				logger,
+				outputContext,
 				property.Type,
 				propertyName,
 				deniedValues.Values,
@@ -149,7 +145,7 @@ partial class ZodSchemaGenerator
 		var propertyValueName = CodeGenHelpers.GetLocalIdentifier(propertyName, "Value");
 		var displayName = GetDisplayName(property);
 		var messageExpression = BuildMessageExpression(
-			logger,
+			outputContext,
 			diagnostics,
 			attributeData,
 			displayName,
@@ -159,17 +155,17 @@ partial class ZodSchemaGenerator
 			CodeGenHelpers.Quote(displayValues)
 		);
 
-		using (generationContext.CodeWriter.OpenBlockScope())
+		using (outputContext.Writer.OpenBlockScope())
 		{
-			generationContext.CodeWriter.WriteLine($"var {propertyValueName} = value.{propertyName};");
+			outputContext.Writer.WriteLine($"var {propertyValueName} = value.{propertyName};");
 			using (
-				generationContext.CodeWriter.OpenBlockScope(
+				outputContext.Writer.OpenBlockScope(
 					$"if ({comparisonExpression.Replace("propertyValue", propertyValueName)})"
 				)
 			)
 			{
 				WriteValidationError(
-					generationContext,
+					outputContext,
 					"invalid_value",
 					messageExpression,
 					CodeGenHelpers.GetPathFieldName(propertyName)
@@ -177,11 +173,11 @@ partial class ZodSchemaGenerator
 			}
 		}
 
-		generationContext.CodeWriter.WriteLine();
+		outputContext.Writer.WriteLine();
 	}
 
 	static bool TryBuildValueSetComparison(
-		GenerationLogger? logger,
+		SchemaGenerationOutputContext outputContext,
 		ITypeSymbol propertyType,
 		string propertyName,
 		ImmutableArray<TypedConstant> values,
@@ -193,7 +189,7 @@ partial class ZodSchemaGenerator
 		string attributeName
 	)
 	{
-		logger?.Debug(
+		outputContext.Debug(
 			$"Building value set comparison for property '{propertyName}' of type '{propertyType.ToDisplayString()}'",
 			1
 		);

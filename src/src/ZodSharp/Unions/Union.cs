@@ -144,7 +144,6 @@ public readonly struct Union<T1, T2> : IUnion, IEquatable<Union<T1, T2>>
 		}
 	}
 
-#pragma warning disable CS8604 // Possible null reference argument: generic equality comparers handle nulls.
 	/// <inheritdoc/>
 	public bool Equals(Union<T1, T2> other) =>
 		Tag == other.Tag
@@ -154,7 +153,6 @@ public readonly struct Union<T1, T2> : IUnion, IEquatable<Union<T1, T2>>
 			1 => EqualityComparer<T2>.Default.Equals(_value2, other._value2),
 			_ => true,
 		};
-#pragma warning restore CS8604
 
 	/// <inheritdoc/>
 	public override bool Equals(object? obj) => obj is Union<T1, T2> other && Equals(other);
@@ -336,7 +334,6 @@ public readonly struct Union<T1, T2, T3> : IUnion, IEquatable<Union<T1, T2, T3>>
 		}
 	}
 
-#pragma warning disable CS8604 // Possible null reference argument: generic equality comparers handle nulls.
 	/// <inheritdoc/>
 	public bool Equals(Union<T1, T2, T3> other) =>
 		Tag == other.Tag
@@ -347,7 +344,6 @@ public readonly struct Union<T1, T2, T3> : IUnion, IEquatable<Union<T1, T2, T3>>
 			2 => EqualityComparer<T3>.Default.Equals(_value3, other._value3),
 			_ => true,
 		};
-#pragma warning restore CS8604
 
 	/// <inheritdoc/>
 	public override bool Equals(object? obj) => obj is Union<T1, T2, T3> other && Equals(other);

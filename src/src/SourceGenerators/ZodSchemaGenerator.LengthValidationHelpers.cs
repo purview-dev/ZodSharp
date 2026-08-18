@@ -94,7 +94,7 @@ partial class ZodSchemaGenerator
 		);
 
 	static string BuildMessageExpression(
-		GenerationLogger? logger,
+		SchemaGenerationOutputContext outputContext,
 		List<DiagnosticInfo> diagnostics,
 		AttributeData? attributeData,
 		string displayName,
@@ -103,7 +103,7 @@ partial class ZodSchemaGenerator
 		params string[] formatArguments
 	)
 	{
-		logger?.Debug($"Building message expression for display name '{displayName}'", 1);
+		outputContext.Debug($"Building message expression for display name '{displayName}'", 1);
 
 		if (
 			!string.IsNullOrEmpty(validationAttribute.ErrorMessageResourceName)
@@ -170,7 +170,7 @@ partial class ZodSchemaGenerator
 			: $"string.Format(global::System.Globalization.CultureInfo.CurrentCulture, {formatExpression}, {string.Join(", ", formatArguments)})";
 
 	static void WriteValidationError(
-		GenerationContext generationContext,
+		SchemaGenerationOutputContext outputContext,
 		string errorCode,
 		string messageExpression,
 		string pathFieldName,
@@ -179,25 +179,25 @@ partial class ZodSchemaGenerator
 		int? maximum = null
 	)
 	{
-		generationContext.CodeWriter.WriteLine(
+		outputContext.Writer.WriteLine(
 			"errors ??= new global::System.Collections.Generic.List<global::ZodSharp.Core.ValidationError>();"
 		);
-		generationContext.CodeWriter.WriteLine(
+		outputContext.Writer.WriteLine(
 			$"errors.Add({TypeLibrary.ValidationError}.Create({CodeGenHelpers.Quote(errorCode)}, {messageExpression}, {pathFieldName}, origin: {CodeGenHelpers.Quote(origin)}, minimum: {(minimum.HasValue ? minimum.Value.ToString(CultureInfo.InvariantCulture) : "null")}, maximum: {(maximum.HasValue ? maximum.Value.ToString(CultureInfo.InvariantCulture) : "null")}, inclusive: true));"
 		);
 	}
 
 	static void WriteValidationError(
-		GenerationContext generationContext,
+		SchemaGenerationOutputContext outputContext,
 		string errorCode,
 		string messageExpression,
 		string pathFieldName
 	)
 	{
-		generationContext.CodeWriter.WriteLine(
+		outputContext.Writer.WriteLine(
 			"errors ??= new global::System.Collections.Generic.List<global::ZodSharp.Core.ValidationError>();"
 		);
-		generationContext.CodeWriter.WriteLine(
+		outputContext.Writer.WriteLine(
 			$"errors.Add({TypeLibrary.ValidationError}.Create({CodeGenHelpers.Quote(errorCode)}, {messageExpression}, {pathFieldName}));"
 		);
 	}

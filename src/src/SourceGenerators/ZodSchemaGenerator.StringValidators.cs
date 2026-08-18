@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Globalization;
 using Microsoft.CodeAnalysis;
 using ZodSharp.SourceGenerators.Helpers;
+using ZodSharp.SourceGenerators.Models;
 using ZodSharp.SourceGenerators.Models.DataAttributes;
 
 namespace ZodSharp.SourceGenerators;
@@ -9,15 +10,14 @@ namespace ZodSharp.SourceGenerators;
 partial class ZodSchemaGenerator
 {
 	static void GenerateStringValidations(
-		GenerationContext generationContext,
-		GenerationLogger? logger,
+		SchemaGenerationOutputContext outputContext,
 		IPropertySymbol property,
 		string propertyName,
 		ImmutableArray<AttributeData> attributes,
 		List<DiagnosticInfo> diagnostics
 	)
 	{
-		StringLengthValidators(generationContext, logger, property, propertyName, attributes, diagnostics);
+		StringLengthValidators(outputContext, property, propertyName, attributes, diagnostics);
 
 		var emailAttribute = EmailAddressAttributeData.FromAttributeData(attributes);
 		if (emailAttribute.Exists)
@@ -26,13 +26,13 @@ partial class ZodSchemaGenerator
 				$"global::System.String.Format(global::System.Globalization.CultureInfo.CurrentCulture, {CodeGenHelpers.Quote(emailAttribute.ValidationAttributeData.ErrorMessage ?? "Field '{0}' must be a valid email address")}, {CodeGenHelpers.Quote(GetDisplayName(property))})";
 
 			using (
-				generationContext.CodeWriter.OpenBlockScope(
+				outputContext.Writer.OpenBlockScope(
 					$"if (!global::ZodSharp.Rules.EmailRule.EmailRegex.IsMatch(value.{propertyName}))"
 				)
 			)
 			{
 				WriteValidationError(
-					generationContext,
+					outputContext,
 					"invalid_string",
 					errorMessage,
 					CodeGenHelpers.GetPathFieldName(propertyName),
@@ -40,7 +40,7 @@ partial class ZodSchemaGenerator
 				);
 			}
 
-			generationContext.CodeWriter.WriteLine();
+			outputContext.Writer.WriteLine();
 		}
 
 		var regularExpressionAttribute = RegularExpressionAttributeData.FromAttributeData(
@@ -52,7 +52,7 @@ partial class ZodSchemaGenerator
 			var displayName = GetDisplayName(property);
 			var propertyValueName = CodeGenHelpers.GetLocalIdentifier(propertyName, "Value");
 			var messageExpression = BuildMessageExpression(
-				logger,
+				outputContext,
 				diagnostics,
 				regularExpressionAttributeData,
 				displayName,
@@ -64,17 +64,17 @@ partial class ZodSchemaGenerator
 				CodeGenHelpers.Quote(regularExpressionAttribute.Pattern ?? string.Empty)
 			);
 
-			using (generationContext.CodeWriter.OpenBlockScope())
+			using (outputContext.Writer.OpenBlockScope())
 			{
-				generationContext.CodeWriter.WriteLine($"var {propertyValueName} = value.{propertyName};");
+				outputContext.Writer.WriteLine($"var {propertyValueName} = value.{propertyName};");
 				using (
-					generationContext.CodeWriter.OpenBlockScope(
+					outputContext.Writer.OpenBlockScope(
 						$"if ({propertyValueName}.Length != 0 && !{GetRegexFieldName(propertyName)}.IsMatch({propertyValueName}))"
 					)
 				)
 				{
 					WriteValidationError(
-						generationContext,
+						outputContext,
 						"invalid_string",
 						messageExpression,
 						CodeGenHelpers.GetPathFieldName(propertyName),
@@ -83,18 +83,17 @@ partial class ZodSchemaGenerator
 				}
 			}
 
-			generationContext.CodeWriter.WriteLine();
+			outputContext.Writer.WriteLine();
 		}
 
-		GenerateUrlValidation(generationContext, logger, property, propertyName, attributes);
-		GeneratePhoneValidation(generationContext, logger, property, propertyName, attributes);
-		GenerateCreditCardValidation(generationContext, logger, property, propertyName, attributes);
-		GenerateBase64StringValidation(generationContext, logger, property, propertyName, attributes);
+		GenerateUrlValidation(outputContext, property, propertyName, attributes);
+		GeneratePhoneValidation(outputContext, property, propertyName, attributes);
+		GenerateCreditCardValidation(outputContext, property, propertyName, attributes);
+		GenerateBase64StringValidation(outputContext, property, propertyName, attributes);
 	}
 
 	static void GenerateUrlValidation(
-		GenerationContext generationContext,
-		GenerationLogger? logger,
+		SchemaGenerationOutputContext outputContext,
 		IPropertySymbol property,
 		string propertyName,
 		ImmutableArray<AttributeData> attributes
@@ -107,7 +106,7 @@ partial class ZodSchemaGenerator
 		var displayName = GetDisplayName(property);
 		var propertyValueName = CodeGenHelpers.GetLocalIdentifier(propertyName, "Value");
 		var messageExpression = BuildMessageExpression(
-			logger,
+			outputContext,
 			[],
 			null,
 			displayName,
@@ -115,17 +114,17 @@ partial class ZodSchemaGenerator
 			CodeGenHelpers.Quote($"Field '{displayName}' must be a valid URL.")
 		);
 
-		using (generationContext.CodeWriter.OpenBlockScope())
+		using (outputContext.Writer.OpenBlockScope())
 		{
-			generationContext.CodeWriter.WriteLine($"var {propertyValueName} = value.{propertyName};");
+			outputContext.Writer.WriteLine($"var {propertyValueName} = value.{propertyName};");
 			using (
-				generationContext.CodeWriter.OpenBlockScope(
+				outputContext.Writer.OpenBlockScope(
 					$"if ({propertyValueName}.Length != 0 && !new global::ZodSharp.Rules.UrlRule().IsValid({propertyValueName}))"
 				)
 			)
 			{
 				WriteValidationError(
-					generationContext,
+					outputContext,
 					"invalid_string",
 					messageExpression,
 					CodeGenHelpers.GetPathFieldName(propertyName),
@@ -134,12 +133,11 @@ partial class ZodSchemaGenerator
 			}
 		}
 
-		generationContext.CodeWriter.WriteLine();
+		outputContext.Writer.WriteLine();
 	}
 
 	static void GeneratePhoneValidation(
-		GenerationContext generationContext,
-		GenerationLogger? logger,
+		SchemaGenerationOutputContext outputContext,
 		IPropertySymbol property,
 		string propertyName,
 		ImmutableArray<AttributeData> attributes
@@ -152,7 +150,7 @@ partial class ZodSchemaGenerator
 		var displayName = GetDisplayName(property);
 		var propertyValueName = CodeGenHelpers.GetLocalIdentifier(propertyName, "Value");
 		var messageExpression = BuildMessageExpression(
-			logger,
+			outputContext,
 			[],
 			null,
 			displayName,
@@ -160,17 +158,17 @@ partial class ZodSchemaGenerator
 			CodeGenHelpers.Quote($"Field '{displayName}' must be a valid phone number.")
 		);
 
-		using (generationContext.CodeWriter.OpenBlockScope())
+		using (outputContext.Writer.OpenBlockScope())
 		{
-			generationContext.CodeWriter.WriteLine($"var {propertyValueName} = value.{propertyName};");
+			outputContext.Writer.WriteLine($"var {propertyValueName} = value.{propertyName};");
 			using (
-				generationContext.CodeWriter.OpenBlockScope(
+				outputContext.Writer.OpenBlockScope(
 					$"if ({propertyValueName}.Length != 0 && !new global::ZodSharp.Rules.PhoneRule().IsValid({propertyValueName}))"
 				)
 			)
 			{
 				WriteValidationError(
-					generationContext,
+					outputContext,
 					"invalid_string",
 					messageExpression,
 					CodeGenHelpers.GetPathFieldName(propertyName),
@@ -179,12 +177,11 @@ partial class ZodSchemaGenerator
 			}
 		}
 
-		generationContext.CodeWriter.WriteLine();
+		outputContext.Writer.WriteLine();
 	}
 
 	static void GenerateCreditCardValidation(
-		GenerationContext generationContext,
-		GenerationLogger? logger,
+		SchemaGenerationOutputContext outputContext,
 		IPropertySymbol property,
 		string propertyName,
 		ImmutableArray<AttributeData> attributes
@@ -197,7 +194,7 @@ partial class ZodSchemaGenerator
 		var displayName = GetDisplayName(property);
 		var propertyValueName = CodeGenHelpers.GetLocalIdentifier(propertyName, "Value");
 		var messageExpression = BuildMessageExpression(
-			logger,
+			outputContext,
 			[],
 			null,
 			displayName,
@@ -205,17 +202,17 @@ partial class ZodSchemaGenerator
 			CodeGenHelpers.Quote($"Field '{displayName}' must be a valid credit card number.")
 		);
 
-		using (generationContext.CodeWriter.OpenBlockScope())
+		using (outputContext.Writer.OpenBlockScope())
 		{
-			generationContext.CodeWriter.WriteLine($"var {propertyValueName} = value.{propertyName};");
+			outputContext.Writer.WriteLine($"var {propertyValueName} = value.{propertyName};");
 			using (
-				generationContext.CodeWriter.OpenBlockScope(
+				outputContext.Writer.OpenBlockScope(
 					$"if ({propertyValueName}.Length != 0 && !new global::ZodSharp.Rules.CreditCardRule().IsValid({propertyValueName}))"
 				)
 			)
 			{
 				WriteValidationError(
-					generationContext,
+					outputContext,
 					"invalid_string",
 					messageExpression,
 					CodeGenHelpers.GetPathFieldName(propertyName),
@@ -224,12 +221,11 @@ partial class ZodSchemaGenerator
 			}
 		}
 
-		generationContext.CodeWriter.WriteLine();
+		outputContext.Writer.WriteLine();
 	}
 
 	static void GenerateBase64StringValidation(
-		GenerationContext generationContext,
-		GenerationLogger? logger,
+		SchemaGenerationOutputContext outputContext,
 		IPropertySymbol property,
 		string propertyName,
 		ImmutableArray<AttributeData> attributes
@@ -242,7 +238,7 @@ partial class ZodSchemaGenerator
 		var displayName = GetDisplayName(property);
 		var propertyValueName = CodeGenHelpers.GetLocalIdentifier(propertyName, "Value");
 		var messageExpression = BuildMessageExpression(
-			logger,
+			outputContext,
 			[],
 			null,
 			displayName,
@@ -250,17 +246,17 @@ partial class ZodSchemaGenerator
 			CodeGenHelpers.Quote($"Field '{displayName}' must be a valid Base64 string.")
 		);
 
-		using (generationContext.CodeWriter.OpenBlockScope())
+		using (outputContext.Writer.OpenBlockScope())
 		{
-			generationContext.CodeWriter.WriteLine($"var {propertyValueName} = value.{propertyName};");
+			outputContext.Writer.WriteLine($"var {propertyValueName} = value.{propertyName};");
 			using (
-				generationContext.CodeWriter.OpenBlockScope(
+				outputContext.Writer.OpenBlockScope(
 					$"if ({propertyValueName}.Length != 0 && !new global::ZodSharp.Rules.Base64StringRule().IsValid({propertyValueName}))"
 				)
 			)
 			{
 				WriteValidationError(
-					generationContext,
+					outputContext,
 					"invalid_string",
 					messageExpression,
 					CodeGenHelpers.GetPathFieldName(propertyName),
@@ -269,12 +265,11 @@ partial class ZodSchemaGenerator
 			}
 		}
 
-		generationContext.CodeWriter.WriteLine();
+		outputContext.Writer.WriteLine();
 	}
 
 	static void StringLengthValidators(
-		GenerationContext generationContext,
-		GenerationLogger? logger,
+		SchemaGenerationOutputContext outputContext,
 		IPropertySymbol property,
 		string propertyName,
 		ImmutableArray<AttributeData> attributes,
@@ -302,10 +297,10 @@ partial class ZodSchemaGenerator
 				);
 			else
 			{
-				using (generationContext.CodeWriter.OpenBlockScope())
+				using (outputContext.Writer.OpenBlockScope())
 				{
 					var tooSmallMessage = BuildMessageExpression(
-						logger,
+						outputContext,
 						diagnostics,
 						lengthAttributeData,
 						displayName,
@@ -316,7 +311,7 @@ partial class ZodSchemaGenerator
 						lengthAttr.MinimumLength.ToString(CultureInfo.InvariantCulture)
 					);
 					var tooBigMessage = BuildMessageExpression(
-						logger,
+						outputContext,
 						diagnostics,
 						lengthAttributeData,
 						displayName,
@@ -327,20 +322,20 @@ partial class ZodSchemaGenerator
 						lengthAttr.MinimumLength.ToString(CultureInfo.InvariantCulture)
 					);
 
-					generationContext.CodeWriter.WriteLine($"var {propertyValueName} = value.{propertyName};");
-					using (generationContext.CodeWriter.OpenBlockScope($"if ({propertyValueName} is not null)"))
+					outputContext.Writer.WriteLine($"var {propertyValueName} = value.{propertyName};");
+					using (outputContext.Writer.OpenBlockScope($"if ({propertyValueName} is not null)"))
 					{
-						generationContext.CodeWriter.WriteLine(
+						outputContext.Writer.WriteLine(
 							$"var {propertyLengthName} = {propertyValueName}.Length;"
 						);
 						using (
-							generationContext.CodeWriter.OpenBlockScope(
+							outputContext.Writer.OpenBlockScope(
 								$"if ({propertyLengthName} < {lengthAttr.MinimumLength})"
 							)
 						)
 						{
 							WriteValidationError(
-								generationContext,
+								outputContext,
 								"too_small",
 								tooSmallMessage,
 								propertyPath,
@@ -350,13 +345,13 @@ partial class ZodSchemaGenerator
 						}
 
 						using (
-							generationContext.CodeWriter.OpenBlockScope(
+							outputContext.Writer.OpenBlockScope(
 								$"else if ({propertyLengthName} > {lengthAttr.MaximumLength})"
 							)
 						)
 						{
 							WriteValidationError(
-								generationContext,
+								outputContext,
 								"too_big",
 								tooBigMessage,
 								propertyPath,
@@ -367,17 +362,17 @@ partial class ZodSchemaGenerator
 					}
 				}
 
-				generationContext.CodeWriter.WriteLine();
+				outputContext.Writer.WriteLine();
 			}
 		}
 
 		var stringLengthAttr = StringLengthAttribute.FromAttributeData(attributes, out var stringLengthAttributeData);
 		if (stringLengthAttr.Exists)
 		{
-			using (generationContext.CodeWriter.OpenBlockScope())
+			using (outputContext.Writer.OpenBlockScope())
 			{
 				var tooSmallMessage = BuildMessageExpression(
-					logger,
+					outputContext,
 					diagnostics,
 					stringLengthAttributeData,
 					displayName,
@@ -388,7 +383,7 @@ partial class ZodSchemaGenerator
 					stringLengthAttr.MinimumLength.ToString(CultureInfo.InvariantCulture)
 				);
 				var tooBigMessage = BuildMessageExpression(
-					logger,
+					outputContext,
 					diagnostics,
 					stringLengthAttributeData,
 					displayName,
@@ -399,18 +394,18 @@ partial class ZodSchemaGenerator
 					stringLengthAttr.MinimumLength.ToString(CultureInfo.InvariantCulture)
 				);
 
-				generationContext.CodeWriter.WriteLine($"var {propertyValueName} = value.{propertyName};");
-				generationContext.CodeWriter.WriteLine($"var {propertyLengthName} = {propertyValueName}.Length;");
+				outputContext.Writer.WriteLine($"var {propertyValueName} = value.{propertyName};");
+				outputContext.Writer.WriteLine($"var {propertyLengthName} = {propertyValueName}.Length;");
 				if (stringLengthAttr.MinimumLength > 0)
 				{
 					using (
-						generationContext.CodeWriter.OpenBlockScope(
+						outputContext.Writer.OpenBlockScope(
 							$"if ({propertyLengthName} < {stringLengthAttr.MinimumLength})"
 						)
 					)
 					{
 						WriteValidationError(
-							generationContext,
+							outputContext,
 							"too_small",
 							tooSmallMessage,
 							propertyPath,
@@ -421,13 +416,13 @@ partial class ZodSchemaGenerator
 				}
 
 				using (
-					generationContext.CodeWriter.OpenBlockScope(
+					outputContext.Writer.OpenBlockScope(
 						$"if ({propertyLengthName} > {stringLengthAttr.MaximumLength})"
 					)
 				)
 				{
 					WriteValidationError(
-						generationContext,
+						outputContext,
 						"too_big",
 						tooBigMessage,
 						propertyPath,
@@ -437,16 +432,16 @@ partial class ZodSchemaGenerator
 				}
 			}
 
-			generationContext.CodeWriter.WriteLine();
+			outputContext.Writer.WriteLine();
 		}
 
 		var minLengthAttr = MinLengthAttributeData.FromAttributeData(attributes, out var minLengthAttributeData);
 		if (minLengthAttr.Exists && minLengthAttr.Length > 0)
 		{
-			using (generationContext.CodeWriter.OpenBlockScope())
+			using (outputContext.Writer.OpenBlockScope())
 			{
 				var messageExpression = BuildMessageExpression(
-					logger,
+					outputContext,
 					diagnostics,
 					minLengthAttributeData,
 					displayName,
@@ -456,14 +451,14 @@ partial class ZodSchemaGenerator
 					minLengthAttr.Length.ToString(CultureInfo.InvariantCulture)
 				);
 
-				generationContext.CodeWriter.WriteLine($"var {propertyValueName} = value.{propertyName};");
-				generationContext.CodeWriter.WriteLine($"var {propertyLengthName} = {propertyValueName}.Length;");
+				outputContext.Writer.WriteLine($"var {propertyValueName} = value.{propertyName};");
+				outputContext.Writer.WriteLine($"var {propertyLengthName} = {propertyValueName}.Length;");
 				using (
-					generationContext.CodeWriter.OpenBlockScope($"if ({propertyLengthName} < {minLengthAttr.Length})")
+					outputContext.Writer.OpenBlockScope($"if ({propertyLengthName} < {minLengthAttr.Length})")
 				)
 				{
 					WriteValidationError(
-						generationContext,
+						outputContext,
 						"too_small",
 						messageExpression,
 						propertyPath,
@@ -473,16 +468,16 @@ partial class ZodSchemaGenerator
 				}
 			}
 
-			generationContext.CodeWriter.WriteLine();
+			outputContext.Writer.WriteLine();
 		}
 
 		var maxLengthAttr = MaxLengthAttributeData.FromAttributeData(attributes, out var maxLengthAttributeData);
 		if (maxLengthAttr.Exists && maxLengthAttr.Length >= 0)
 		{
-			using (generationContext.CodeWriter.OpenBlockScope())
+			using (outputContext.Writer.OpenBlockScope())
 			{
 				var messageExpression = BuildMessageExpression(
-					logger,
+					outputContext,
 					diagnostics,
 					maxLengthAttributeData,
 					displayName,
@@ -492,14 +487,14 @@ partial class ZodSchemaGenerator
 					maxLengthAttr.Length.ToString(CultureInfo.InvariantCulture)
 				);
 
-				generationContext.CodeWriter.WriteLine($"var {propertyValueName} = value.{propertyName};");
-				generationContext.CodeWriter.WriteLine($"var {propertyLengthName} = {propertyValueName}.Length;");
+				outputContext.Writer.WriteLine($"var {propertyValueName} = value.{propertyName};");
+				outputContext.Writer.WriteLine($"var {propertyLengthName} = {propertyValueName}.Length;");
 				using (
-					generationContext.CodeWriter.OpenBlockScope($"if ({propertyLengthName} > {maxLengthAttr.Length})")
+					outputContext.Writer.OpenBlockScope($"if ({propertyLengthName} > {maxLengthAttr.Length})")
 				)
 				{
 					WriteValidationError(
-						generationContext,
+						outputContext,
 						"too_big",
 						messageExpression,
 						propertyPath,
@@ -509,7 +504,7 @@ partial class ZodSchemaGenerator
 				}
 			}
 
-			generationContext.CodeWriter.WriteLine();
+			outputContext.Writer.WriteLine();
 		}
 	}
 }

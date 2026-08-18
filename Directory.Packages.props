@@ -8,21 +8,21 @@
 		-->
 		<RoslynCompilerVersion>4.13.0</RoslynCompilerVersion>
 		<RoslynAnalyzersVersion>[5.6.0,)</RoslynAnalyzersVersion>
-		<TUnitVersion>1.61.0</TUnitVersion>
-		<PurviewSourceGenFramework>[1.0.0-prerelease.18,)</PurviewSourceGenFramework>
+		<TUnitVersion>[1.65.0,)</TUnitVersion>
+		<PurviewSourceGenFramework>[1.0.0-prerelease.20,)</PurviewSourceGenFramework>
 	</PropertyGroup>
 	<ItemGroup>
-		<PackageVersion Include="Bogus" Version="35.6.5" />
-		<PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.9" />
-		<PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.300" />
+		<PackageVersion Include="Bogus" Version="[35.6.5,)" />
+		<PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="[10.0.10,)" />
+		<PackageVersion Include="Microsoft.SourceLink.GitHub" Version="[10.0.300,)" />
 		<PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="$(RoslynCompilerVersion)" />
 		<PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="$(RoslynAnalyzersVersion)" />
 		<PackageVersion Include="TUnit" Version="$(TUnitVersion)" />
 		<PackageVersion Include="TUnit.Mocks" Version="$(TUnitVersion)" />
-		<PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
-		<PackageVersion Include="System.Text.Json" Version="10.0.9" />
-		<PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
-		<PackageVersion Include="BenchmarkDotNet" Version="0.15.8" />
+		<PackageVersion Include="Newtonsoft.Json" Version="[13.0.4,)" />
+		<PackageVersion Include="System.Text.Json" Version="[10.0.10,)" />
+		<PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="[10.0.0,)" />
+		<PackageVersion Include="BenchmarkDotNet" Version="[0.15.8,)" />
 		<PackageVersion Include="Purview.SourceGeneratorFramework" Version="$(PurviewSourceGenFramework)" />
 		<PackageVersion
 			Include="Purview.SourceGeneratorFramework.Testing.TUnit"

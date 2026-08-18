@@ -9,64 +9,36 @@ namespace ZodSharp.SourceGenerators.Helpers;
 static class SourceGenLibrary
 {
 	public static IncrementalValueProvider<SchemaGenerationModel> GetGeneratorValueProviders(
-		IncrementalGeneratorInitializationContext context,
-		GenerationLogger? logger
+		IncrementalGeneratorInitializationContext context
 	)
 	{
-		var isDisabled = IncrementalPipeline.IsDisabledValueProvider(
-			context,
-			PropertyLibrary.DisableZodSharpSourceGeneratorProperty
-		);
-		var generationContext = IncrementalPipeline.GenerationContextValueProvider<SchemaGenerationContext>(
+		var outputContext = IncrementalPipeline.GenerationContextValueProvider<SchemaGenerationContext>(
 			context,
 			typeof(ZodSchemaGenerator).FullName,
 			AssemblyInfo.Version,
-			(compilation, generatorName, generatorVersion, _) => new(compilation, generatorName, generatorVersion),
-			logger
+			(compilation, generatorSettings, logger, _) => new(compilation, generatorSettings, logger),
+			PropertyLibrary.DisableZodSharpSourceGeneratorProperty
 		);
 		var zodSchemas = IncrementalPipeline.ForAttributeWithMetadataName(
 			context,
 			TypeLibrary.ZodSchemaAttribute,
-			predicate: (s, _) => s is ClassDeclarationSyntax or StructDeclarationSyntax or RecordDeclarationSyntax,
-			transform: (ctx, ct) => GetZodSchemaTargetForGeneration(ctx, logger, ct)
+			predicate: static (s, _) =>
+				s is ClassDeclarationSyntax or StructDeclarationSyntax or RecordDeclarationSyntax,
+			transform: static (ctx, ct) => GetZodSchemaTargetForGeneration(ctx, ct)
 		);
 
-		return isDisabled
-			.CombineWith(
-				generationContext,
-				static (isDisabled, generationContext, _) =>
-				{
-					SchemaGenerationModel model = new(isDisabled, generationContext);
-
-					List<DiagnosticInfo> diagnostics = [];
-
-					if (diagnostics.Count > 0)
-						model.Diagnostics = model.Diagnostics.AddRange(diagnostics);
-
-					return model;
-				},
-				"CollectSchemaGenerationModel"
-			)
-			.CollectWith(
-				zodSchemas,
-				static (model, zodSchemas, _) =>
-				{
-					model.ZodSchemas = zodSchemas;
-
-					return model;
-				},
-				"CombineWithZodSchemas"
-			);
+		return outputContext.CollectWith(
+			zodSchemas,
+			static (generationContext, zodSchemas, _) => new SchemaGenerationModel(generationContext, zodSchemas),
+			"CollectZodSchemas"
+		);
 	}
 
 	static GeneratorResult<ZodSchemaDescriptor> GetZodSchemaTargetForGeneration(
 		GeneratorAttributeSyntaxContext context,
-		GenerationLogger? logger,
 		CancellationToken cancellationToken
 	)
 	{
-		logger?.Debug($"Processing target node: {context.TargetNode.GetType().Name}");
-
 		var declaration = (TypeDeclarationSyntax)context.TargetNode;
 		if (context.SemanticModel.GetDeclaredSymbol(declaration, cancellationToken) is not INamedTypeSymbol symbol)
 			return GeneratorResult<ZodSchemaDescriptor>.Empty;
