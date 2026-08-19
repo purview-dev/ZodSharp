@@ -19,7 +19,7 @@ namespace Testing
 ";
 
 		// Act
-		var driverResult = await GenerateZodAsync(source, cancellationToken);
+		var driverResult = await GenerateAsync(source, cancellationToken);
 		var generatedSource = GetSchemaGeneratedSource(driverResult, "CustomerSchema");
 
 		// Assert
@@ -41,7 +41,7 @@ namespace Testing
 ";
 
 		// Act
-		var driverResult = await GenerateZodAsync(source, cancellationToken);
+		var driverResult = await GenerateAsync(source, cancellationToken);
 		var generatedSource = GetSchemaGeneratedSource(driverResult, "CustomerSchema");
 
 		// Assert
@@ -68,7 +68,7 @@ namespace Testing
 ";
 
 		// Act
-		var driverResult = await GenerateZodAsync(source, cancellationToken);
+		var driverResult = await GenerateAsync(source, cancellationToken);
 
 		// Assert
 		await Assert.That(GetSchemaGeneratedSource(driverResult, "CustomerSchema")).IsNotEmpty();

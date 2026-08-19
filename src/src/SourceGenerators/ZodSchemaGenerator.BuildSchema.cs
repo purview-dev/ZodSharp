@@ -1,8 +1,8 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Text;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Text;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Text;
 using ZodSharp.SourceGenerators.Helpers;
 using ZodSharp.SourceGenerators.Models;
 using ZodSharp.SourceGenerators.Models.DataAttributes;
@@ -64,7 +64,7 @@ partial class ZodSchemaGenerator
 		{
 			// Report diagnostic if generation fails
 			var diagnostic = DiagnosticInfo.Create(
-				GeneratorDiagnostics.UnhandledException,
+				DiagnosticLibrary.UnhandledException,
 				schemaDescriptor.Symbol.Locations.FirstOrDefault(),
 				schemaDescriptor.Symbol.Name,
 				ex.Message
@@ -276,7 +276,7 @@ partial class ZodSchemaGenerator
 				block.Dispose();
 		}
 
-		return CodeGenHelpers.ProcessGeneratedCode(writer);
+		return writer.ToString();
 	}
 
 	static ImmutableArray<INamedTypeSymbol> GetContainingTypeChain(INamedTypeSymbol typeSymbol)
@@ -748,7 +748,7 @@ partial class ZodSchemaGenerator
 		{
 			diagnostics.Add(
 				DiagnosticInfo.Create(
-					GeneratorDiagnostics.ComparePropertyNotFound,
+					DiagnosticLibrary.ComparePropertyNotFound,
 					property.Locations.FirstOrDefault(),
 					propertyName,
 					otherPropertyName

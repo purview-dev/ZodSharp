@@ -29,8 +29,8 @@ namespace Testing
 	}
 }";
 
-		var driverResult = await GenerateZodAsync(source, cancellationToken);
-		var assembly = await Assert.That(driverResult.Assembly).IsNotNull();
+		var driverResult = await GenerateAsync(source, cancellationToken);
+		var assembly = await Assert.That(driverResult.CompilationResult.Assembly).IsNotNull();
 
 		var parentType = assembly.GetType("Testing.Parent")!;
 		var schemaType = assembly.GetType("Testing.ParentSchema")!;
@@ -78,8 +78,8 @@ namespace Testing
 	}
 }";
 
-		var driverResult = await GenerateZodAsync(source, cancellationToken);
-		var assembly = await Assert.That(driverResult.Assembly).IsNotNull();
+		var driverResult = await GenerateAsync(source, cancellationToken);
+		var assembly = await Assert.That(driverResult.CompilationResult.Assembly).IsNotNull();
 
 		var grandParentType = assembly.GetType("Testing.GrandParent")!;
 		var schemaType = assembly.GetType("Testing.GrandParentSchema")!;
@@ -138,8 +138,8 @@ namespace Testing
 }
 ";
 
-		var driverResult = await GenerateZodAsync(source, cancellationToken);
-		var assembly = await Assert.That(driverResult.Assembly).IsNotNull();
+		var driverResult = await GenerateAsync(source, cancellationToken);
+		var assembly = await Assert.That(driverResult.CompilationResult.Assembly).IsNotNull();
 
 		var grandParentType = assembly.GetType("Testing.GrandParent")!;
 		var schemaType = assembly.GetType("Testing.GrandParentSchema")!;
@@ -192,8 +192,8 @@ namespace Testing
 	}
 }";
 
-		var driverResult = await GenerateZodAsync(source, cancellationToken);
-		var assembly = await Assert.That(driverResult.Assembly).IsNotNull();
+		var driverResult = await GenerateAsync(source, cancellationToken);
+		var assembly = await Assert.That(driverResult.CompilationResult.Assembly).IsNotNull();
 
 		var containerType = await Assert.That(assembly.GetType("Testing.ArrayContainer")).IsNotNull();
 		var schemaType = await Assert.That(assembly.GetType("Testing.ArrayContainerSchema")).IsNotNull();
@@ -240,8 +240,8 @@ namespace Testing
 	}
 }";
 
-		var driverResult = await GenerateZodAsync(source, cancellationToken);
-		var assembly = await Assert.That(driverResult.Assembly).IsNotNull();
+		var driverResult = await GenerateAsync(source, cancellationToken);
+		var assembly = await Assert.That(driverResult.CompilationResult.Assembly).IsNotNull();
 
 		var containerType = assembly.GetType("Testing.ListContainer")!;
 		var schemaType = assembly.GetType("Testing.ListContainerSchema")!;
@@ -296,8 +296,8 @@ namespace Testing
 	}
 }";
 
-		var driverResult = await GenerateZodAsync(source, cancellationToken);
-		var assembly = await Assert.That(driverResult.Assembly).IsNotNull();
+		var driverResult = await GenerateAsync(source, cancellationToken);
+		var assembly = await Assert.That(driverResult.CompilationResult.Assembly).IsNotNull();
 
 		var containerType = assembly.GetType("Testing.NullableListContainer")!;
 		var schemaType = assembly.GetType("Testing.NullableListContainerSchema")!;

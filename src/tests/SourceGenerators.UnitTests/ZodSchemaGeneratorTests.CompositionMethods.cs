@@ -19,7 +19,7 @@ namespace Testing
 ";
 
 		// Act
-		var driverResult = await GenerateZodAsync(source, cancellationToken);
+		var driverResult = await GenerateAsync(source, cancellationToken);
 		var generatedSource = GetSchemaGeneratedSource(driverResult, "ComposeModelSchema");
 
 		await Assert.That(generatedSource).Contains("ApplyAnd");
@@ -46,8 +46,8 @@ namespace Testing
 ";
 
 		// Act
-		var driverResult = await GenerateZodAsync(source, cancellationToken);
-		var assembly = await Assert.That(driverResult.Assembly).IsNotNull();
+		var driverResult = await GenerateAsync(source, cancellationToken);
+		var assembly = await Assert.That(driverResult.CompilationResult.Assembly).IsNotNull();
 
 		var modelType = assembly.GetType("Testing.RefineModel")!;
 		var schemaType = assembly.GetType("Testing.RefineModelSchema")!;
@@ -97,8 +97,8 @@ namespace Testing
 
 		// Act — compile and invoke, proving the generated validator can be cast to
 		// IZodSchema<T> and used in the composition API.
-		var driverResult = await GenerateZodAsync(source, cancellationToken);
-		var assembly = await Assert.That(driverResult.Assembly).IsNotNull();
+		var driverResult = await GenerateAsync(source, cancellationToken);
+		var assembly = await Assert.That(driverResult.CompilationResult.Assembly).IsNotNull();
 
 		// Assert
 		var helper = assembly.GetType("Testing.CompositionUser")!;

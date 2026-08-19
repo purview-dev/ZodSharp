@@ -1,5 +1,4 @@
 using Microsoft.CodeAnalysis;
-using Purview.SourceGeneratorFramework.Testing;
 using ZodSharp.SourceGenerators.Infra;
 
 namespace ZodSharp.SourceGenerators;
@@ -8,7 +7,7 @@ namespace ZodSharp.SourceGenerators;
 public partial class ZodSchemaGeneratorTests : IncrementalSourceGeneratorTestBase<ZodSchemaGenerator>
 {
 	static string GetSchemaGeneratedSource(DriverRunResult driverRunResults) =>
-		GetSchemaGeneratedSource(driverRunResults.Result);
+		GetSchemaGeneratedSource(driverRunResults.DriverResult);
 
 	static string GetSchemaGeneratedSource(GeneratorDriverRunResult result)
 	{
@@ -23,7 +22,7 @@ public partial class ZodSchemaGeneratorTests : IncrementalSourceGeneratorTestBas
 	}
 
 	static string GetSchemaGeneratedSource(DriverRunResult driverRunResults, string schemaName) =>
-		GetSchemaGeneratedSource(driverRunResults.Result, schemaName);
+		GetSchemaGeneratedSource(driverRunResults.DriverResult, schemaName);
 
 	static string GetSchemaGeneratedSource(GeneratorDriverRunResult result, string schemaName)
 	{

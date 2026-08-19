@@ -40,7 +40,7 @@ partial class ZodSchemaGenerator
 				Diagnostics:
 				[
 					DiagnosticInfo.Create(
-						GeneratorDiagnostics.CustomValidationInvalidMethodName,
+						DiagnosticLibrary.CustomValidationInvalidMethodName,
 						GetAttributeLocation(zodSchemaAttribute, classSymbol),
 						methodName,
 						classSymbol.Name
@@ -71,7 +71,7 @@ partial class ZodSchemaGenerator
 						Diagnostics:
 						[
 							DiagnosticInfo.Create(
-								GeneratorDiagnostics.CustomValidationMethodNotFound,
+								DiagnosticLibrary.CustomValidationMethodNotFound,
 								GetAttributeLocation(zodSchemaAttribute, classSymbol),
 								methodName,
 								classSymbol.Name
@@ -131,7 +131,7 @@ partial class ZodSchemaGenerator
 				Diagnostics:
 				[
 					DiagnosticInfo.Create(
-						GeneratorDiagnostics.CustomValidationAmbiguousOverloads,
+						DiagnosticLibrary.CustomValidationAmbiguousOverloads,
 						validCandidates[0].Locations.Length > 0 ? validCandidates[0].Locations[0] : null,
 						methodName,
 						classSymbol.Name
@@ -206,7 +206,7 @@ partial class ZodSchemaGenerator
 		{
 			diagnostics.Add(
 				DiagnosticInfo.Create(
-					GeneratorDiagnostics.CustomValidationGenericMethod,
+					DiagnosticLibrary.CustomValidationGenericMethod,
 					methodLocation,
 					method.Name,
 					typeName
@@ -219,7 +219,7 @@ partial class ZodSchemaGenerator
 		{
 			diagnostics.Add(
 				DiagnosticInfo.Create(
-					GeneratorDiagnostics.CustomValidationAbstractMethod,
+					DiagnosticLibrary.CustomValidationAbstractMethod,
 					methodLocation,
 					method.Name,
 					typeName
@@ -232,7 +232,7 @@ partial class ZodSchemaGenerator
 		{
 			diagnostics.Add(
 				DiagnosticInfo.Create(
-					GeneratorDiagnostics.CustomValidationUnimplementedPartial,
+					DiagnosticLibrary.CustomValidationUnimplementedPartial,
 					methodLocation,
 					method.Name,
 					typeName
@@ -243,7 +243,7 @@ partial class ZodSchemaGenerator
 		{
 			diagnostics.Add(
 				DiagnosticInfo.Create(
-					GeneratorDiagnostics.CustomValidationUnimplementedPartial,
+					DiagnosticLibrary.CustomValidationUnimplementedPartial,
 					methodLocation,
 					method.Name,
 					typeName
@@ -256,7 +256,7 @@ partial class ZodSchemaGenerator
 		{
 			diagnostics.Add(
 				DiagnosticInfo.Create(
-					GeneratorDiagnostics.CustomValidationInvalidStaticInstance,
+					DiagnosticLibrary.CustomValidationInvalidStaticInstance,
 					methodLocation,
 					method.Name,
 					typeName
@@ -275,7 +275,7 @@ partial class ZodSchemaGenerator
 			{
 				diagnostics.Add(
 					DiagnosticInfo.Create(
-						GeneratorDiagnostics.CustomValidationInvalidParameterModifier,
+						DiagnosticLibrary.CustomValidationInvalidParameterModifier,
 						methodLocation,
 						method.Name,
 						typeName
@@ -290,7 +290,7 @@ partial class ZodSchemaGenerator
 		{
 			diagnostics.Add(
 				DiagnosticInfo.Create(
-					GeneratorDiagnostics.CustomValidationInvalidParameterCount,
+					DiagnosticLibrary.CustomValidationInvalidParameterCount,
 					methodLocation,
 					method.Name,
 					typeName
@@ -307,7 +307,7 @@ partial class ZodSchemaGenerator
 		{
 			diagnostics.Add(
 				DiagnosticInfo.Create(
-					GeneratorDiagnostics.CustomValidationInvalidModelParameter,
+					DiagnosticLibrary.CustomValidationInvalidModelParameter,
 					methodLocation,
 					method.Name,
 					typeName
@@ -321,7 +321,7 @@ partial class ZodSchemaGenerator
 		{
 			diagnostics.Add(
 				DiagnosticInfo.Create(
-					GeneratorDiagnostics.CustomValidationInvalidCancellationToken,
+					DiagnosticLibrary.CustomValidationInvalidCancellationToken,
 					methodLocation,
 					method.Name,
 					typeName
@@ -337,7 +337,7 @@ partial class ZodSchemaGenerator
 		{
 			diagnostics.Add(
 				DiagnosticInfo.Create(
-					GeneratorDiagnostics.CustomValidationInvalidReturnType,
+					DiagnosticLibrary.CustomValidationInvalidReturnType,
 					methodLocation,
 					method.Name,
 					typeName
@@ -353,7 +353,7 @@ partial class ZodSchemaGenerator
 			{
 				diagnostics.Add(
 					DiagnosticInfo.Create(
-						GeneratorDiagnostics.CustomValidationInaccessible,
+						DiagnosticLibrary.CustomValidationInaccessible,
 						methodLocation,
 						method.Name,
 						typeName

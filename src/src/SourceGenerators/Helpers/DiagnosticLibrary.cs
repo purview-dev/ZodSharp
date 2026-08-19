@@ -1,8 +1,8 @@
 using Microsoft.CodeAnalysis;
 
-namespace ZodSharp.SourceGenerators.Models;
+namespace ZodSharp.SourceGenerators.Helpers;
 
-static class GeneratorDiagnostics
+static class DiagnosticLibrary
 {
 	const string Category = "ZodSharp.SourceGenerator";
 
@@ -42,7 +42,7 @@ static class GeneratorDiagnostics
 		isEnabledByDefault: true
 	);
 
-	public static readonly DiagnosticDescriptor UnsupportedDataAnnoationsUsage = new(
+	public static readonly DiagnosticDescriptor UnsupportedDataAnnotationsUsage = new(
 		id: "ZODSGEN006",
 		title: "Unsupported DataAnnotations usage",
 		messageFormat: "Unsupported Data Annotations type on '{0}'",

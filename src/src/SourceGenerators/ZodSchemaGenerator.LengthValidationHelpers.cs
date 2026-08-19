@@ -55,7 +55,7 @@ partial class ZodSchemaGenerator
 	) =>
 		diagnostics.Add(
 			DiagnosticInfo.Create(
-				GeneratorDiagnostics.InvalidLengthAttribute,
+				DiagnosticLibrary.InvalidLengthAttribute,
 				GetAttributeLocation(attributeData),
 				message
 			)
@@ -69,7 +69,7 @@ partial class ZodSchemaGenerator
 	) =>
 		diagnostics.Add(
 			DiagnosticInfo.Create(
-				GeneratorDiagnostics.UnsupportedLengthAttributeTarget,
+				DiagnosticLibrary.UnsupportedLengthAttributeTarget,
 				GetAttributeLocation(attributeData),
 				string.Format(
 					CultureInfo.InvariantCulture,
@@ -87,7 +87,7 @@ partial class ZodSchemaGenerator
 	) =>
 		diagnostics.Add(
 			DiagnosticInfo.Create(
-				GeneratorDiagnostics.UnsupportedDataAnnoationsUsage,
+				DiagnosticLibrary.UnsupportedDataAnnotationsUsage,
 				GetAttributeLocation(attributeData),
 				message
 			)
@@ -117,7 +117,7 @@ partial class ZodSchemaGenerator
 			{
 				diagnostics.Add(
 					DiagnosticInfo.Create(
-						GeneratorDiagnostics.InvalidDataAnnotationsErrorMessage,
+						DiagnosticLibrary.InvalidDataAnnotationsErrorMessage,
 						GetAttributeLocation(attributeData),
 						"ErrorMessageResourceName and ErrorMessageResourceType must both be supplied."
 					)
@@ -140,7 +140,7 @@ partial class ZodSchemaGenerator
 			{
 				diagnostics.Add(
 					DiagnosticInfo.Create(
-						GeneratorDiagnostics.InvalidDataAnnotationsErrorMessage,
+						DiagnosticLibrary.InvalidDataAnnotationsErrorMessage,
 						GetAttributeLocation(attributeData),
 						string.Format(
 							CultureInfo.InvariantCulture,

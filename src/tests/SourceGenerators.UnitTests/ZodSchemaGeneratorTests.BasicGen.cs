@@ -16,7 +16,7 @@ namespace Testing
 ";
 
 		// Act
-		var driverResult = await GenerateZodAsync(source, cancellationToken);
+		var driverResult = await GenerateAsync(source, cancellationToken);
 
 		// Assert
 		await Assert.That(driverResult.EnsureValid).ThrowsNothing();
@@ -46,7 +46,7 @@ namespace Testing
 ";
 
 		// Act
-		var driverResult = await GenerateZodAsync(source, cancellationToken);
+		var driverResult = await GenerateAsync(source, cancellationToken);
 		var generatedSource = GetSchemaGeneratedSource(driverResult);
 
 		// Assert — generated file starts with auto-generated header

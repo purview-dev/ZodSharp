@@ -22,10 +22,10 @@ namespace Testing
 ";
 
 		// Act
-		var driverResult = await GenerateZodAsync(source, cancellationToken);
+		var driverResult = await GenerateAsync(source, cancellationToken);
 
 		// Assert
-		await Assert.That(driverResult.GeneratedTrees).Count().IsEqualTo(ExpectedFileCount);
+		await Assert.That(driverResult.AllSyntaxTrees).Count().IsEqualTo(ExpectedFileCount);
 	}
 
 	[Test]
@@ -41,11 +41,11 @@ namespace Testing
 ";
 
 		// Act
-		var driverResult = await GenerateZodAsync(source, cancellationToken);
-		var assembly = await Assert.That(driverResult.Assembly).IsNotNull();
+		var driverResult = await GenerateAsync(source, cancellationToken);
+		var assembly = await Assert.That(driverResult.CompilationResult.Assembly).IsNotNull();
 
 		// Assert — attribute files are generated
-		var attributeSources = driverResult.GeneratedTrees.Select(static t => t.GetText().ToString()).ToList();
+		var attributeSources = driverResult.AllSyntaxTrees.Select(static t => t.GetText().ToString()).ToList();
 
 		await Assert.That(attributeSources).Count().IsEqualTo(ExpectedFileCount);
 
