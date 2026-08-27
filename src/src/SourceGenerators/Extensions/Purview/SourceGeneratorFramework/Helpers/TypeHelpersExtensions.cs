@@ -129,10 +129,10 @@ static class TypeHelpersExtensions
 				&& string.Equals(namedType.ToDisplayString(), fullyQualifiedMetadataName, StringComparison.Ordinal);
 		}
 
-		public static bool HasAttribute(IEnumerable<AttributeData> attributes, TypeValueObject attribute) =>
+		public static bool HasAttribute(IEnumerable<AttributeData> attributes, TypeIdentity attribute) =>
 			attributes.Any(attribute.Equals);
 
-		public static bool IsOrImplements(ITypeSymbol type, TypeValueObject interfaceType)
+		public static bool IsOrImplements(ITypeSymbol type, TypeIdentity interfaceType)
 		{
 			var unwrapped = StripNullableAnnotations(type);
 			return TypeHelpers.IsNamedType(unwrapped, interfaceType.MetadataFullName)

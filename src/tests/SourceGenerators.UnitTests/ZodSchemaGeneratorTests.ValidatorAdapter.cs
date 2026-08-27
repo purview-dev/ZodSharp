@@ -18,7 +18,7 @@ namespace Testing
     }
 }";
 		var driverResult = await GenerateAsync(source, cancellationToken);
-		var generatedSource = GetSchemaGeneratedSource(driverResult, "WidgetSchema");
+		var generatedSource = driverResult.GetSource("WidgetSchema");
 
 		await Assert.That(generatedSource).Contains("class WidgetSchemaValidator");
 		await Assert.That(generatedSource).Contains("IZodSchemaValidator");
@@ -40,8 +40,8 @@ namespace Testing
 		var driverResult = await GenerateAsync(source, cancellationToken);
 		var allGenerated = string.Join("\n", driverResult.AllSyntaxTrees.Select(static t => t.GetText().ToString()));
 
-		await Assert.That(allGenerated).Contains("ZodSchemaGenerated");
-		await Assert.That(allGenerated).Contains("Gadget");
+		await Assert.That(allGenerated).ContainsGeneratedCode("ZodSchemaGenerated");
+		await Assert.That(allGenerated).ContainsGeneratedCode("Gadget");
 	}
 
 	[Test]
@@ -60,11 +60,11 @@ namespace Testing
     }
 }";
 		var driverResult = await GenerateAsync(source, cancellationToken);
-		var generatedSource = GetSchemaGeneratedSource(driverResult, "GizmoSchema");
+		var generatedSource = driverResult.GetSource("GizmoSchema");
 
-		await Assert.That(generatedSource).Contains("ValidateAsync");
-		await Assert.That(generatedSource).Contains("ValueTask");
-		await Assert.That(generatedSource).Contains("GizmoSchemaValidator");
+		await Assert.That(generatedSource).ContainsGeneratedCode("ValidateAsync");
+		await Assert.That(generatedSource).ContainsGeneratedCode("ValueTask");
+		await Assert.That(generatedSource).ContainsGeneratedCode("GizmoSchemaValidator");
 	}
 
 	[Test]

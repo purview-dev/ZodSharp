@@ -369,7 +369,7 @@ partial class ZodSchemaGenerator
 	/// Constructs the expected <c>ValueTask&lt;ValidationResult&lt;T&gt;&gt;</c> symbol
 	/// from the compilation's framework symbols.
 	/// </summary>
-	static TypeValueObject GetExpectedReturnType(INamedTypeSymbol classSymbol) =>
+	static TypeIdentity GetExpectedReturnType(INamedTypeSymbol classSymbol) =>
 		TypeLibrary.ValueTask.MakeGeneric(
 			TypeLibrary.ValidationResult.MakeGeneric(
 				classSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)

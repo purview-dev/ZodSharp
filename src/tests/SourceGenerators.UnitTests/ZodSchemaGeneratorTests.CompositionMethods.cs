@@ -20,13 +20,11 @@ namespace Testing
 
 		// Act
 		var driverResult = await GenerateAsync(source, cancellationToken);
-		var generatedSource = GetSchemaGeneratedSource(driverResult, "ComposeModelSchema");
+		var generatedSource = driverResult.GetSource("ComposeModelSchema");
 
-		await Assert.That(generatedSource).Contains("ApplyAnd");
-		await Assert.That(generatedSource).Contains("ApplyOr");
-		await Assert.That(generatedSource).Contains("ApplyRefine");
-		// Compilation succeeding proves the previously-buggy Or emission (a stray
-		// dollar sign before the return type) is fixed.
+		await Assert.That(generatedSource).ContainsGeneratedCode("ApplyAnd");
+		await Assert.That(generatedSource).ContainsGeneratedCode("ApplyOr");
+		await Assert.That(generatedSource).ContainsGeneratedCode("ApplyRefine");
 	}
 
 	[Test]

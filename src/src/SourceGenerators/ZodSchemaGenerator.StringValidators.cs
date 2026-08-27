@@ -325,9 +325,7 @@ partial class ZodSchemaGenerator
 					outputContext.Writer.WriteLine($"var {propertyValueName} = value.{propertyName};");
 					using (outputContext.Writer.OpenBlockScope($"if ({propertyValueName} is not null)"))
 					{
-						outputContext.Writer.WriteLine(
-							$"var {propertyLengthName} = {propertyValueName}.Length;"
-						);
+						outputContext.Writer.WriteLine($"var {propertyLengthName} = {propertyValueName}.Length;");
 						using (
 							outputContext.Writer.OpenBlockScope(
 								$"if ({propertyLengthName} < {lengthAttr.MinimumLength})"
@@ -416,9 +414,7 @@ partial class ZodSchemaGenerator
 				}
 
 				using (
-					outputContext.Writer.OpenBlockScope(
-						$"if ({propertyLengthName} > {stringLengthAttr.MaximumLength})"
-					)
+					outputContext.Writer.OpenBlockScope($"if ({propertyLengthName} > {stringLengthAttr.MaximumLength})")
 				)
 				{
 					WriteValidationError(
@@ -453,9 +449,7 @@ partial class ZodSchemaGenerator
 
 				outputContext.Writer.WriteLine($"var {propertyValueName} = value.{propertyName};");
 				outputContext.Writer.WriteLine($"var {propertyLengthName} = {propertyValueName}.Length;");
-				using (
-					outputContext.Writer.OpenBlockScope($"if ({propertyLengthName} < {minLengthAttr.Length})")
-				)
+				using (outputContext.Writer.OpenBlockScope($"if ({propertyLengthName} < {minLengthAttr.Length})"))
 				{
 					WriteValidationError(
 						outputContext,
@@ -489,9 +483,7 @@ partial class ZodSchemaGenerator
 
 				outputContext.Writer.WriteLine($"var {propertyValueName} = value.{propertyName};");
 				outputContext.Writer.WriteLine($"var {propertyLengthName} = {propertyValueName}.Length;");
-				using (
-					outputContext.Writer.OpenBlockScope($"if ({propertyLengthName} > {maxLengthAttr.Length})")
-				)
+				using (outputContext.Writer.OpenBlockScope($"if ({propertyLengthName} > {maxLengthAttr.Length})"))
 				{
 					WriteValidationError(
 						outputContext,

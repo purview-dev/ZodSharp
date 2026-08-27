@@ -47,9 +47,9 @@ namespace Testing
 
 		// Act
 		var driverResult = await GenerateAsync(source, cancellationToken);
-		var generatedSource = GetSchemaGeneratedSource(driverResult);
+		var generatedSource = driverResult.GetSource();
 
 		// Assert — generated file starts with auto-generated header
-		await Assert.That(generatedSource).Contains(expectation);
+		await Assert.That(generatedSource).ContainsGeneratedCode(expectation);
 	}
 }

@@ -90,11 +90,7 @@ partial class ZodSchemaGenerator
 					lengthAttr.MinimumLength.ToString(CultureInfo.InvariantCulture)
 				);
 
-				using (
-					outputContext.Writer.OpenBlockScope(
-						$"if ({propertyLengthName} < {lengthAttr.MinimumLength})"
-					)
-				)
+				using (outputContext.Writer.OpenBlockScope($"if ({propertyLengthName} < {lengthAttr.MinimumLength})"))
 				{
 					WriteValidationError(
 						outputContext,
@@ -107,9 +103,7 @@ partial class ZodSchemaGenerator
 				}
 
 				using (
-					outputContext.Writer.OpenBlockScope(
-						$"else if ({propertyLengthName} > {lengthAttr.MaximumLength})"
-					)
+					outputContext.Writer.OpenBlockScope($"else if ({propertyLengthName} > {lengthAttr.MaximumLength})")
 				)
 				{
 					WriteValidationError(
@@ -136,9 +130,7 @@ partial class ZodSchemaGenerator
 					minLengthAttr.Length.ToString(CultureInfo.InvariantCulture)
 				);
 
-				using (
-					outputContext.Writer.OpenBlockScope($"if ({propertyLengthName} < {minLengthAttr.Length})")
-				)
+				using (outputContext.Writer.OpenBlockScope($"if ({propertyLengthName} < {minLengthAttr.Length})"))
 				{
 					WriteValidationError(
 						outputContext,
@@ -164,9 +156,7 @@ partial class ZodSchemaGenerator
 					maxLengthAttr.Length.ToString(CultureInfo.InvariantCulture)
 				);
 
-				using (
-					outputContext.Writer.OpenBlockScope($"if ({propertyLengthName} > {maxLengthAttr.Length})")
-				)
+				using (outputContext.Writer.OpenBlockScope($"if ({propertyLengthName} > {maxLengthAttr.Length})"))
 				{
 					WriteValidationError(
 						outputContext,

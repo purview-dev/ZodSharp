@@ -13,13 +13,13 @@ public sealed partial class ZodSchemaGenerator : IIncrementalGenerator
 {
 	public void Initialize(IncrementalGeneratorInitializationContext context)
 	{
-		context.RegisterEmbeddedAttribute(AssemblyInfo.AssemblyName, AssemblyInfo.Version);
-
-		context.RegisterPostInitializationOutput(static ctx =>
-		{
-			foreach (var (HintName, SourceText) in AttributeGenHelper.GenerateMarkers())
-				ctx.AddSource($"{HintName}.g.cs", SourceText);
-		});
+		context
+			.RegisterEmbeddedAttribute<ZodSchemaGenerator>()
+			.RegisterPostInitializationOutput(static ctx =>
+			{
+				foreach (var (HintName, SourceText) in AttributeGenHelper.GenerateMarkers())
+					ctx.AddSource($"{HintName}.g.cs", SourceText);
+			});
 
 		var generationValueProviders = SourceGenLibrary.GetGeneratorValueProviders(context);
 
@@ -28,31 +28,26 @@ public sealed partial class ZodSchemaGenerator : IIncrementalGenerator
 			generationValueProviders,
 			(spc, model) =>
 			{
-				if (model.GenerationContext.Settings.IsSourceGeneratorDisabled)
+				if (model.Context.Settings.IsSourceGeneratorDisabled)
 					return;
 
-				var isFatal = false;
 				foreach (var schema in model.ZodSchemas)
 				{
 					if (schema.HasDiagnostics)
-					{
-						ReportDiagnostics(spc, schema.Diagnostics, model.GenerationContext);
-					}
+						spc.ReportDiagnostics(schema.Diagnostics);
 
-					if (schema.IsFatal)
-						isFatal = true;
-				}
+					if (!schema.ShouldProcess)
+						continue;
 
-				if (isFatal)
-					return;
+					var symbol = SymbolResolver.Resolve(
+						model.Context.Capabilities.Compilation,
+						schema.Value.SchemaType
+					);
+					if (symbol is null)
+						continue;
 
-				SchemaGenerationOutputContext outputContext = new(model.GenerationContext);
-				var allSchemas = DiscoverAllSchemas(model.ZodSchemas);
-				foreach (var (descriptor, isPrimary) in allSchemas)
-				{
-					// We'll create a new new code writer for each schema.
-					outputContext.CreateCodeWriter();
-					BuildSchema(descriptor, outputContext, spc, isPrimary);
+					SchemaGenerationOutputContext outputContext = new(model.Context);
+					BuildSchema(symbol, schema.Value.SchemaType, outputContext, spc, schema.Value.IsPrimary);
 				}
 			}
 		);

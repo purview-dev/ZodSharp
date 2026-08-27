@@ -25,7 +25,7 @@ namespace Testing
 		var driverResult = await GenerateAsync(source, cancellationToken);
 
 		// Assert
-		await Assert.That(driverResult.AllSyntaxTrees).Count().IsEqualTo(ExpectedFileCount);
+		await Assert.That(driverResult.AllSyntaxTrees.Length).IsEqualTo(ExpectedFileCount);
 	}
 
 	[Test]

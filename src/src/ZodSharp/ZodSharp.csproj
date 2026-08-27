@@ -1,9 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<GenerateDocumentationFile>true</GenerateDocumentationFile>
-	</PropertyGroup>
-
-	<PropertyGroup>
 		<IsPackable>true</IsPackable>
 		<PackageId>ZodSharp</PackageId>
 		<Description>
@@ -11,6 +7,7 @@
 			Features zero-allocation validation, struct-based rules, fluent API,
 			and source generator support for maximum performance.
 		</Description>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<PackageTags>zod;validation;schema</PackageTags>
 		<NoWarn>$(NoWarn);NU5118</NoWarn>
 	</PropertyGroup>

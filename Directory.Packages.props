@@ -8,8 +8,8 @@
 		-->
 		<RoslynCompilerVersion>4.13.0</RoslynCompilerVersion>
 		<RoslynAnalyzersVersion>[5.6.0,)</RoslynAnalyzersVersion>
-		<TUnitVersion>[1.65.0,)</TUnitVersion>
-		<PurviewSourceGenFramework>[1.0.0-prerelease.23,)</PurviewSourceGenFramework>
+		<TUnitVersion>[1.65.68,)</TUnitVersion>
+		<PurviewSourceGenFramework>[1.0.0-prerelease.25,)</PurviewSourceGenFramework>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageVersion Include="Bogus" Version="[35.6.5,)" />

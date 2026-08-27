@@ -23,10 +23,10 @@ namespace Testing
 ";
 
 		var driverResult = await GenerateAsync(source, cancellationToken);
-		var generatedSource = GetSchemaGeneratedSource(driverResult, "InnerSchema");
+		var generatedSource = driverResult.GetSource("InnerSchema");
 
-		await Assert.That(generatedSource).Contains("private static partial class InnerSchema");
-		await Assert.That(generatedSource).Contains("public partial class Outer");
+		await Assert.That(generatedSource).ContainsGeneratedCode("private static partial class InnerSchema");
+		await Assert.That(generatedSource).ContainsGeneratedCode("public partial class Outer");
 	}
 
 	[Test]
@@ -52,7 +52,7 @@ namespace Testing
 
 		var driverResult = await GenerateAsync(source, cancellationToken);
 
-		await Assert.That(GetSchemaGeneratedSource(driverResult, "InnerSchema")).IsNotEmpty();
+		await Assert.That(driverResult.GetSource("InnerSchema")).IsNotEmpty();
 	}
 
 	[Test]

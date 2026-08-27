@@ -1,43 +1,31 @@
-using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
-using ZodSharp.SourceGenerators.Helpers;
 
 namespace ZodSharp.SourceGenerators.Models;
 
-sealed record SchemaGenerationModel(SchemaGenerationContext GenerationContext, ImmutableArray<GeneratorResult<ZodSchemaDescriptor>> ZodSchemas)
+sealed record SchemaGenerationModel(GenerationContext<SchemaGenerationCapabilities> Context)
 {
-	public ImmutableArray<DiagnosticInfo> Diagnostics { get; set; } = [];
+	public EquatableArray<GeneratorResult<ZodSchemaDescriptor>> ZodSchemas { get; init; } = [];
+
+	public EquatableArray<DiagnosticInfo> Diagnostics { get; init; } = [];
 }
 
-sealed class SchemaGenerationContext : GenerationContext
+sealed record SchemaGenerationCapabilities(Compilation Compilation) : IGenerationCapabilities
 {
-	public SchemaGenerationContext(Compilation compilation, GenerationSettings settings, ISourceGenLogger? logger)
-		: base(compilation, settings, logger)
-	{
-		RequiredAttribute = GetTypeByMetadataName(TypeLibrary.DataAnnotations.RequiredAttribute);
-	}
-
-	public INamedTypeSymbol? RequiredAttribute { get; }
+	public bool HasRequiredAttribute { get; init; }
 }
 
 // This is recreated outside of the pipeline to avoid the state
 // of the CodeWriter being shared across multiple source outputs.
-sealed class SchemaGenerationOutputContext(SchemaGenerationContext generationContext) : ISourceGenLogger
+sealed record SchemaGenerationOutputContext(GenerationContext<SchemaGenerationCapabilities> Context) : ISourceGenLogger
 {
-	public SchemaGenerationContext Generation { get; } = generationContext;
+	public CodeWriter Writer { get; private set; } = Context.CreateCodeWriter();
 
-	public CodeWriter Writer { get; private set; } = generationContext.CreateCodeWriter();
-
-	public CodeWriter CreateCodeWriter() => Writer = Generation.CreateCodeWriter();
+	public CodeWriter CreateCodeWriter() => Writer = Context.CreateCodeWriter();
 
 	public void Log(SourceGenLogLevel level, int indentation, string message, params object[] args) =>
-		Generation.Log(level, indentation, message, args);
+		Context.Log(level, indentation, message, args);
 }
 
-readonly record struct ZodSchemaDescriptor(
-	INamedTypeSymbol Symbol,
-	TypeValueObject SchemaType,
-	ImmutableArray<ZodPropertyDescriptor> Properties
-);
+readonly record struct ZodSchemaDescriptor(TypeIdentity SchemaType, string DeclarationFingerprint, bool IsPrimary);
 
-readonly record struct ZodPropertyDescriptor(IPropertySymbol Symbol);
+readonly record struct SchemaSet(EquatableArray<ZodSchemaDescriptor> Schemas);

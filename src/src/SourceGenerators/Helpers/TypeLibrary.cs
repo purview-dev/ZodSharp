@@ -10,20 +10,20 @@ static partial class TypeLibrary
 	public const string DefaultCustomValidationMethodName = "CustomValidationAsync";
 
 	// This matches the name of the class, just so we can use the `nameof` for later...
-	public static readonly TypeValueObject ZodSchemaAttribute = new(nameof(ZodSchemaAttribute), ZodSharpNamespace);
+	public static readonly TypeIdentity ZodSchemaAttribute = new(nameof(ZodSchemaAttribute), ZodSharpNamespace);
 
-	public static readonly TypeValueObject ZodSchemaGeneratedAttribute = new(
+	public static readonly TypeIdentity ZodSchemaGeneratedAttribute = new(
 		nameof(ZodSchemaGeneratedAttribute),
 		ZodSharpCoreNamespace
 	);
 
 	// Other ZodSharp types...
-	public static readonly TypeValueObject ValidationResult = new(nameof(ValidationResult), ZodSharpCoreNamespace);
+	public static readonly TypeIdentity ValidationResult = new(nameof(ValidationResult), ZodSharpCoreNamespace);
 
-	public static readonly TypeValueObject ValidationResultMetadataName = new(
+	public static readonly TypeIdentity ValidationResultMetadataName = new(
 		nameof(ValidationResultMetadataName),
 		ZodSharpCoreNamespace
 	);
 
-	public static readonly TypeValueObject ValidationError = new(nameof(ValidationError), ZodSharpCoreNamespace);
+	public static readonly TypeIdentity ValidationError = new(nameof(ValidationError), ZodSharpCoreNamespace);
 }
