@@ -1,8 +1,8 @@
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Text;
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Text;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Text;
 using ZodSharp.SourceGenerators.Helpers;
 using ZodSharp.SourceGenerators.Models;
 using ZodSharp.SourceGenerators.Models.DataAttributes;
