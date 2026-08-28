@@ -13,6 +13,6 @@ sealed class SampleDiDtoSchemaValidator : IZodSchemaValidator<SampleDiDto>
 
 	public ValueTask<ValidationResult<SampleDiDto>> ValidateAsync(
 		SampleDiDto value,
-		CancellationToken cancellationToken = default
+		CancellationToken _ = default
 	) => new(Validate(value));
 }
