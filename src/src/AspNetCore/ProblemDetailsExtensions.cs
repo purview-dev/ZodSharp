@@ -7,6 +7,9 @@ namespace ZodSharp.AspNetCore;
 /// <summary>
 /// Converts ZodSharp validation results into ASP.NET Core ProblemDetails payloads.
 /// </summary>
+#if !NETSTANDARD2_1_OR_GREATER
+[System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+#endif
 public static class ProblemDetailsExtensions
 {
 	/// <summary>
@@ -68,7 +71,7 @@ public static class ProblemDetailsExtensions
 	)
 	{
 		var details = result.ToHttpValidationProblemDetails(statusCode);
-		return new ValidationProblemDetails(details.Errors)
+		return new(details.Errors)
 		{
 			Title = details.Title,
 			Status = details.Status,

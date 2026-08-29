@@ -2,6 +2,8 @@
 	<PropertyGroup>
 		<IsRoslynComponent>true</IsRoslynComponent>
 		<AssemblyName>ZodSharp.SourceGeneration</AssemblyName>
+		<EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+		<TreatWarningsAsErrors>true</TreatWarningsAsErrors>
 		<!--<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>-->
 	</PropertyGroup>
 

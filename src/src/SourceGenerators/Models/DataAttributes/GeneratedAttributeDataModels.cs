@@ -7,7 +7,7 @@ namespace ZodSharp.SourceGenerators.Models.DataAttributes;
 readonly partial record struct ValidationAttributeData(
 	string? ErrorMessage,
 	string? ErrorMessageResourceName,
-	ITypeSymbol? ErrorMessageResourceType
+	TypeIdentity? ErrorMessageResourceType
 );
 
 [Generate("System.ComponentModel.DataAnnotations.RequiredAttribute")]
@@ -29,7 +29,7 @@ readonly partial record struct DisplayAttributeData(
 	string? Name,
 	string? Description,
 	string? Prompt,
-	ITypeSymbol? ResourceType,
+	TypeIdentity? ResourceType,
 	bool AutoGenerateField,
 	bool AutoGenerateFilter,
 	int Order
@@ -73,20 +73,166 @@ readonly partial record struct RegularExpressionAttributeData(
 	[NestedModel] ValidationAttributeData ValidationAttribute
 );
 
-[Generate("System.ComponentModel.DataAnnotations.AllowedValuesAttribute")]
 readonly partial record struct AllowedValuesAttributeData(
-	[Argument("values")] ImmutableArray<TypedConstant> Values,
-	[NestedModel] ValidationAttributeData ValidationAttribute
-);
+	bool Exists,
+	EquatableArray<TypedConstant> Values,
+	ValidationAttributeData ValidationAttribute
+)
+{
+	public static readonly AllowedValuesAttributeData Empty = new(
+		false,
+		new EquatableArray<TypedConstant>([]),
+		ValidationAttributeData.Empty
+	);
+
+	public static readonly TypeIdentity TargetAttribute = new(
+		"AllowedValuesAttribute",
+		"System.ComponentModel.DataAnnotations"
+	);
+
+	public static AllowedValuesAttributeData FromAttributeData(AttributeData attributeData)
+	{
+		if (!TargetAttribute.Equals(attributeData.AttributeClass))
+			return Empty;
+
+		var values = GetValues(attributeData);
+		var validationAttribute = ValidationAttributeData.FromAttributeData(attributeData);
+		return new(true, values, validationAttribute);
+	}
+
+	public static AllowedValuesAttributeData FromAttributeData(ImmutableArray<AttributeData> attributes)
+	{
+		foreach (var attribute in attributes)
+		{
+			var result = FromAttributeData(attribute);
+			if (result.Exists)
+				return result;
+		}
+
+		return Empty;
+	}
+
+	public static AllowedValuesAttributeData FromAttributeData(ISymbol symbol) =>
+		FromAttributeData(symbol.GetAttributes());
+
+	public static bool TryFromAttributeData(
+		ISymbol symbol,
+		out AllowedValuesAttributeData attributeData,
+		out AttributeData? attribute
+	)
+	{
+		attributeData = Empty;
+		attribute = null;
+
+		foreach (var attr in symbol.GetAttributes())
+		{
+			var result = FromAttributeData(attr);
+			if (!result.Exists)
+				continue;
+
+			attributeData = result;
+			attribute = attr;
+			return true;
+		}
+
+		return false;
+	}
+
+	static EquatableArray<TypedConstant> GetValues(AttributeData attributeData)
+	{
+		if (attributeData.ConstructorArguments.Length == 0)
+			return new EquatableArray<TypedConstant>([]);
+
+		var argument = attributeData.ConstructorArguments[0];
+		if (argument.Kind == TypedConstantKind.Array)
+			return new(argument.Values);
+
+		// If the attribute was constructed with a single value, we wrap it in an array for consistency.
+		return new([argument]);
+	}
+}
 
 [Generate("System.ComponentModel.DataAnnotations.Base64StringAttribute")]
 readonly partial record struct Base64StringAttributeData([NestedModel] ValidationAttributeData ValidationAttribute);
 
-[Generate("System.ComponentModel.DataAnnotations.DeniedValuesAttribute")]
 readonly partial record struct DeniedValuesAttributeData(
-	[Argument("values")] ImmutableArray<TypedConstant> Values,
-	[NestedModel] ValidationAttributeData ValidationAttribute
-);
+	bool Exists,
+	EquatableArray<TypedConstant> Values,
+	ValidationAttributeData ValidationAttribute
+)
+{
+	public static readonly DeniedValuesAttributeData Empty = new(
+		false,
+		new EquatableArray<TypedConstant>([]),
+		ValidationAttributeData.Empty
+	);
+
+	public static readonly TypeIdentity TargetAttribute = new(
+		"DeniedValuesAttribute",
+		"System.ComponentModel.DataAnnotations"
+	);
+
+	public static DeniedValuesAttributeData FromAttributeData(AttributeData attributeData)
+	{
+		if (!TargetAttribute.Equals(attributeData.AttributeClass))
+			return Empty;
+
+		var values = GetValues(attributeData);
+		var validationAttribute = ValidationAttributeData.FromAttributeData(attributeData);
+		return new(true, values, validationAttribute);
+	}
+
+	public static DeniedValuesAttributeData FromAttributeData(ImmutableArray<AttributeData> attributes)
+	{
+		foreach (var attribute in attributes)
+		{
+			var result = FromAttributeData(attribute);
+			if (result.Exists)
+				return result;
+		}
+
+		return Empty;
+	}
+
+	public static DeniedValuesAttributeData FromAttributeData(ISymbol symbol) =>
+		FromAttributeData(symbol.GetAttributes());
+
+	public static bool TryFromAttributeData(
+		ISymbol symbol,
+		out DeniedValuesAttributeData attributeData,
+		out AttributeData? attribute
+	)
+	{
+		attributeData = Empty;
+		attribute = null;
+
+		foreach (var attr in symbol.GetAttributes())
+		{
+			var result = FromAttributeData(attr);
+			if (!result.Exists)
+				continue;
+
+			attributeData = result;
+			attribute = attr;
+			return true;
+		}
+
+		return false;
+	}
+
+	static EquatableArray<TypedConstant> GetValues(AttributeData attributeData)
+	{
+		if (attributeData.ConstructorArguments.Length == 0)
+			return new EquatableArray<TypedConstant>([]);
+
+		var argument = attributeData.ConstructorArguments[0];
+		if (argument.Kind == TypedConstantKind.Array)
+			return new(argument.Values);
+
+		// If the attribute was constructed with a single value, we wrap it in an array for consistency.
+		return new([argument]);
+	}
+}
 
 [Generate("System.ComponentModel.DataAnnotations.LengthAttribute")]
 readonly partial record struct LengthAttributeData(

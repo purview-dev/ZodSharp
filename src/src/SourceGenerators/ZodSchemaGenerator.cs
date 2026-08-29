@@ -1,6 +1,5 @@
 using Microsoft.CodeAnalysis;
 using ZodSharp.SourceGenerators.Helpers;
-using ZodSharp.SourceGenerators.Models;
 
 namespace ZodSharp.SourceGenerators;
 
@@ -23,7 +22,6 @@ public sealed partial class ZodSchemaGenerator : IIncrementalGenerator
 
 		var generationValueProviders = SourceGenLibrary.GetGeneratorValueProviders(context);
 
-		// Register source outputs
 		context.RegisterSourceOutput(
 			generationValueProviders,
 			(spc, model) =>
@@ -31,23 +29,33 @@ public sealed partial class ZodSchemaGenerator : IIncrementalGenerator
 				if (model.Context.Settings.IsSourceGeneratorDisabled)
 					return;
 
+				if (!model.Context.Capabilities.HasRequiredAttribute)
+					return;
+
 				foreach (var schema in model.ZodSchemas)
 				{
-					if (schema.HasDiagnostics)
-						spc.ReportDiagnostics(schema.Diagnostics);
-
 					if (!schema.ShouldProcess)
 						continue;
 
-					var symbol = SymbolResolver.Resolve(
-						model.Context.Capabilities.Compilation,
-						schema.Value.SchemaType
-					);
-					if (symbol is null)
-						continue;
+					try
+					{
+						var outputContext = new SchemaGenerationOutputContext(model.Context, schema.Value);
+						BuildSchema(outputContext, spc, schema.Value.IsPrimary);
+					}
+					catch (CodeWriterScopeValidationException)
+					{
+						throw;
+					}
+					catch (Exception ex)
+					{
+						var diagnostic = DiagnosticInfo.Create(
+							DiagnosticLibrary.UnhandledException,
+							schema.Value.TargetType.Name,
+							ex.Message
+						);
 
-					SchemaGenerationOutputContext outputContext = new(model.Context);
-					BuildSchema(symbol, schema.Value.SchemaType, outputContext, spc, schema.Value.IsPrimary);
+						spc.ReportDiagnostic(diagnostic.ToDiagnostic());
+					}
 				}
 			}
 		);

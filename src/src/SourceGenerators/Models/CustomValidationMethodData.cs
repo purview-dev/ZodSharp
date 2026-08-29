@@ -1,5 +1,3 @@
-using System.Collections.Immutable;
-
 namespace ZodSharp.SourceGenerators.Models;
 
 /// <summary>
@@ -26,8 +24,7 @@ readonly record struct CustomValidationMethodData(
 	bool Exists,
 	bool IsValid,
 	string MethodName,
-	CustomValidationInvocationKind InvocationKind,
-	ImmutableArray<DiagnosticInfo> Diagnostics
+	CustomValidationInvocationKind InvocationKind
 )
 {
 	public static readonly CustomValidationMethodData None = new(
@@ -35,8 +32,7 @@ readonly record struct CustomValidationMethodData(
 		Exists: false,
 		IsValid: false,
 		MethodName: string.Empty,
-		InvocationKind: CustomValidationInvocationKind.None,
-		Diagnostics: []
+		InvocationKind: CustomValidationInvocationKind.None
 	);
 
 	public bool HasCustomValidation => IsValid && InvocationKind != CustomValidationInvocationKind.None;

@@ -1,26 +1,23 @@
-using System.Diagnostics.CodeAnalysis;
+using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using ZodSharp.SourceGenerators.Helpers;
 using ZodSharp.SourceGenerators.Models;
 
-namespace ZodSharp.SourceGenerators;
+namespace ZodSharp.SourceGenerators.Helpers;
 
-[SuppressMessage("Style", "CA1506")]
-partial class ZodSchemaGenerator
+partial class SourceGenLibrary
 {
 	/// <summary>
 	/// Reads the <c>CustomValidationMethodName</c> property from the <c>[ZodSchema]</c> attribute,
 	/// discovers and validates the matching method on the schema type, and returns
 	/// an immutable <see cref="CustomValidationMethodData"/>.
 	/// </summary>
-	static CustomValidationMethodData ResolveCustomValidationMethod(INamedTypeSymbol classSymbol)
+	internal static GeneratorResult<CustomValidationMethodData> ResolveCustomValidationMethod(
+		INamedTypeSymbol classSymbol,
+		ZodSchemaAttributeData zodSchemaAttributeData,
+		AttributeData zodSchemaAttribute
+	)
 	{
-		var zodSchemaAttributeData = ZodSchemaAttributeData.FromAttributeData(
-			classSymbol.GetAttributes(),
-			out var zodSchemaAttribute
-		);
-
 		var configuredName = zodSchemaAttributeData.CustomValidationMethodName;
 		var isExplicitlyConfigured = !string.IsNullOrEmpty(configuredName);
 
@@ -31,21 +28,14 @@ partial class ZodSchemaGenerator
 		// Validate the configured name is a valid C# identifier.
 		if (isExplicitlyConfigured && !IsValidIdentifier(methodName))
 		{
-			return new(
-				IsConfigured: true,
-				Exists: false,
-				IsValid: false,
-				MethodName: methodName,
-				InvocationKind: CustomValidationInvocationKind.None,
-				Diagnostics:
-				[
-					DiagnosticInfo.Create(
-						DiagnosticLibrary.CustomValidationInvalidMethodName,
-						GetAttributeLocation(zodSchemaAttribute, classSymbol),
-						methodName,
-						classSymbol.Name
-					),
-				]
+			return GeneratorResult<CustomValidationMethodData>.Create(
+				CustomValidationMethodData.None,
+				DiagnosticInfo.Create(
+					DiagnosticLibrary.CustomValidationInvalidMethodName,
+					zodSchemaAttribute,
+					methodName,
+					classSymbol.Name
+				)
 			);
 		}
 
@@ -59,24 +49,18 @@ partial class ZodSchemaGenerator
 
 			if (c.Count == 0)
 			{
-				// No method found, checking the model and the schema validator...but only report a diagnostic if explicitly configured.
+				// No method found, checking the model and the schema validator
+				// ...but only report a diagnostic if explicitly configured.
 				if (isExplicitlyConfigured)
 				{
-					return new CustomValidationMethodData(
-						IsConfigured: true,
-						Exists: false,
-						IsValid: false,
-						MethodName: methodName,
-						InvocationKind: CustomValidationInvocationKind.None,
-						Diagnostics:
-						[
-							DiagnosticInfo.Create(
-								DiagnosticLibrary.CustomValidationMethodNotFound,
-								GetAttributeLocation(zodSchemaAttribute, classSymbol),
-								methodName,
-								classSymbol.Name
-							),
-						]
+					return GeneratorResult<CustomValidationMethodData>.Create(
+						CustomValidationMethodData.None,
+						DiagnosticInfo.Create(
+							DiagnosticLibrary.CustomValidationMethodNotFound,
+							GetAttributeLocation(zodSchemaAttribute, classSymbol),
+							methodName,
+							classSymbol.Name
+						)
 					);
 				}
 			}
@@ -97,46 +81,33 @@ partial class ZodSchemaGenerator
 
 		// Validate each candidate and collect valid ones + diagnostics.
 		var validCandidates = new List<IMethodSymbol>();
-		var diagnostics = new List<DiagnosticInfo>();
-
+		var diagnostics = ImmutableArray.CreateBuilder<DiagnosticInfo>();
 		foreach (var candidate in candidates)
 		{
-			var (isValid, candidateDiagnostics) = ValidateMethodSignature(candidate, classSymbol, invocationKind);
-			diagnostics.AddRange(candidateDiagnostics);
+			var isValid = ValidateMethodSignature(candidate, classSymbol, invocationKind, diagnostics);
 			if (isValid)
 				validCandidates.Add(candidate);
 		}
 
 		if (validCandidates.Count == 0)
 		{
-			return new CustomValidationMethodData(
-				IsConfigured: true,
-				Exists: true,
-				IsValid: false,
-				MethodName: methodName,
-				InvocationKind: CustomValidationInvocationKind.None,
-				Diagnostics: [.. diagnostics]
+			return GeneratorResult<CustomValidationMethodData>.Create(
+				CustomValidationMethodData.None,
+				diagnostics.ToImmutable()
 			);
 		}
 
 		if (validCandidates.Count > 1)
 		{
 			// Ambiguous — multiple valid overloads.
-			return new CustomValidationMethodData(
-				IsConfigured: true,
-				Exists: true,
-				IsValid: false,
-				MethodName: methodName,
-				InvocationKind: CustomValidationInvocationKind.None,
-				Diagnostics:
-				[
-					DiagnosticInfo.Create(
-						DiagnosticLibrary.CustomValidationAmbiguousOverloads,
-						validCandidates[0].Locations.Length > 0 ? validCandidates[0].Locations[0] : null,
-						methodName,
-						classSymbol.Name
-					),
-				]
+			return GeneratorResult<CustomValidationMethodData>.Create(
+				CustomValidationMethodData.None,
+				DiagnosticInfo.Create(
+					DiagnosticLibrary.CustomValidationAmbiguousOverloads,
+					validCandidates[0].Locations.Length > 0 ? validCandidates[0].Locations[0] : null,
+					methodName,
+					classSymbol.Name
+				)
 			);
 		}
 
@@ -146,8 +117,7 @@ partial class ZodSchemaGenerator
 			Exists: true,
 			IsValid: true,
 			MethodName: methodName,
-			InvocationKind: invocationKind,
-			Diagnostics: []
+			InvocationKind: invocationKind
 		);
 	}
 
@@ -190,13 +160,13 @@ partial class ZodSchemaGenerator
 				.Where(static m => m.MethodKind == MethodKind.Ordinary && !m.IsImplicitlyDeclared),
 		];
 
-	static (bool IsValid, List<DiagnosticInfo> Diagnostics) ValidateMethodSignature(
+	static bool ValidateMethodSignature(
 		IMethodSymbol method,
 		INamedTypeSymbol classSymbol,
-		CustomValidationInvocationKind invocationKind
+		CustomValidationInvocationKind invocationKind,
+		ImmutableArray<DiagnosticInfo>.Builder diagnostics
 	)
 	{
-		var diagnostics = new List<DiagnosticInfo>();
 		var typeName = classSymbol.Name;
 		var methodLocation = method.Locations.Length > 0 ? method.Locations[0] : null;
 		var comparer = SymbolEqualityComparer.Default;
@@ -298,7 +268,7 @@ partial class ZodSchemaGenerator
 			);
 
 			// Can't validate individual params if count is wrong; return early.
-			return (false, diagnostics);
+			return false;
 		}
 
 		// First parameter must be the schema model type.
@@ -362,7 +332,7 @@ partial class ZodSchemaGenerator
 			}
 		}
 
-		return (diagnostics.Count == 0, diagnostics);
+		return diagnostics.Count == 0;
 	}
 
 	/// <summary>

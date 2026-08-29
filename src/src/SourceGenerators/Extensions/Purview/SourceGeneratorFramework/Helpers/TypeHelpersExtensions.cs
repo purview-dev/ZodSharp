@@ -82,6 +82,17 @@ static class TypeHelpersExtensions
 			return namedType.GetAttributes().Any(a => TypeLibrary.ZodSchemaAttribute.Equals(a.AttributeClass));
 		}
 
+		public static bool HasDataAnnotationAttribute(IPropertySymbol propertySymbol)
+		{
+			// Check if the property has the DataAnnotation attribute
+			return propertySymbol
+				.GetAttributes()
+				.Any(a =>
+					a.AttributeClass is not null
+					&& TypeHelpers.InheritsFrom(a.AttributeClass, TypeLibrary.DataAnnotations.ValidationAttribute)
+				);
+		}
+
 #pragma warning disable format
 		public static bool CanBeNull(ITypeSymbol typeSymbol) =>
 			typeSymbol.IsReferenceType

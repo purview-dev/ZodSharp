@@ -1,4 +1,5 @@
 using ZodSharp.Core;
+using ZodSharp.SourceGenerators.Infra;
 
 namespace ZodSharp.SourceGenerators;
 
@@ -29,7 +30,11 @@ namespace Testing
 	}
 }";
 
-		var driverResult = await GenerateAsync(source, cancellationToken);
+		var driverResult = await GenerateAsync(
+			source,
+			new ZodSourceGeneratorTestOptions().Compile(),
+			cancellationToken
+		);
 		var assembly = await Assert.That(driverResult.CompilationResult.Assembly).IsNotNull();
 
 		var modelType = assembly.GetType("Testing.RuntimeModel")!;
@@ -74,7 +79,11 @@ namespace Testing
 	}
 }";
 
-		var driverResult = await GenerateAsync(source, cancellationToken);
+		var driverResult = await GenerateAsync(
+			source,
+			new ZodSourceGeneratorTestOptions().Compile(),
+			cancellationToken
+		);
 		var assembly = await Assert.That(driverResult.CompilationResult.Assembly).IsNotNull();
 
 		var modelType = assembly.GetType("Testing.MergeModel")!;
@@ -124,7 +133,11 @@ namespace Testing
 	}
 }";
 
-		var driverResult = await GenerateAsync(source, cancellationToken);
+		var driverResult = await GenerateAsync(
+			source,
+			new ZodSourceGeneratorTestOptions().Compile(),
+			cancellationToken
+		);
 		var assembly = await Assert.That(driverResult.CompilationResult.Assembly).IsNotNull();
 
 		var modelType = assembly.GetType("Testing.BothPassModel")!;
@@ -171,7 +184,11 @@ namespace Testing
 	}
 }";
 
-		var driverResult = await GenerateAsync(source, cancellationToken);
+		var driverResult = await GenerateAsync(
+			source,
+			new ZodSourceGeneratorTestOptions().Compile(),
+			cancellationToken
+		);
 		var assembly = await Assert.That(driverResult.CompilationResult.Assembly).IsNotNull();
 
 		var modelType = assembly.GetType("Testing.CancellationModel")!;

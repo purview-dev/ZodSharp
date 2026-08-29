@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using ZodSharp.SourceGenerators.Infra;
 
 namespace ZodSharp.SourceGenerators;
 
@@ -41,7 +42,11 @@ namespace Testing
 ";
 
 		// Act
-		var driverResult = await GenerateAsync(source, cancellationToken);
+		var driverResult = await GenerateAsync(
+			source,
+			new ZodSourceGeneratorTestOptions().Compile(),
+			cancellationToken
+		);
 		var assembly = await Assert.That(driverResult.CompilationResult.Assembly).IsNotNull();
 
 		// Assert — attribute files are generated

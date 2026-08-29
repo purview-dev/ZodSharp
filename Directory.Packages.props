@@ -7,9 +7,9 @@
 			allowing the generator assembly to be referenced by net8.0-net10.0 test projects.
 		-->
 		<RoslynCompilerVersion>4.13.0</RoslynCompilerVersion>
-		<RoslynAnalyzersVersion>[5.6.0,)</RoslynAnalyzersVersion>
+		<RoslynAnalyzersVersion>[5.9.0,)</RoslynAnalyzersVersion>
 		<TUnitVersion>[1.65.68,)</TUnitVersion>
-		<PurviewSourceGenFramework>[1.0.0-prerelease.25,)</PurviewSourceGenFramework>
+		<PurviewSourceGenFramework>[1.0.0-prerelease.26,)</PurviewSourceGenFramework>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageVersion Include="Bogus" Version="[35.6.5,)" />

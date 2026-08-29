@@ -1,31 +1,118 @@
-using Microsoft.CodeAnalysis;
+using System.Collections.Immutable;
+using ZodSharp.SourceGenerators.Models.DataAttributes;
 
 namespace ZodSharp.SourceGenerators.Models;
 
 sealed record SchemaGenerationModel(GenerationContext<SchemaGenerationCapabilities> Context)
 {
 	public EquatableArray<GeneratorResult<ZodSchemaDescriptor>> ZodSchemas { get; init; } = [];
-
-	public EquatableArray<DiagnosticInfo> Diagnostics { get; init; } = [];
 }
 
-sealed record SchemaGenerationCapabilities(Compilation Compilation) : IGenerationCapabilities
+sealed record SchemaGenerationCapabilities : IGenerationCapabilities
 {
 	public bool HasRequiredAttribute { get; init; }
 }
 
-// This is recreated outside of the pipeline to avoid the state
-// of the CodeWriter being shared across multiple source outputs.
-sealed record SchemaGenerationOutputContext(GenerationContext<SchemaGenerationCapabilities> Context) : ISourceGenLogger
+readonly record struct SchemaSet(EquatableArray<ZodSchemaDescriptor> Schemas);
+
+enum PropertyValidationKind
 {
-	public CodeWriter Writer { get; private set; } = Context.CreateCodeWriter();
-
-	public CodeWriter CreateCodeWriter() => Writer = Context.CreateCodeWriter();
-
-	public void Log(SourceGenLogLevel level, int indentation, string message, params object[] args) =>
-		Context.Log(level, indentation, message, args);
+	String,
+	Numeric,
+	Collection,
+	Complex,
+	Unsupported,
 }
 
-readonly record struct ZodSchemaDescriptor(TypeIdentity SchemaType, string DeclarationFingerprint, bool IsPrimary);
+readonly record struct LengthAccessor(string LengthExpression, string Origin, bool IsSupported);
 
-readonly record struct SchemaSet(EquatableArray<ZodSchemaDescriptor> Schemas);
+/// <param name="TargetType">This is the target of the attribute, the type where the attribute was defined.</param>
+/// <param name="SchemaType">This is the schema type, the one that will be generated.</param>
+/// <param name="TargetCanBeNull">Indicates whether the target type can be null.</param>
+/// <param name="ContainingTypes">The containing types of the target type, if it is a nested type.</param>
+/// <param name="TargetAccessibility">The accessibility of the target type, if it is a type declaration.</param>
+/// <param name="Properties">The validatable properties of the target type that will be included in the schema.</param>
+/// <param name="CustomValidationMethod">The custom validation method data, if any.</param>
+/// <param name="IsPrimary">True if this is the primary schema for the target type, false if it is a secondary schema.</param>
+readonly record struct ZodSchemaDescriptor(
+	TypeIdentity TargetType,
+	TypeIdentity SchemaType,
+	bool TargetCanBeNull,
+	EquatableArray<TypeDeclarationOptions> ContainingTypes,
+	TypeDeclarationAccessibility? TargetAccessibility,
+	EquatableArray<GeneratorResult<ZodPropertyDescriptor>> Properties,
+	GeneratorResult<CustomValidationMethodData> CustomValidationMethod,
+	bool IsPrimary
+);
+
+readonly record struct ZodPropertyDescriptor(
+	TypeIdentity PropertyType,
+	string Name,
+	string DisplayName,
+	bool CanBeNull,
+	bool IsEnum,
+	PropertyValidationKind ValidationKind,
+	TypeIdentity? ElementType,
+	bool ElementTypeCanBeNull,
+	TypeIdentity? NestedSchemaType,
+	LengthAccessor LengthAccessor,
+	ValidationAttributes ValidationAttributes
+);
+
+readonly record struct ValidationAttributes(
+	GeneratorResult<RequiredAttributeData> Required,
+	GeneratorResult<CompareAttributeData> Compare,
+	GeneratorResult<DisplayAttributeData> Display,
+	GeneratorResult<EmailAddressAttributeData> EmailAddress,
+	GeneratorResult<CreditCardAttributeData> CreditCard,
+	GeneratorResult<PhoneAttribute> Phone,
+	GeneratorResult<UrlAttribute> Url,
+	GeneratorResult<StringLengthAttribute> StringLength,
+	GeneratorResult<MinLengthAttributeData> MinLength,
+	GeneratorResult<MaxLengthAttributeData> MaxLength,
+	GeneratorResult<RegularExpressionAttributeData> RegularExpression,
+	GeneratorResult<Base64StringAttributeData> Base64String,
+	GeneratorResult<DeniedValuesAttributeData> DeniedValues,
+	GeneratorResult<AllowedValuesAttributeData> AllowedValues,
+	GeneratorResult<LengthAttributeData> Length,
+	GeneratorResult<RangeAttributeData> Range
+)
+{
+	public bool HasDiagnostics =>
+		Required.HasDiagnostics
+		|| Compare.HasDiagnostics
+		|| Display.HasDiagnostics
+		|| EmailAddress.HasDiagnostics
+		|| CreditCard.HasDiagnostics
+		|| Phone.HasDiagnostics
+		|| Url.HasDiagnostics
+		|| StringLength.HasDiagnostics
+		|| MinLength.HasDiagnostics
+		|| MaxLength.HasDiagnostics
+		|| RegularExpression.HasDiagnostics
+		|| Base64String.HasDiagnostics
+		|| DeniedValues.HasDiagnostics
+		|| AllowedValues.HasDiagnostics
+		|| Length.HasDiagnostics
+		|| Range.HasDiagnostics;
+
+	public ImmutableArray<DiagnosticInfo> GetDiagnostics() =>
+		[
+			.. Required.Diagnostics,
+			.. Compare.Diagnostics,
+			.. Display.Diagnostics,
+			.. EmailAddress.Diagnostics,
+			.. CreditCard.Diagnostics,
+			.. Phone.Diagnostics,
+			.. Url.Diagnostics,
+			.. StringLength.Diagnostics,
+			.. MinLength.Diagnostics,
+			.. MaxLength.Diagnostics,
+			.. RegularExpression.Diagnostics,
+			.. Base64String.Diagnostics,
+			.. DeniedValues.Diagnostics,
+			.. AllowedValues.Diagnostics,
+			.. Length.Diagnostics,
+			.. Range.Diagnostics,
+		];
+}

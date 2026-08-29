@@ -1,5 +1,4 @@
 using System.Reflection;
-using ZodSharp.SourceGenerators.Helpers;
 using ZodSharp.SourceGenerators.Infra;
 
 namespace ZodSharp.SourceGenerators;
@@ -11,7 +10,11 @@ partial class ZodSchemaGeneratorTests
 	[Test]
 	public async Task GeneratedValidate_GivenUserWithValidData_ReturnsSuccess(CancellationToken cancellationToken)
 	{
-		var driverResult = await GenerateAsync(UserSource, cancellationToken);
+		var driverResult = await GenerateAsync(
+			UserSource,
+			new ZodSourceGeneratorTestOptions().Compile(),
+			cancellationToken
+		);
 		var assembly = await Assert.That(driverResult.CompilationResult.Assembly).IsNotNull();
 
 		var user = CreateUser(assembly, "John Doe", 30, "john@example.com");
@@ -41,7 +44,11 @@ partial class ZodSchemaGeneratorTests
 		CancellationToken cancellationToken
 	)
 	{
-		var driverResult = await GenerateAsync(UserSource, cancellationToken);
+		var driverResult = await GenerateAsync(
+			UserSource,
+			new ZodSourceGeneratorTestOptions().Compile(),
+			cancellationToken
+		);
 		var assembly = await Assert.That(driverResult.CompilationResult.Assembly).IsNotNull();
 
 		var user = CreateUser(assembly, name, age, email);
@@ -57,7 +64,11 @@ partial class ZodSchemaGeneratorTests
 	[Test]
 	public async Task GeneratedParse_GivenInvalidUser_ThrowsZodException(CancellationToken cancellationToken)
 	{
-		var driverResult = await GenerateAsync(UserSource, cancellationToken);
+		var driverResult = await GenerateAsync(
+			UserSource,
+			new ZodSourceGeneratorTestOptions().Compile(),
+			cancellationToken
+		);
 		var assembly = await Assert.That(driverResult.CompilationResult.Assembly).IsNotNull();
 
 		var user = CreateUser(assembly, "AB", 30, "john@example.com");
@@ -90,7 +101,7 @@ partial class ZodSchemaGeneratorTests
 		await Assert
 			.That(generatedSource)
 			.ContainsGeneratedCode("ageValue < RangeMinimum_Age || ageValue > RangeMaximum_Age");
-		await Assert.That(generatedSource).ContainsGeneratedCode("EmailRegex.IsMatch(value.Email)");
+		await Assert.That(generatedSource).ContainsGeneratedCode("EmailRegex.IsMatch(emailValue)");
 	}
 
 	[Test]
@@ -167,7 +178,11 @@ namespace Testing
 }
 ";
 
-		var driverResult = await GenerateAsync(source, cancellationToken);
+		var driverResult = await GenerateAsync(
+			source,
+			new ZodSourceGeneratorTestOptions().Compile(),
+			cancellationToken
+		);
 		var generatedSource = driverResult.GetSource("AttributeExamplesSchema");
 
 		await Assert
@@ -175,7 +190,7 @@ namespace Testing
 			.ContainsGeneratedCode("static readonly global::System.Text.RegularExpressions.Regex Regex_CountryCode");
 		await Assert
 			.That(generatedSource)
-			.ContainsGeneratedCode("EqualityComparer<string>.Default.Equals(statusValue, \"open\")");
+			.ContainsGeneratedCode("EqualityComparer<string?>.Default.Equals(statusValue, \"open\")");
 		await Assert.That(generatedSource).ContainsGeneratedCode("EqualityComparer<int>.Default.Equals(codeValue, 13)");
 		await Assert.That(generatedSource).ContainsGeneratedCode("static readonly decimal RangeMinimum_Price");
 		await Assert.That(generatedSource).ContainsGeneratedCode("Decimal.Parse(\"1.5\"");
@@ -209,7 +224,11 @@ namespace Testing
 }
 ";
 
-		var driverResult = await GenerateAsync(source, cancellationToken);
+		var driverResult = await GenerateAsync(
+			source,
+			new ZodSourceGeneratorTestOptions().Compile(),
+			cancellationToken
+		);
 		var assembly = await Assert.That(driverResult.CompilationResult.Assembly).IsNotNull();
 
 		var modelType = assembly.GetType("Testing.ResourceModel")!;
@@ -255,7 +274,11 @@ namespace Testing
 }
 ";
 
-		var driverResult = await GenerateAsync(source, cancellationToken);
+		var driverResult = await GenerateAsync(
+			source,
+			new ZodSourceGeneratorTestOptions().Compile(),
+			cancellationToken
+		);
 		var assembly = await Assert.That(driverResult.CompilationResult.Assembly).IsNotNull();
 
 		var inventoryType = assembly.GetType("Testing.Inventory")!;
@@ -303,7 +326,11 @@ namespace Testing
 }
 ";
 
-		var driverResult = await GenerateAsync(source, cancellationToken);
+		var driverResult = await GenerateAsync(
+			source,
+			new ZodSourceGeneratorTestOptions().Compile(),
+			cancellationToken
+		);
 		var assembly = await Assert.That(driverResult.CompilationResult.Assembly).IsNotNull();
 
 		var modelType = assembly.GetType("Testing.AttributeRuntimeModel")!;
@@ -377,7 +404,11 @@ namespace Testing
 }
 ";
 
-		var driverResult = await GenerateAsync(source, cancellationToken);
+		var driverResult = await GenerateAsync(
+			source,
+			new ZodSourceGeneratorTestOptions().Compile(),
+			cancellationToken
+		);
 		var assembly = await Assert.That(driverResult.CompilationResult.Assembly).IsNotNull();
 
 		var modelType = assembly.GetType("Testing.FullAttributeCoverageModel")!;
@@ -408,107 +439,6 @@ namespace Testing
 		await Assert.That(codesByPath["Status"]).IsEqualTo("invalid_value");
 		await Assert.That(codesByPath["Code"]).IsEqualTo("invalid_value");
 		await Assert.That(codesByPath["Quantity"]).IsEqualTo("invalid_range");
-	}
-
-	[Test]
-	public async Task Generate_GivenInvalidLengthAttributeConfiguration_ReportsDiagnostic(
-		CancellationToken cancellationToken
-	)
-	{
-		const string source =
-			@"
-using System.ComponentModel.DataAnnotations;
-
-namespace Testing
-{
-	[ZodSchema]
-	public sealed class InvalidLengthModel
-	{
-		[Length(5, 2)]
-		public string? Name { get; set; }
-	}
-}
-";
-
-		var driverResult = await GenerateAsync(source, ZodSourceGeneratorTestOptions.NoValidation, cancellationToken);
-
-		await Assert.That(driverResult).HasDiagnostic(DiagnosticLibrary.InvalidLengthAttribute);
-	}
-
-	[Test]
-	public async Task Generate_GivenUnsupportedLengthTarget_ReportsDiagnostic(CancellationToken cancellationToken)
-	{
-		const string source =
-			@"
-using System.ComponentModel.DataAnnotations;
-
-namespace Testing
-{
-	[ZodSchema]
-	public sealed class UnsupportedLengthModel
-	{
-		[Length(1, 2)]
-		public decimal Amount { get; set; }
-	}
-}
-";
-
-		var driverResult = await GenerateAsync(source, ZodSourceGeneratorTestOptions.NoValidation, cancellationToken);
-		await Assert.That(driverResult).HasDiagnostic(DiagnosticLibrary.UnsupportedLengthAttributeTarget);
-	}
-
-	[Test]
-	public async Task Generate_GivenUnsupportedAdditionalDataAnnotationTargets_ReportsDiagnostic(
-		CancellationToken cancellationToken
-	)
-	{
-		const string source =
-			@"
-using System;
-using System.ComponentModel.DataAnnotations;
-
-namespace Testing
-{
-	[ZodSchema]
-	public sealed class UnsupportedAnnotationsModel
-	{
-		[RegularExpression(""^[A-Z]{2}$"")]
-		public int CountryCode { get; set; }
-
-		[AllowedValues(1, 2)]
-		public DateTime Timestamp { get; set; }
-	}
-}
-";
-
-		var driverResult = await GenerateAsync(source, ZodSourceGeneratorTestOptions.NoValidation, cancellationToken);
-
-		await Assert.That(driverResult).HasDiagnostics("ZODSGEN006", 2);
-		//.And
-		//.IsGreaterThanOrEqualTo(2);
-	}
-
-	[Test]
-	public async Task Generate_GivenInvalidResourceConfiguration_ReportsDiagnostic(CancellationToken cancellationToken)
-	{
-		const string source =
-			@"
-using System.ComponentModel.DataAnnotations;
-
-namespace Testing
-{
-	[ZodSchema]
-	public sealed class InvalidResourceModel
-	{
-		[StringLength(5, ErrorMessageResourceName = ""OnlyNameProvided"")]
-		public string Value { get; set; } = string.Empty;
-	}
-}
-";
-
-		var driverResult = await GenerateAsync(source, ZodSourceGeneratorTestOptions.NoValidation, cancellationToken);
-
-		await Assert.That(driverResult).HasDiagnostic(DiagnosticLibrary.InvalidDataAnnotationsErrorMessage);
 	}
 
 	[Test]
@@ -599,7 +529,11 @@ namespace Testing
 }
 ";
 
-		var driverResult = await GenerateAsync(source, cancellationToken);
+		var driverResult = await GenerateAsync(
+			source,
+			new ZodSourceGeneratorTestOptions().Compile(),
+			cancellationToken
+		);
 		var assembly = await Assert.That(driverResult.CompilationResult.Assembly).IsNotNull();
 
 		var modelType = assembly.GetType("Testing.StringFormatRuntimeModel")!;
@@ -657,7 +591,11 @@ namespace Testing
 }
 ";
 
-		var driverResult = await GenerateAsync(source, cancellationToken);
+		var driverResult = await GenerateAsync(
+			source,
+			new ZodSourceGeneratorTestOptions().Compile(),
+			cancellationToken
+		);
 		var assembly = await Assert.That(driverResult.CompilationResult.Assembly).IsNotNull();
 
 		var modelType = assembly.GetType("Testing.StringFormatValidModel")!;
@@ -671,65 +609,6 @@ namespace Testing
 
 		var result = InvokeValidate(assembly, model, "Testing.StringFormatValidModelSchema");
 		await Assert.That((bool)result.GetType().GetProperty("IsSuccess")!.GetValue(result)!).IsTrue();
-	}
-
-	[Test]
-	public async Task Generate_GivenStringOnlyDataAnnotationsOnNonStringTargets_ReportsDiagnostics(
-		CancellationToken cancellationToken
-	)
-	{
-		const string source =
-			@"
-using System.ComponentModel.DataAnnotations;
-
-namespace Testing
-{
-	[ZodSchema]
-	public sealed class UnsupportedStringFormatModel
-	{
-		[Url]
-		public int Website { get; set; }
-
-		[Phone]
-		public int PhoneNumber { get; set; }
-
-		[CreditCard]
-		public int CardNumber { get; set; }
-
-		[Base64String]
-		public int Encoded { get; set; }
-	}
-}
-";
-
-		var driverResult = await GenerateAsync(source, ZodSourceGeneratorTestOptions.NoValidation, cancellationToken);
-
-		await Assert.That(driverResult).HasDiagnostics("ZODSGEN006", 4);
-	}
-
-	[Test]
-	public async Task Generate_GivenCompareAttributeWithMissingProperty_ReportsDiagnostic(
-		CancellationToken cancellationToken
-	)
-	{
-		const string source =
-			@"
-using System.ComponentModel.DataAnnotations;
-
-namespace Testing
-{
-	[ZodSchema]
-	public sealed class CompareMissingModel
-	{
-		[Compare(""MissingProperty"")]
-		public string? Password { get; set; }
-	}
-}
-";
-
-		var driverResult = await GenerateAsync(source, ZodSourceGeneratorTestOptions.NoValidation, cancellationToken);
-
-		await Assert.That(driverResult).HasDiagnostic(DiagnosticLibrary.ComparePropertyNotFound);
 	}
 
 	const string UserSource =

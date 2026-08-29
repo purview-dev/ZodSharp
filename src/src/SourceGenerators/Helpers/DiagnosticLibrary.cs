@@ -176,4 +176,13 @@ static class DiagnosticLibrary
 		defaultSeverity: DiagnosticSeverity.Error,
 		isEnabledByDefault: true
 	);
+
+	public static readonly DiagnosticDescriptor DataAnnotationsReferenceNotFound = new(
+		id: "ZODSGEN021",
+		title: "Unable to find Data Annotations reference/ types",
+		messageFormat: "Add a reference to System.ComponentModel.DataAnnotations",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Error,
+		isEnabledByDefault: true
+	);
 }

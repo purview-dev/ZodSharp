@@ -1,4 +1,5 @@
 using ZodSharp.Core;
+using ZodSharp.SourceGenerators.Infra;
 
 namespace ZodSharp.SourceGenerators;
 
@@ -29,7 +30,11 @@ namespace Testing
 	}
 }";
 
-		var driverResult = await GenerateAsync(source, cancellationToken);
+		var driverResult = await GenerateAsync(
+			source,
+			new ZodSourceGeneratorTestOptions().Compile(),
+			cancellationToken
+		);
 		var assembly = await Assert.That(driverResult.CompilationResult.Assembly).IsNotNull();
 
 		var parentType = assembly.GetType("Testing.Parent")!;
@@ -78,7 +83,11 @@ namespace Testing
 	}
 }";
 
-		var driverResult = await GenerateAsync(source, cancellationToken);
+		var driverResult = await GenerateAsync(
+			source,
+			new ZodSourceGeneratorTestOptions().Compile(),
+			cancellationToken
+		);
 		var assembly = await Assert.That(driverResult.CompilationResult.Assembly).IsNotNull();
 
 		var grandParentType = assembly.GetType("Testing.GrandParent")!;
@@ -138,7 +147,11 @@ namespace Testing
 }
 ";
 
-		var driverResult = await GenerateAsync(source, cancellationToken);
+		var driverResult = await GenerateAsync(
+			source,
+			new ZodSourceGeneratorTestOptions().Compile(),
+			cancellationToken
+		);
 		var assembly = await Assert.That(driverResult.CompilationResult.Assembly).IsNotNull();
 
 		var grandParentType = assembly.GetType("Testing.GrandParent")!;
@@ -192,7 +205,11 @@ namespace Testing
 	}
 }";
 
-		var driverResult = await GenerateAsync(source, cancellationToken);
+		var driverResult = await GenerateAsync(
+			source,
+			new ZodSourceGeneratorTestOptions().Compile(),
+			cancellationToken
+		);
 		var assembly = await Assert.That(driverResult.CompilationResult.Assembly).IsNotNull();
 
 		var containerType = await Assert.That(assembly.GetType("Testing.ArrayContainer")).IsNotNull();
@@ -240,7 +257,11 @@ namespace Testing
 	}
 }";
 
-		var driverResult = await GenerateAsync(source, cancellationToken);
+		var driverResult = await GenerateAsync(
+			source,
+			new ZodSourceGeneratorTestOptions().Compile(),
+			cancellationToken
+		);
 		var assembly = await Assert.That(driverResult.CompilationResult.Assembly).IsNotNull();
 
 		var containerType = assembly.GetType("Testing.ListContainer")!;
@@ -296,7 +317,11 @@ namespace Testing
 	}
 }";
 
-		var driverResult = await GenerateAsync(source, cancellationToken);
+		var driverResult = await GenerateAsync(
+			source,
+			new ZodSourceGeneratorTestOptions().Compile(),
+			cancellationToken
+		);
 		var assembly = await Assert.That(driverResult.CompilationResult.Assembly).IsNotNull();
 
 		var containerType = assembly.GetType("Testing.NullableListContainer")!;

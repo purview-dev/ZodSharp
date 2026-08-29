@@ -1,3 +1,5 @@
+using ZodSharp.SourceGenerators.Infra;
+
 namespace ZodSharp.SourceGenerators;
 
 partial class ZodSchemaGeneratorTests
@@ -44,7 +46,11 @@ namespace Testing
 ";
 
 		// Act
-		var driverResult = await GenerateAsync(source, cancellationToken);
+		var driverResult = await GenerateAsync(
+			source,
+			new ZodSourceGeneratorTestOptions().Compile(),
+			cancellationToken
+		);
 		var assembly = await Assert.That(driverResult.CompilationResult.Assembly).IsNotNull();
 
 		var modelType = assembly.GetType("Testing.RefineModel")!;
@@ -95,7 +101,11 @@ namespace Testing
 
 		// Act — compile and invoke, proving the generated validator can be cast to
 		// IZodSchema<T> and used in the composition API.
-		var driverResult = await GenerateAsync(source, cancellationToken);
+		var driverResult = await GenerateAsync(
+			source,
+			new ZodSourceGeneratorTestOptions().Compile(),
+			cancellationToken
+		);
 		var assembly = await Assert.That(driverResult.CompilationResult.Assembly).IsNotNull();
 
 		// Assert

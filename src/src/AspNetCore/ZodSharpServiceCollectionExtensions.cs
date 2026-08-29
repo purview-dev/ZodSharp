@@ -6,6 +6,9 @@ namespace ZodSharp.AspNetCore;
 /// <summary>
 /// DI integration for ZodSharp schema validation.
 /// </summary>
+#if !NETSTANDARD2_1_OR_GREATER
+[System.ComponentModel.EditorBrowsable(System.ComponentModel.EditorBrowsableState.Never)]
+#endif
 public static class ZodSharpServiceCollectionExtensions
 {
 	/// <summary>
@@ -17,15 +20,17 @@ public static class ZodSharpServiceCollectionExtensions
 		Action<ZodSchemaFactoryOptions>? configure = null
 	)
 	{
-		var options = new ZodSchemaFactoryOptions();
+		ZodSchemaFactoryOptions options = new();
 		configure?.Invoke(options);
 
 		services.AddSingleton<IZodSchemaFactory>(sp =>
 		{
-			var factory = new ZodSchemaFactory();
+			ZodSchemaFactory factory = new();
 			options.ConfigureFactory?.Invoke(factory);
+
 			foreach (var assembly in options.ScanAssemblies)
 				factory.RegisterFromAssembly(assembly);
+
 			return factory;
 		});
 

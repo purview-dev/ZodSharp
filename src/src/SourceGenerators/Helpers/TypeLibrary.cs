@@ -18,6 +18,8 @@ static partial class TypeLibrary
 	);
 
 	// Other ZodSharp types...
+	public static readonly TypeIdentity IZodSchemaValidator = new(nameof(IZodSchemaValidator), ZodSharpCoreNamespace);
+
 	public static readonly TypeIdentity ValidationResult = new(nameof(ValidationResult), ZodSharpCoreNamespace);
 
 	public static readonly TypeIdentity ValidationResultMetadataName = new(
