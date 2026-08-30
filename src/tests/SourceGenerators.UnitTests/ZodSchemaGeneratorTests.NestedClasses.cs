@@ -1,4 +1,6 @@
 using System.Reflection;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using ZodSharp.SourceGenerators.Infra;
 
 namespace ZodSharp.SourceGenerators;
@@ -97,5 +99,52 @@ namespace Testing
 		var isSuccess = (bool)result.GetType().GetProperty("IsSuccess")!.GetValue(result)!;
 
 		await Assert.That(isSuccess).IsFalse();
+	}
+
+	[Test]
+	public async Task Generate_GivenNestedSchemaType_DoesNotPlaceGeneratedAttributesOnContainingTypes(
+		CancellationToken cancellationToken
+	)
+	{
+		const string source =
+			@"
+namespace Testing
+{
+	public partial class Outer
+	{
+		public partial class Middle
+		{
+			[ZodSchema]
+			private class Inner
+			{
+				public string? Name { get; set; }
+			}
+		}
+	}
+}
+";
+
+		var driverResult = await GenerateAsync(source, cancellationToken);
+		var generatedSource = driverResult.GetSource("InnerSchema");
+		await Assert.That(generatedSource).IsNotNull();
+
+		var root = await CSharpSyntaxTree
+			.ParseText(generatedSource!, cancellationToken: cancellationToken)
+			.GetRootAsync(cancellationToken);
+
+		var containingDeclarations = root.DescendantNodes()
+			.OfType<ClassDeclarationSyntax>()
+			.Where(static declaration => declaration.Identifier.ValueText is "Outer" or "Middle")
+			.ToList();
+
+		await Assert.That(containingDeclarations.Count).IsEqualTo(2);
+		foreach (var containingDeclaration in containingDeclarations)
+			await Assert.That(containingDeclaration.AttributeLists.Any()).IsFalse();
+
+		var schemaDeclaration = root.DescendantNodes()
+			.OfType<ClassDeclarationSyntax>()
+			.Single(static declaration => declaration.Identifier.ValueText == "InnerSchema");
+
+		await Assert.That(schemaDeclaration.AttributeLists.Any()).IsTrue();
 	}
 }
