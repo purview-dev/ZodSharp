@@ -65,8 +65,19 @@ public class ZodObject(
 		{
 			if (!value.TryGetValue(key, out var propertyValue))
 			{
-				if (!IsOptional(key))
+				if (!IsOptionalKey(key) && !(schema is IOptionalSchema optionalSchema && optionalSchema.IsOptional))
+				{
 					errors.Add(new ValidationError("missing_field", $"Required field '{key}' is missing", [key]));
+					continue;
+				}
+
+				if (schema is IOptionalSchema { ProvidesValueOnMissing: true })
+				{
+					var missingResult = schema.Validate(null!);
+					if (missingResult.IsSuccess && missingResult.Value is not null)
+						validatedObject[key] = missingResult.Value;
+				}
+
 				continue;
 			}
 
@@ -139,11 +150,13 @@ public class ZodObject(
 	/// <summary>
 	/// Returns <see langword="true"/> if <paramref name="key"/> is optional.
 	/// </summary>
-	bool IsOptional(string key) => optionalKeys is not null && optionalKeys.Contains(key);
+	bool IsOptionalKey(string key) => optionalKeys is not null && optionalKeys.Contains(key);
 
 	/// <summary>
 	/// Creates a new <see cref="ZodObject"/> with an additional or replaced field.
-	/// Equivalent to Zod's <c>.extend({ key: schema })</c>.
+	/// Equivalent to Zod's <c>.extend({ key: schema })</c>. Replacing an existing key
+	/// drops its previous optional-key metadata, so the field's optionality is governed
+	/// solely by the new <paramref name="fieldSchema"/>.
 	/// </summary>
 	/// <typeparam name="T">The field type.</typeparam>
 	/// <param name="key">The field name.</param>
@@ -157,13 +170,15 @@ public class ZodObject(
 			throw new ArgumentNullException(nameof(fieldSchema));
 
 		var newShape = shape.SetItem(key, FieldSchemaWrapper<T>.Wrap(fieldSchema));
-		return new ZodObject(newShape, unknownKeyPolicy, optionalKeys, catchallSchema);
+		var newOptionalKeys = optionalKeys?.Remove(key);
+		return new ZodObject(newShape, unknownKeyPolicy, newOptionalKeys, catchallSchema);
 	}
 
 	/// <summary>
 	/// Creates a new <see cref="ZodObject"/> by merging another object's shape into this one.
 	/// Equivalent to Zod's <c>.merge(other)</c>. Keys in <paramref name="other"/> override
-	/// keys in this object.
+	/// keys in this object, and the merged object adopts <paramref name="other"/>'s unknown-key
+	/// policy and catchall schema. Optionality follows the contributing object for each key.
 	/// </summary>
 	/// <param name="other">The object to merge.</param>
 	/// <returns>A new merged <see cref="ZodObject"/>.</returns>
@@ -176,7 +191,9 @@ public class ZodObject(
 		foreach (var (key, schema) in other.Shape)
 			newShape = newShape.SetItem(key, schema);
 
-		return new ZodObject(newShape, unknownKeyPolicy, optionalKeys, catchallSchema);
+		var mergedOptionalKeys = (optionalKeys ?? []).Except(other.Shape.Keys).Union(other.OptionalKeys);
+
+		return new ZodObject(newShape, other.UnknownKeyPolicy, mergedOptionalKeys, other.CatchallSchema);
 	}
 
 	/// <summary>

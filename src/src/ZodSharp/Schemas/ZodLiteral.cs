@@ -20,10 +20,19 @@ public class ZodLiteral<T>(T value) : ZodType<T, T>
 	/// </summary>
 	/// <param name="value">The value to validate</param>
 	/// <returns>A validation result</returns>
-	protected override ValidationResult<T> ParseInternal(T value) =>
-		value.Equals(_value)
+	protected override ValidationResult<T> ParseInternal(T value)
+	{
+		if (value is null)
+		{
+			return ValidationResult<T>.Failure(
+				new ValidationError("invalid_literal", $"Expected literal value {_value}, but got null", [])
+			);
+		}
+
+		return value.Equals(_value)
 			? ValidationResult<T>.Success(value)
 			: ValidationResult<T>.Failure(
 				new ValidationError("invalid_literal", $"Expected literal value {_value}, but got {value}", [])
 			);
+	}
 }

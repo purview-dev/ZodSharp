@@ -5,8 +5,11 @@ namespace ZodSharp.Schemas;
 /// <summary>
 /// Schema for null validation.
 /// </summary>
-public class ZodNull : ZodType<object?>
+public class ZodNull : ZodType<object?>, IAcceptsNull
 {
+	/// <inheritdoc/>
+	public ValidationResult<object> ValidateNull() => ValidationResult<object>.Success(null!);
+
 	/// <summary>
 	/// Parses and validates a null value.
 	/// </summary>

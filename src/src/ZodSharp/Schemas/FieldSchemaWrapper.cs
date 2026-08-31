@@ -9,8 +9,14 @@ namespace ZodSharp.Schemas;
 /// Used by <see cref="ZodObject.Extend{T}(string, IZodSchema{T, T})"/> and the object/union builders.
 /// </summary>
 /// <typeparam name="T">The inner schema's type.</typeparam>
-public sealed class FieldSchemaWrapper<T>(IZodSchema<T, T> inner) : IZodSchema<object, object>
+public sealed class FieldSchemaWrapper<T>(IZodSchema<T, T> inner) : IZodSchema<object, object>, IOptionalSchema
 {
+	/// <inheritdoc/>
+	public bool IsOptional => inner is IOptionalSchema o && o.IsOptional;
+
+	/// <inheritdoc/>
+	public bool ProvidesValueOnMissing => inner is IOptionalSchema o && o.ProvidesValueOnMissing;
+
 	/// <summary>Wraps a typed schema into an untyped schema.</summary>
 	[SuppressMessage(
 		"Design",
@@ -22,6 +28,9 @@ public sealed class FieldSchemaWrapper<T>(IZodSchema<T, T> inner) : IZodSchema<o
 	/// <inheritdoc/>
 	public ValidationResult<object> Validate(object value)
 	{
+		if (value is null && inner is IAcceptsNull acceptsNull)
+			return acceptsNull.ValidateNull();
+
 		if (SchemaValueCoercion.TryCoerce<T>(value, out var typedValue))
 		{
 			var result = inner.Validate(typedValue);
@@ -33,7 +42,7 @@ public sealed class FieldSchemaWrapper<T>(IZodSchema<T, T> inner) : IZodSchema<o
 		return ValidationResult<object>.Failure(
 			new ValidationError(
 				"invalid_type",
-				$"Expected {typeof(T).Name}, but got {value?.GetType().Name ?? "null"}",
+				$"Expected {SchemaValueCoercion.GetTypeDisplayName(typeof(T))}, but got {value?.GetType().Name ?? "null"}",
 				[]
 			)
 		);

@@ -12,8 +12,17 @@ namespace ZodSharp.Schemas;
 /// </remarks>
 /// <param name="innerSchema">The inner schema</param>
 /// <param name="defaultValue">The default value</param>
-public class ZodDefault<T>(IZodSchema<T> innerSchema, T defaultValue) : ZodType<T, T?>
+public class ZodDefault<T>(IZodSchema<T> innerSchema, T defaultValue) : ZodType<T, T?>, IAcceptsNull
 {
+	/// <inheritdoc/>
+	public override bool IsOptional => true;
+
+	/// <inheritdoc/>
+	public override bool ProvidesValueOnMissing => true;
+
+	/// <inheritdoc/>
+	public ValidationResult<object> ValidateNull() => ValidationResult<object>.Success(defaultValue!);
+
 	/// <summary>
 	/// Parses and validates the value, using the default if null.
 	/// </summary>

@@ -50,16 +50,23 @@ public class ZodDiscriminatedUnionBuilder(string discriminator)
 	/// </summary>
 	public ZodDiscriminatedUnion Build() => new(discriminator, _options.ToImmutableDictionary());
 
-	sealed class SchemaWrapper<T>(IZodSchema<T, T> inner) : IZodSchema<object, object>
+	sealed class SchemaWrapper<T>(IZodSchema<T, T> inner) : IZodSchema<object, object>, IOptionalSchema
 	{
+		public bool IsOptional => inner is IOptionalSchema o && o.IsOptional;
+
+		public bool ProvidesValueOnMissing => inner is IOptionalSchema o && o.ProvidesValueOnMissing;
+
 		public ValidationResult<object> Validate(object value)
 		{
+			if (value is null && inner is IAcceptsNull acceptsNull)
+				return acceptsNull.ValidateNull();
+
 			if (!SchemaValueCoercion.TryCoerce<T>(value, out var typedValue))
 			{
 				return ValidationResult<object>.Failure(
 					new ValidationError(
 						"invalid_type",
-						$"Expected {typeof(T).Name}, but got {value?.GetType().Name ?? "null"}",
+						$"Expected {SchemaValueCoercion.GetTypeDisplayName(typeof(T))}, but got {value?.GetType().Name ?? "null"}",
 						[]
 					)
 				);

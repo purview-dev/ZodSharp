@@ -18,27 +18,45 @@ static class SchemaValueCoercion
 	/// emit an <c>invalid_type</c> error).
 	/// </summary>
 	/// <remarks>
-	/// Direct assignment is tried first. Numeric coercion (e.g. boxed <see cref="long"/>
+	/// Direct assignment is tried first. <see langword="null"/> passes through to the
+	/// inner schema for reference types and <see cref="Nullable{T}"/> (so optional and
+	/// defaulting schemas can handle a missing or null value), while failing for
+	/// non-nullable value types. Numeric coercion (e.g. boxed <see cref="long"/>
 	/// to <see cref="double"/>) is applied only when both the source and target are
-	/// numeric <see cref="IConvertible"/> types, so non-numeric mismatches (e.g.
+	/// numeric <see cref="IConvertible"/> types, including numeric coercion into a
+	/// <see cref="Nullable{T}"/> target (e.g. boxed <see cref="int"/> to
+	/// <see cref="double"/>?), so non-numeric mismatches (e.g.
 	/// <c>"not-a-number"</c> into <see cref="double"/>) still fail as before.
 	/// </remarks>
 	public static bool TryCoerce<T>(object? value, out T result)
 	{
+		if (value is null)
+		{
+			if (typeof(T).IsValueType && Nullable.GetUnderlyingType(typeof(T)) is null)
+			{
+				result = default!;
+				return false;
+			}
+
+			result = default!;
+			return true;
+		}
+
 		if (value is T typedValue)
 		{
 			result = typedValue;
 			return true;
 		}
 
-		if (value is IConvertible convertible && IsNumericType(typeof(T)))
+		var targetType = Nullable.GetUnderlyingType(typeof(T)) ?? typeof(T);
+		if (value is IConvertible convertible && IsNumericType(targetType))
 		{
 			var sourceType = value.GetType();
 			if (IsNumericType(sourceType))
 			{
 				try
 				{
-					result = (T)convertible.ToType(typeof(T), CultureInfo.InvariantCulture);
+					result = (T)convertible.ToType(targetType, CultureInfo.InvariantCulture);
 					return true;
 				}
 				catch (InvalidCastException)
@@ -68,4 +86,11 @@ static class SchemaValueCoercion
 		|| type == typeof(ulong)
 		|| type == typeof(ushort)
 		|| type == typeof(sbyte);
+
+	/// <summary>
+	/// Returns a human-readable name for <paramref name="type"/>, unwrapping
+	/// <see cref="Nullable{T}"/> to its underlying type for display purposes.
+	/// </summary>
+	public static string GetTypeDisplayName(Type type) =>
+		Nullable.GetUnderlyingType(type) is Type underlying ? underlying.Name : type.Name;
 }

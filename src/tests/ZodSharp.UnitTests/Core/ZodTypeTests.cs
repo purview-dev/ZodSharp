@@ -30,6 +30,15 @@ public class ZodTypeTests
 	}
 
 	[Test]
+	public async Task LiteralValidate_GivenNull_ReturnsFailureWithoutThrowing()
+	{
+		var result = Z.Literal("active").Validate(null!);
+
+		await Assert.That(result.IsSuccess).IsFalse();
+		await Assert.That(result.Errors[0].Code).IsEqualTo("invalid_literal");
+	}
+
+	[Test]
 	public async Task Parse_GivenValidData_ReturnsValue()
 	{
 		var value = Z.String().Min(3).Parse("John");

@@ -35,10 +35,17 @@ public sealed class ZodObjectBuilder
 	public ZodObject Build() => new(_shape.ToImmutableDictionary());
 
 	/// <typeparam name="T">The inner type</typeparam>
-	sealed class SchemaWrapper<T>(IZodSchema<T, T> inner) : IZodSchema<object, object>
+	sealed class SchemaWrapper<T>(IZodSchema<T, T> inner) : IZodSchema<object, object>, IOptionalSchema
 	{
+		public bool IsOptional => inner is IOptionalSchema o && o.IsOptional;
+
+		public bool ProvidesValueOnMissing => inner is IOptionalSchema o && o.ProvidesValueOnMissing;
+
 		public ValidationResult<object> Validate(object value)
 		{
+			if (value is null && inner is IAcceptsNull acceptsNull)
+				return acceptsNull.ValidateNull();
+
 			if (SchemaValueCoercion.TryCoerce<T>(value, out var typedValue))
 			{
 				var result = inner.Validate(typedValue);
@@ -50,7 +57,7 @@ public sealed class ZodObjectBuilder
 			return ValidationResult<object>.Failure(
 				new ValidationError(
 					"invalid_type",
-					$"Expected {typeof(T).Name}, but got {value?.GetType().Name ?? "null"}",
+					$"Expected {SchemaValueCoercion.GetTypeDisplayName(typeof(T))}, but got {value?.GetType().Name ?? "null"}",
 					[]
 				)
 			);

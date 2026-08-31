@@ -10,9 +10,15 @@ namespace ZodSharp.Schemas;
 /// Initializes a new instance of the ZodOptional class.
 /// </remarks>
 /// <param name="innerSchema">The inner schema</param>
-public class ZodOptional<T>(IZodSchema<T, T> innerSchema) : ZodType<T?, T?>
+public class ZodOptional<T>(IZodSchema<T, T> innerSchema) : ZodType<T?, T?>, IAcceptsNull
 	where T : class
 {
+	/// <inheritdoc/>
+	public override bool IsOptional => true;
+
+	/// <inheritdoc/>
+	public ValidationResult<object> ValidateNull() => ValidationResult<object>.Success(null!);
+
 	/// <summary>
 	/// Parses and validates the value, allowing null.
 	/// </summary>

@@ -6,6 +6,7 @@
 		<PackageId>ZodSharp.AspNetCore</PackageId>
 		<Description>ASP.NET Core ProblemDetails integration for ZodSharp validation results.</Description>
 		<PackageTags>zod;validation;aspnetcore;problemdetails</PackageTags>
+		<AssemblyName>ZodSharp.AspNetCore</AssemblyName>
 	</PropertyGroup>
 
 	<ItemGroup>

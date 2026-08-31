@@ -9,11 +9,17 @@ namespace ZodSharp.Core;
 /// </summary>
 /// <typeparam name="TOutput">The output type after validation</typeparam>
 /// <typeparam name="TInput">The input type before validation</typeparam>
-public abstract class ZodType<TOutput, TInput> : IZodSchema<TOutput, TInput>
+public abstract class ZodType<TOutput, TInput> : IZodSchema<TOutput, TInput>, IOptionalSchema
 {
 	static readonly string[] EmptyPath = [];
 
 	ImmutableArray<IValidationRule<TOutput>> _rules = [];
+
+	/// <inheritdoc/>
+	public virtual bool IsOptional => false;
+
+	/// <inheritdoc/>
+	public virtual bool ProvidesValueOnMissing => false;
 
 	/// <summary>
 	/// Gets the description of this schema.
