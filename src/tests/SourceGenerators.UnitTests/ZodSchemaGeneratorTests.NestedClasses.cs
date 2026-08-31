@@ -147,4 +147,48 @@ namespace Testing
 
 		await Assert.That(schemaDeclaration.AttributeLists.Any()).IsTrue();
 	}
+
+	[Test]
+	public async Task Generate_GivenSealedNestedSchemaType_DoesNotPlaceGeneratedAttributesOnSealedContainingType(
+		CancellationToken cancellationToken
+	)
+	{
+		const string source =
+			@"
+namespace Testing
+{
+	sealed partial class WebAppKit
+	{
+		[ZodSchema]
+		sealed partial class WebAppKitOptions
+		{
+			public string? Name { get; set; }
+		}
+	}
+}
+";
+
+		var driverResult = await GenerateAsync(source, cancellationToken);
+		var generatedSource = driverResult.GetSource("WebAppKitOptionsSchema");
+		await Assert.That(generatedSource).IsNotNull();
+
+		var root = await CSharpSyntaxTree
+			.ParseText(generatedSource!, cancellationToken: cancellationToken)
+			.GetRootAsync(cancellationToken);
+
+		var containingDeclarations = root.DescendantNodes()
+			.OfType<ClassDeclarationSyntax>()
+			.Where(static declaration => declaration.Identifier.ValueText == "WebAppKit")
+			.ToList();
+
+		await Assert.That(containingDeclarations.Count).IsEqualTo(1);
+		foreach (var containingDeclaration in containingDeclarations)
+			await Assert.That(containingDeclaration.AttributeLists.Any()).IsFalse();
+
+		var schemaDeclaration = root.DescendantNodes()
+			.OfType<ClassDeclarationSyntax>()
+			.Single(static declaration => declaration.Identifier.ValueText == "WebAppKitOptionsSchema");
+
+		await Assert.That(schemaDeclaration.AttributeLists.Any()).IsTrue();
+	}
 }

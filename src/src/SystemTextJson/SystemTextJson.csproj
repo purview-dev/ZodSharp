@@ -3,7 +3,7 @@
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<AutoIncludeUsings>false</AutoIncludeUsings>
 		<RootNamespace>ZodSharp</RootNamespace>
-		<AssemblyName>ZodSharp.SystemTextJson</AssemblyName>
+		<!--<AssemblyName>ZodSharp.SystemTextJson</AssemblyName>-->
 	</PropertyGroup>
 
 	<PropertyGroup>
