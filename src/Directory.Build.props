@@ -1,7 +1,7 @@
 <Project>
 	<PropertyGroup>
 		<!--
-			Supported .NET target frameworks. .NET 8 leaves support in November 2025;
+			Supported .NET target frameworks. .NET 8 leaves support in November 2026;
 			removing it is a single-line change here.
 		-->
 		<ZodSharpNetTargetFrameworks>net8.0;net9.0;net10.0</ZodSharpNetTargetFrameworks>
