@@ -29,6 +29,7 @@ public class ZodLiteral<T>(T value) : ZodType<T, T>
 			);
 		}
 
+		// Check if the value is equal to the literal value
 		return value.Equals(_value)
 			? ValidationResult<T>.Success(value)
 			: ValidationResult<T>.Failure(

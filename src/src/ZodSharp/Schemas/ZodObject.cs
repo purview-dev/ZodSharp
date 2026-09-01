@@ -14,11 +14,13 @@ namespace ZodSharp.Schemas;
 /// <param name="unknownKeyPolicy">How unknown keys are handled.</param>
 /// <param name="optionalKeys">Optional field names.</param>
 /// <param name="catchallSchema">Schema for unknown keys.</param>
+/// <param name="requiredKeys">Field names whose presence is required, overriding schema-level optionality.</param>
 public class ZodObject(
 	ImmutableDictionary<string, IZodSchema<object, object>> shape,
 	UnknownKeyPolicy unknownKeyPolicy = UnknownKeyPolicy.Strip,
 	ImmutableHashSet<string>? optionalKeys = null,
-	IZodSchema<object, object>? catchallSchema = null
+	IZodSchema<object, object>? catchallSchema = null,
+	ImmutableHashSet<string>? requiredKeys = null
 ) : ZodType<Dictionary<string, object?>, Dictionary<string, object?>>
 {
 	static readonly string[] EmptyPath = [];
@@ -37,6 +39,12 @@ public class ZodObject(
 	/// The set of field names that are optional (missing fields are allowed).
 	/// </summary>
 	public ImmutableHashSet<string> OptionalKeys => optionalKeys ?? [];
+
+	/// <summary>
+	/// The set of field names whose presence is explicitly required, even when
+	/// the field schema otherwise accepts a missing value.
+	/// </summary>
+	public ImmutableHashSet<string> RequiredKeys => requiredKeys ?? [];
 
 	/// <summary>
 	/// The catchall schema for unknown keys, or <see langword="null"/> when not set.
@@ -65,7 +73,10 @@ public class ZodObject(
 		{
 			if (!value.TryGetValue(key, out var propertyValue))
 			{
-				if (!IsOptionalKey(key) && !(schema is IOptionalSchema optionalSchema && optionalSchema.IsOptional))
+				var allowsMissing =
+					!IsRequiredKey(key) && (IsOptionalKey(key) || schema is IOptionalSchema { IsOptional: true });
+
+				if (!allowsMissing)
 				{
 					errors.Add(new ValidationError("missing_field", $"Required field '{key}' is missing", [key]));
 					continue;
@@ -153,6 +164,11 @@ public class ZodObject(
 	bool IsOptionalKey(string key) => optionalKeys is not null && optionalKeys.Contains(key);
 
 	/// <summary>
+	/// Returns <see langword="true"/> if <paramref name="key"/>'s presence is explicitly required.
+	/// </summary>
+	bool IsRequiredKey(string key) => requiredKeys is not null && requiredKeys.Contains(key);
+
+	/// <summary>
 	/// Creates a new <see cref="ZodObject"/> with an additional or replaced field.
 	/// Equivalent to Zod's <c>.extend({ key: schema })</c>. Replacing an existing key
 	/// drops its previous optional-key metadata, so the field's optionality is governed
@@ -171,7 +187,8 @@ public class ZodObject(
 
 		var newShape = shape.SetItem(key, FieldSchemaWrapper<T>.Wrap(fieldSchema));
 		var newOptionalKeys = optionalKeys?.Remove(key);
-		return new ZodObject(newShape, unknownKeyPolicy, newOptionalKeys, catchallSchema);
+		var newRequiredKeys = requiredKeys?.Remove(key);
+		return new ZodObject(newShape, unknownKeyPolicy, newOptionalKeys, catchallSchema, newRequiredKeys);
 	}
 
 	/// <summary>
@@ -192,8 +209,15 @@ public class ZodObject(
 			newShape = newShape.SetItem(key, schema);
 
 		var mergedOptionalKeys = (optionalKeys ?? []).Except(other.Shape.Keys).Union(other.OptionalKeys);
+		var mergedRequiredKeys = (requiredKeys ?? []).Except(other.Shape.Keys).Union(other.RequiredKeys);
 
-		return new ZodObject(newShape, other.UnknownKeyPolicy, mergedOptionalKeys, other.CatchallSchema);
+		return new ZodObject(
+			newShape,
+			other.UnknownKeyPolicy,
+			mergedOptionalKeys,
+			other.CatchallSchema,
+			mergedRequiredKeys
+		);
 	}
 
 	/// <summary>
@@ -210,7 +234,8 @@ public class ZodObject(
 		var keySet = keys.ToHashSet();
 		var newShape = shape.Where(kv => keySet.Contains(kv.Key)).ToImmutableDictionary();
 		var newOptional = optionalKeys?.Where(keySet.Contains).ToImmutableHashSet();
-		return new ZodObject(newShape, unknownKeyPolicy, newOptional, catchallSchema);
+		var newRequired = requiredKeys?.Where(keySet.Contains).ToImmutableHashSet();
+		return new ZodObject(newShape, unknownKeyPolicy, newOptional, catchallSchema, newRequired);
 	}
 
 	/// <summary>
@@ -227,7 +252,8 @@ public class ZodObject(
 		var keySet = keys.ToHashSet();
 		var newShape = shape.Where(kv => !keySet.Contains(kv.Key)).ToImmutableDictionary();
 		var newOptional = optionalKeys?.Where(k => !keySet.Contains(k)).ToImmutableHashSet();
-		return new ZodObject(newShape, unknownKeyPolicy, newOptional, catchallSchema);
+		var newRequired = requiredKeys?.Where(k => !keySet.Contains(k)).ToImmutableHashSet();
+		return new ZodObject(newShape, unknownKeyPolicy, newOptional, catchallSchema, newRequired);
 	}
 
 	/// <summary>
@@ -235,32 +261,33 @@ public class ZodObject(
 	/// are allowed). Equivalent to Zod's <c>.partial()</c>.
 	/// </summary>
 	/// <returns>A new <see cref="ZodObject"/> with all keys optional.</returns>
-	public ZodObject Partial() => new(shape, unknownKeyPolicy, [.. shape.Keys], catchallSchema);
+	public ZodObject Partial() => new(shape, unknownKeyPolicy, [.. shape.Keys], catchallSchema, null);
 
 	/// <summary>
 	/// Creates a new <see cref="ZodObject"/> where all fields are required (no optional keys).
 	/// Equivalent to Zod's <c>.required()</c>.
 	/// </summary>
 	/// <returns>A new <see cref="ZodObject"/> with no optional keys.</returns>
-	public ZodObject Required() => new(shape, unknownKeyPolicy, null, catchallSchema);
+	public ZodObject Required() => new(shape, unknownKeyPolicy, null, catchallSchema, [.. shape.Keys]);
 
 	/// <summary>
 	/// Creates a new <see cref="ZodObject"/> that keeps unknown keys in the output.
 	/// Equivalent to Zod's <c>.passthrough()</c>.
 	/// </summary>
-	public ZodObject Passthrough() => new(shape, UnknownKeyPolicy.Passthrough, optionalKeys, catchallSchema);
+	public ZodObject Passthrough() =>
+		new(shape, UnknownKeyPolicy.Passthrough, optionalKeys, catchallSchema, requiredKeys);
 
 	/// <summary>
 	/// Creates a new <see cref="ZodObject"/> that rejects unknown keys with an error.
 	/// Equivalent to Zod's <c>.strict()</c>.
 	/// </summary>
-	public ZodObject Strict() => new(shape, UnknownKeyPolicy.Strict, optionalKeys, catchallSchema);
+	public ZodObject Strict() => new(shape, UnknownKeyPolicy.Strict, optionalKeys, catchallSchema, requiredKeys);
 
 	/// <summary>
 	/// Creates a new <see cref="ZodObject"/> that silently drops unknown keys.
 	/// Equivalent to Zod's <c>.strip()</c> (the default).
 	/// </summary>
-	public ZodObject Strip() => new(shape, UnknownKeyPolicy.Strip, optionalKeys, catchallSchema);
+	public ZodObject Strip() => new(shape, UnknownKeyPolicy.Strip, optionalKeys, catchallSchema, requiredKeys);
 
 	/// <summary>
 	/// Creates a new <see cref="ZodObject"/> that validates unknown keys against
@@ -272,6 +299,6 @@ public class ZodObject(
 	{
 		return schema is null
 			? throw new ArgumentNullException(nameof(schema))
-			: new ZodObject(shape, unknownKeyPolicy, optionalKeys, schema);
+			: new ZodObject(shape, unknownKeyPolicy, optionalKeys, schema, requiredKeys);
 	}
 }

@@ -27,7 +27,7 @@ jobs:
           echo "version=$TAG" >> $GITHUB_OUTPUT
 
       - name: Restore
-        run: dotnet restore src/ZodSharp.slnx
+        run: dotnet restore src/ZodSharp.slnx --locked-mode
 
       - name: Build (release)
         run: dotnet build src/ZodSharp.slnx -c Release --no-restore /p:Version=${{ steps.version.outputs.version }}

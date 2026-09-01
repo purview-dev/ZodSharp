@@ -15,6 +15,15 @@
 
 	<PropertyGroup>
 		<NoWarn>$(NoWarn);CA1031;CA1510;</NoWarn>
+		<!--
+			Commit a NuGet lock file per project so the resolved dependency graph is
+			reproducible. CI restores in locked mode; regenerate after version bumps
+			with a force-evaluate restore.
+
+			See the README.md in the repo root for potential issues with this approach
+			and how to resolve them.
+		-->
+		<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
 	</PropertyGroup>
 
 	<Import Sdk="Purview.DotNetProjectSdk" Project="Sdk.props" />

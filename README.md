@@ -593,6 +593,25 @@ var span = "user@example.com".AsSpan();
 var result = schema.ValidateSpan(span);
 ```
 
+## Dependency Reproducibility
+
+This repository commits a `packages.lock.json` file for every project, so the full resolved dependency graph (direct and transitive) is reproducible. CI restores with `dotnet restore --locked-mode`, which fails the build if the committed lock files drift from the declared dependencies.
+
+### How it works
+
+- Package versions are declared centrally in `Directory.Packages.props`. Note that a version like `13.0.4` is a *minimum* version requirement, not an exact pin, so the restore graph alone is not reproducible.
+- The lock files pin the actually *resolved* version and content hash of every package for each target framework, which is what makes builds reproducible without forcing exact versions onto consumers.
+- When package versions change (for example via Dependabot or manual edits to `Directory.Packages.props` / `Directory.Build.targets`), regenerate the lock files and commit them **in the same change**:
+  ```bash
+  dotnet restore src/ZodSharp.slnx --force-evaluate
+  ```
+  Committing lock files without the version change, or vice versa, will fail CI.
+
+### Known risks
+
+- **Cross-platform lock files** - Lock files are generated on the developer's OS, but CI runs on Linux (atm). The current package set is OS-agnostic (no runtime identifiers involved), so resolution should be identical. If locked-mode restore ever fails on Linux, regenerate the lock files from a Linux/WSL environment and recommit them.
+- **Lock file drift** - Any dependency change requires the lock files to be regenerated and committed together. Dependabot and package-update PRs must therefore include the lock-file updates; CI's locked-mode restore enforces this.
+
 ## License
 
 MIT License - see the LICENSE file for details.

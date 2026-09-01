@@ -182,7 +182,7 @@ public class ZodObjectShapeTests
 		var b = Z.Object().Field("age", Z.Number()).Build().Partial();
 
 		// Act
-		var result = a.Merge(b).Validate(new Dictionary<string, object?>());
+		var result = a.Merge(b).Validate([]);
 
 		// Assert — age is optional because the right object made it so.
 		await Assert.That(result.IsSuccess).IsTrue();
@@ -196,7 +196,7 @@ public class ZodObjectShapeTests
 		var b = Z.Object().Field("name", Z.String()).Build();
 
 		// Act
-		var result = a.Merge(b).Validate(new Dictionary<string, object?>());
+		var result = a.Merge(b).Validate([]);
 
 		// Assert — name is required again because the right object made it so.
 		await Assert.That(result.IsSuccess).IsFalse();
@@ -282,6 +282,50 @@ public class ZodObjectShapeTests
 	}
 
 	[Test]
+	public async Task Required_GivenSchemaLevelOptionalField_RequiresFieldPresence()
+	{
+		// Arrange
+		var schema = Z.Object().Field("name", Z.Optional(Z.String())).Build().Required();
+
+		// Act
+		var result = schema.Validate([]);
+
+		// Assert
+		await Assert.That(result.IsSuccess).IsFalse();
+		await Assert
+			.That(result.Errors.Any(static e => e.Code == "missing_field" && e.Path.SequenceEqual(["name"])))
+			.IsTrue();
+	}
+
+	[Test]
+	public async Task Required_GivenPresentSchemaLevelOptionalField_PreservesFieldValidation()
+	{
+		// Arrange
+		var schema = Z.Object().Field("name", Z.Optional(Z.String())).Build().Required();
+
+		// Act
+		var valueResult = schema.Validate(new Dictionary<string, object?> { ["name"] = "John" });
+		var nullResult = schema.Validate(new Dictionary<string, object?> { ["name"] = null });
+
+		// Assert — Required controls presence; the underlying C# schema still accepts an explicit null.
+		await Assert.That(valueResult.IsSuccess).IsTrue();
+		await Assert.That(nullResult.IsSuccess).IsTrue();
+	}
+
+	[Test]
+	public async Task Partial_GivenRequiredSchemaLevelOptionalField_AllowsMissingAgain()
+	{
+		// Arrange
+		var schema = Z.Object().Field("name", Z.Optional(Z.String())).Build().Required().Partial();
+
+		// Act
+		var result = schema.Validate([]);
+
+		// Assert
+		await Assert.That(result.IsSuccess).IsTrue();
+	}
+
+	[Test]
 	public async Task Strict_GivenUnknownKey_ReturnsError()
 	{
 		// Arrange
@@ -346,7 +390,7 @@ public class ZodObjectShapeTests
 		var schema = Z.Object().Field("name", Z.Optional(Z.String())).Build();
 
 		// Act
-		var result = schema.Validate(new Dictionary<string, object?>());
+		var result = schema.Validate([]);
 
 		// Assert
 		await Assert.That(result.IsSuccess).IsTrue();
@@ -448,7 +492,7 @@ public class ZodObjectShapeTests
 		var schema = Z.Object().Field("age", Z.Nullable(Z.Number())).Build();
 
 		// Act
-		var result = schema.Validate(new Dictionary<string, object?>());
+		var result = schema.Validate([]);
 
 		// Assert
 		await Assert.That(result.IsSuccess).IsFalse();
@@ -478,7 +522,7 @@ public class ZodObjectShapeTests
 		var schema = new ZodObject(shape);
 
 		// Act
-		var result = schema.Validate(new Dictionary<string, object?>());
+		var result = schema.Validate([]);
 
 		// Assert
 		await Assert.That(result.IsSuccess).IsTrue();

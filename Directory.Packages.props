@@ -1,5 +1,10 @@
 <Project>
 	<PropertyGroup>
+		<!--
+		  Set explicitly rather than relying on auto-detection otherwise
+		  operations with RestorePackagesWithLockFile fail.
+		-->
+		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
 		<CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
 		<!--
 			Keep compiler-facing Roslyn packages aligned with the minimum supported by
