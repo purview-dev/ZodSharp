@@ -133,17 +133,23 @@ partial class ZodSchemaGenerator
 			},
 			body =>
 			{
-				body.WriteMethod(
-					new MethodDeclarationOptions(
-						"Validate",
-						TypeLibrary.ValidationResult.MakeGeneric(schema.TargetType).AsTypeReference(),
-						TypeDeclarationAccessibility.Public
-					)
-					{
-						Parameters = [new ParameterDeclarationOptions("value", schema.TargetType.AsTypeReference())],
-					},
-					methodBody => methodBody.WriteReturn($"{schema.SchemaType.Name}.Validate(value)")
-				);
+				body.XmlSummary("Validates an instance of the target type, returning a ValidationResult.")
+					.XmlParam("value", "The value to validate.")
+					.XmlReturn("ValidationResult indicating success or failure of the validation.")
+					.WriteMethod(
+						new MethodDeclarationOptions(
+							"Validate",
+							TypeLibrary.ValidationResult.MakeGeneric(schema.TargetType).AsTypeReference(),
+							TypeDeclarationAccessibility.Public
+						)
+						{
+							Parameters =
+							[
+								new ParameterDeclarationOptions("value", schema.TargetType.AsTypeReference()),
+							],
+						},
+						methodBody => methodBody.WriteReturn($"{schema.SchemaType.Name}.Validate(value)")
+					);
 
 				GenerateValidateAsyncMethod(body, schema, cancellationToken);
 			}
@@ -182,35 +188,40 @@ partial class ZodSchemaGenerator
 			],
 		};
 
-		writer.WriteMethod(
-			methodDeclaration,
-			method =>
-			{
-				if (customValidation.InvocationKind == CustomValidationInvocationKind.None)
+		writer
+			.XmlSummary("Asynchronously validates an instance of the target type, returning a ValidationResult.")
+			.XmlParam("value", "The value to validate.")
+			.XmlParam("cancellationToken", "The cancellation token.")
+			.XmlReturn("ValidationResult indicating success or failure of the validation.")
+			.WriteMethod(
+				methodDeclaration,
+				method =>
 				{
-					method.WriteReturn(
-						$"global::System.Threading.Tasks.ValueTask.FromResult({schema.SchemaType.Name}.Validate(value))"
+					if (customValidation.InvocationKind == CustomValidationInvocationKind.None)
+					{
+						method.WriteReturn(
+							$"global::System.Threading.Tasks.ValueTask.FromResult({schema.SchemaType.Name}.Validate(value))"
+						);
+						return;
+					}
+
+					method.WriteLine($"var syncResult = {schema.SchemaType.Name}.Validate(value);");
+
+					var prefix =
+						customValidation.InvocationKind == CustomValidationInvocationKind.DefinedOnSchemaValidator
+							? "this."
+							: $"{schema.TargetType}.";
+
+					method.WriteLine(
+						$"var customResult = await {prefix}{customValidation.MethodName}(value, cancellationToken).ConfigureAwait(false);"
 					);
-					return;
+
+					method.NewLine();
+					method.WriteReturn(
+						$"{TypeLibrary.ValidationResult.MakeGeneric(schema.TargetType)}.Merge(syncResult, customResult)"
+					);
 				}
-
-				method.WriteLine($"var syncResult = {schema.SchemaType.Name}.Validate(value);");
-
-				var prefix =
-					customValidation.InvocationKind == CustomValidationInvocationKind.DefinedOnSchemaValidator
-						? "this."
-						: $"{schema.TargetType}.";
-
-				method.WriteLine(
-					$"var customResult = await {prefix}{customValidation.MethodName}(value, cancellationToken).ConfigureAwait(false);"
-				);
-
-				method.NewLine();
-				method.WriteReturn(
-					$"{TypeLibrary.ValidationResult.MakeGeneric(schema.TargetType)}.Merge(syncResult, customResult)"
-				);
-			}
-		);
+			);
 	}
 
 	static void GenerateValidateMethod(
