@@ -2,5 +2,6 @@
 	<PropertyGroup>
 		<RootNamespace>ZodSharp</RootNamespace>
 		<NoWarn>$(NoWarn);CA1849;CA1002;CA2227;</NoWarn>
+		<AssemblyName>Purview.ZodSharp.NewtonsoftJson.UnitTests</AssemblyName>
 	</PropertyGroup>
 </Project>

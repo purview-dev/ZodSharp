@@ -1,8 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<AssemblyName>Purview.ZodSharp.AspNetCore.UnitTests</AssemblyName>
+	</PropertyGroup>
+
 	<ItemGroup>
 		<ProjectReference Include="..\..\src\AspNetCore\AspNetCore.csproj" />
 		<ProjectReference Include="..\..\src\ZodSharp\ZodSharp.csproj" />
 	</ItemGroup>
+
 	<ItemGroup>
 		<!-- Runs the generator against the test project.
          This makes generated attributes/types available to test source code. -->

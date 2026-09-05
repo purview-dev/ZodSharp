@@ -3,12 +3,12 @@
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<AutoIncludeUsings>false</AutoIncludeUsings>
 		<RootNamespace>ZodSharp</RootNamespace>
-		<!--<AssemblyName>ZodSharp.SystemTextJson</AssemblyName>-->
+		<AssemblyName>Purview.ZodSharp.SystemTextJson</AssemblyName>
 	</PropertyGroup>
 
 	<PropertyGroup>
 		<IsPackable>true</IsPackable>
-		<PackageId>ZodSharp.SystemTextJson</PackageId>
+		<PackageId>Purview.ZodSharp.SystemTextJson</PackageId>
 		<Description>A high-performance C# port of Zod schema validation library. Features zero-allocation validation, struct-based rules, fluent API, and source generator support for maximum performance.</Description>
 		<PackageTags>zod;validation;schema;json</PackageTags>
 	</PropertyGroup>

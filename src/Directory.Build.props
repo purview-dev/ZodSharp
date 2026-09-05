@@ -10,20 +10,11 @@
 		<!-- Set project-by-project -->
 		<IsPackable>false</IsPackable>
 		<ExcludePurviewTelemetry>true</ExcludePurviewTelemetry>
-		<RepositoryUrl>https://github.com/guinhx/ZodSharp</RepositoryUrl>
+		<RepositoryUrl>https://github.com/purview-dev/zodsharp</RepositoryUrl>
 	</PropertyGroup>
 
 	<PropertyGroup>
 		<NoWarn>$(NoWarn);CA1031;CA1510;</NoWarn>
-		<!--
-			Commit a NuGet lock file per project so the resolved dependency graph is
-			reproducible. CI restores in locked mode; regenerate after version bumps
-			with a force-evaluate restore.
-
-			See the README.md in the repo root for potential issues with this approach
-			and how to resolve them.
-		-->
-		<RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
 	</PropertyGroup>
 
 	<Import Sdk="Purview.DotNetProjectSdk" Project="Sdk.props" />
@@ -35,8 +26,8 @@
 
 	<PropertyGroup Condition="'$(IsPackable)' == 'true'">
 		<Authors>ZodSharp Contributors</Authors>
-		<PackageProjectUrl>https://github.com/guinhx/ZodSharp</PackageProjectUrl>
-		<RepositoryUrl>https://github.com/guinhx/ZodSharp</RepositoryUrl>
+		<PackageProjectUrl>https://github.com/purview-dev/zodsharp</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/purview-dev/zodsharp</RepositoryUrl>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
 		<PackageReadmeFile>README.md</PackageReadmeFile>
 	</PropertyGroup>

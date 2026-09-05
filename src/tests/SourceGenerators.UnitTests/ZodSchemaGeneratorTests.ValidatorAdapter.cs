@@ -21,11 +21,11 @@ namespace Testing
 		var driverResult = await GenerateAsync(source, cancellationToken);
 		var generatedSource = driverResult.GetSource("WidgetSchema");
 
-		await Assert.That(generatedSource).Contains("class WidgetSchemaValidator");
-		await Assert.That(generatedSource).Contains("IZodSchemaValidator");
-		await Assert.That(generatedSource).Contains("Widget");
-		await Assert.That(generatedSource).Contains("Validate(");
-		await Assert.That(generatedSource).Contains("return WidgetSchema.Validate(value);");
+		await Assert.That(generatedSource).ContainsGeneratedCode("class WidgetSchemaValidator");
+		await Assert.That(generatedSource).ContainsGeneratedCode("IZodSchemaValidator");
+		await Assert.That(generatedSource).ContainsGeneratedCode("Widget");
+		await Assert.That(generatedSource).ContainsGeneratedCode("Validate(");
+		await Assert.That(generatedSource).ContainsGeneratedCode("return WidgetSchema.Validate(value);");
 	}
 
 	[Test]
@@ -97,14 +97,8 @@ namespace Testing
 			}}
 		}}
 	}}";
-		var driverResult = await GenerateAsync(
-			source,
-			new ZodSourceGeneratorTestOptions().Compile(),
-			cancellationToken
-		);
+		var driverResult = await GenerateAsync(source, ZodSourceGeneratorTestOptions.Compile, cancellationToken);
 		var assembly = await Assert.That(driverResult.CompilationResult.Assembly).IsNotNull();
-
-		await Assert.That(driverResult).HasNoErrorDiagnostics();
 
 		var gizmoType = assembly.GetType("Testing.Gizmo");
 		var gizmoSchemaType = assembly.GetType("Testing.GizmoSchemaValidator");

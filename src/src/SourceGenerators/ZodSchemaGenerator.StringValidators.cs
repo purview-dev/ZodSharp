@@ -19,16 +19,16 @@ partial class ZodSchemaGenerator
 			var messageExpression = BuildErrorMessageExpression(
 				emailAttribute.Value.ValidationAttributeData,
 				"Field '{0}' must be a valid email address.",
-				CodeGenHelpers.Quote(displayName)
+				displayName.Surround()
 			);
 
 			using (writer.OpenBlockScope())
 			{
 				var propertyValueName = CodeGenHelpers.GetLocalIdentifier(propertyName, "Value");
-				writer.WriteLine($"var {propertyValueName} = value.{propertyName};");
+				writer.Assignment("var", propertyValueName, $"value.{propertyName}");
 				using (
-					writer.OpenBlockScope(
-						$"if ({propertyValueName}.Length != 0 && !global::ZodSharp.Rules.EmailRule.EmailRegex.IsMatch({propertyValueName}))"
+					writer.IfBlockScope(
+						$"{propertyValueName}.Length != 0 && !global::ZodSharp.Rules.EmailRule.EmailRegex.IsMatch({propertyValueName})"
 					)
 				)
 				{
@@ -54,17 +54,17 @@ partial class ZodSchemaGenerator
 			var messageExpression = BuildErrorMessageExpression(
 				regularExpressionAttribute.Value.ValidationAttribute,
 				"Field '{0}' must match the regular expression '{1}'.",
-				CodeGenHelpers.Quote(displayName),
-				CodeGenHelpers.Quote(pattern)
+				displayName.Surround(),
+				pattern.Surround()
 			);
 
 			using (writer.OpenBlockScope())
 			{
 				var propertyValueName = CodeGenHelpers.GetLocalIdentifier(propertyName, "Value");
-				writer.WriteLine($"var {propertyValueName} = value.{propertyName};");
+				writer.Assignment("var", propertyValueName, $"value.{propertyName}");
 				using (
-					writer.OpenBlockScope(
-						$"if ({propertyValueName}.Length != 0 && !{GetRegexFieldName(propertyName)}.IsMatch({propertyValueName}))"
+					writer.IfBlockScope(
+						$"{propertyValueName}.Length != 0 && !{GetRegexFieldName(propertyName)}.IsMatch({propertyValueName})"
 					)
 				)
 				{
@@ -162,19 +162,15 @@ partial class ZodSchemaGenerator
 	{
 		var propertyName = property.Name;
 		var displayName = property.DisplayName;
-		var messageExpression = BuildErrorMessageExpression(
-			validationAttribute,
-			defaultFormat,
-			CodeGenHelpers.Quote(displayName)
-		);
+		var messageExpression = BuildErrorMessageExpression(validationAttribute, defaultFormat, displayName.Surround());
 
 		using (writer.OpenBlockScope())
 		{
 			var propertyValueName = CodeGenHelpers.GetLocalIdentifier(propertyName, "Value");
-			writer.WriteLine($"var {propertyValueName} = value.{propertyName};");
+			writer.Assignment("var", propertyValueName, $"value.{propertyName}");
 			using (
-				writer.OpenBlockScope(
-					$"if ({propertyValueName}.Length != 0 && !new {ruleType}().IsValid({propertyValueName}))"
+				writer.IfBlockScope(
+					$"{propertyValueName}.Length != 0 && !new {ruleType}().IsValid({propertyValueName})"
 				)
 			)
 			{
@@ -209,46 +205,49 @@ partial class ZodSchemaGenerator
 				{
 					var tooSmallMessage = BuildMessageExpression(
 						length.ValidationAttribute,
-						$"{CodeGenHelpers.Quote($"Field '{displayName}' must contain at least ")} + FormatCount({length.MinimumLength}, {CodeGenHelpers.Quote("character")}, {CodeGenHelpers.Quote("characters")}) + {CodeGenHelpers.Quote(".")}",
-						CodeGenHelpers.Quote(displayName),
+						$"{$"Field '{displayName}' must contain at least ".Surround()} + FormatCount({length.MinimumLength}, {"character".Surround()}, {"characters".Surround()}) + {".".Surround()}",
+						displayName.Surround(),
 						length.MaximumLength.ToString(CultureInfo.InvariantCulture),
 						length.MinimumLength.ToString(CultureInfo.InvariantCulture)
 					);
 					var tooBigMessage = BuildMessageExpression(
 						length.ValidationAttribute,
-						$"{CodeGenHelpers.Quote($"Field '{displayName}' must contain no more than ")} + FormatCount({length.MaximumLength}, {CodeGenHelpers.Quote("character")}, {CodeGenHelpers.Quote("characters")}) + {CodeGenHelpers.Quote(".")}",
-						CodeGenHelpers.Quote(displayName),
+						$"{$"Field '{displayName}' must contain no more than ".Surround()} + FormatCount({length.MaximumLength}, {"character".Surround()}, {"characters".Surround()}) + {".".Surround()}",
+						displayName.Surround(),
 						length.MaximumLength.ToString(CultureInfo.InvariantCulture),
 						length.MinimumLength.ToString(CultureInfo.InvariantCulture)
 					);
 
-					writer.WriteLine($"var {propertyValueName} = value.{propertyName};");
-					using (writer.OpenBlockScope($"if ({propertyValueName} is not null)"))
+					writer.Assignment("var", propertyValueName, $"value.{propertyName}");
+					using (writer.IfBlockScope($"({propertyValueName} is not null)"))
 					{
-						writer.WriteLine($"var {propertyLengthName} = {propertyValueName}.Length;");
-						using (writer.OpenBlockScope($"if ({propertyLengthName} < {length.MinimumLength})"))
-						{
-							WriteValidationError(
-								writer,
-								"too_small",
-								tooSmallMessage,
-								propertyPath,
-								"string",
-								minimum: length.MinimumLength
-							);
-						}
+						writer.Assignment("var", propertyLengthName, $"{propertyValueName}.Length");
 
-						using (writer.OpenBlockScope($"else if ({propertyLengthName} > {length.MaximumLength})"))
-						{
-							WriteValidationError(
-								writer,
-								"too_big",
-								tooBigMessage,
-								propertyPath,
-								"string",
-								maximum: length.MaximumLength
+						writer
+							.IfBlock(
+								$"{propertyLengthName} < {length.MinimumLength}",
+								w =>
+									WriteValidationError(
+										w,
+										"too_small",
+										tooSmallMessage,
+										propertyPath,
+										"string",
+										minimum: length.MinimumLength
+									)
+							)
+							.ElseIf(
+								$"{propertyLengthName} > {length.MaximumLength}",
+								w =>
+									WriteValidationError(
+										w,
+										"too_big",
+										tooBigMessage,
+										propertyPath,
+										"string",
+										maximum: length.MaximumLength
+									)
 							);
-						}
 					}
 				}
 
@@ -264,24 +263,24 @@ partial class ZodSchemaGenerator
 			{
 				var tooSmallMessage = BuildMessageExpression(
 					stringLength.ValidationAttribute,
-					$"{CodeGenHelpers.Quote($"Field '{displayName}' must contain at least ")} + FormatCount({stringLength.MinimumLength}, {CodeGenHelpers.Quote("character")}, {CodeGenHelpers.Quote("characters")}) + {CodeGenHelpers.Quote(".")}",
-					CodeGenHelpers.Quote(displayName),
+					$"{$"Field '{displayName}' must contain at least ".Surround()} + FormatCount({stringLength.MinimumLength}, {"character".Surround()}, {"characters".Surround()}) + {".".Surround()}",
+					displayName.Surround(),
 					stringLength.MaximumLength.ToString(CultureInfo.InvariantCulture),
 					stringLength.MinimumLength.ToString(CultureInfo.InvariantCulture)
 				);
 				var tooBigMessage = BuildMessageExpression(
 					stringLength.ValidationAttribute,
-					$"{CodeGenHelpers.Quote($"Field '{displayName}' must contain no more than ")} + FormatCount({stringLength.MaximumLength}, {CodeGenHelpers.Quote("character")}, {CodeGenHelpers.Quote("characters")}) + {CodeGenHelpers.Quote(".")}",
-					CodeGenHelpers.Quote(displayName),
+					$"{$"Field '{displayName}' must contain no more than ".Surround()} + FormatCount({stringLength.MaximumLength}, {"character".Surround()}, {"characters".Surround()}) + {".".Surround()}",
+					displayName.Surround(),
 					stringLength.MaximumLength.ToString(CultureInfo.InvariantCulture),
 					stringLength.MinimumLength.ToString(CultureInfo.InvariantCulture)
 				);
 
-				writer.WriteLine($"var {propertyValueName} = value.{propertyName};");
-				writer.WriteLine($"var {propertyLengthName} = {propertyValueName}.Length;");
+				writer.Assignment("var", propertyValueName, $"value.{propertyName}");
+				writer.Assignment("var", propertyLengthName, $"{propertyValueName}.Length");
 				if (stringLength.MinimumLength > 0)
 				{
-					using (writer.OpenBlockScope($"if ({propertyLengthName} < {stringLength.MinimumLength})"))
+					using (writer.IfBlockScope($"{propertyLengthName} < {stringLength.MinimumLength}"))
 					{
 						WriteValidationError(
 							writer,
@@ -294,7 +293,7 @@ partial class ZodSchemaGenerator
 					}
 				}
 
-				using (writer.OpenBlockScope($"if ({propertyLengthName} > {stringLength.MaximumLength})"))
+				using (writer.IfBlockScope($"{propertyLengthName} > {stringLength.MaximumLength}"))
 				{
 					WriteValidationError(
 						writer,
@@ -318,14 +317,14 @@ partial class ZodSchemaGenerator
 			{
 				var messageExpression = BuildMessageExpression(
 					minLengthAttr.Value.ValidationAttribute,
-					$"{CodeGenHelpers.Quote($"Field '{displayName}' must contain at least ")} + FormatCount({minLength}, {CodeGenHelpers.Quote("character")}, {CodeGenHelpers.Quote("characters")}) + {CodeGenHelpers.Quote(".")}",
-					CodeGenHelpers.Quote(displayName),
+					$"{$"Field '{displayName}' must contain at least ".Surround()} + FormatCount({minLength}, {"character".Surround()}, {"characters".Surround()}) + {".".Surround()}",
+					displayName.Surround(),
 					minLength.ToString(CultureInfo.InvariantCulture)
 				);
 
-				writer.WriteLine($"var {propertyValueName} = value.{propertyName};");
-				writer.WriteLine($"var {propertyLengthName} = {propertyValueName}.Length;");
-				using (writer.OpenBlockScope($"if ({propertyLengthName} < {minLength})"))
+				writer.Assignment("var", propertyValueName, $"value.{propertyName}");
+				writer.Assignment("var", propertyLengthName, $"{propertyValueName}.Length");
+				using (writer.IfBlockScope($"{propertyLengthName} < {minLength}"))
 				{
 					WriteValidationError(
 						writer,
@@ -349,14 +348,14 @@ partial class ZodSchemaGenerator
 			{
 				var messageExpression = BuildMessageExpression(
 					maxLengthAttr.Value.ValidationAttribute,
-					$"{CodeGenHelpers.Quote($"Field '{displayName}' must contain no more than ")} + FormatCount({maxLength}, {CodeGenHelpers.Quote("character")}, {CodeGenHelpers.Quote("characters")}) + {CodeGenHelpers.Quote(".")}",
-					CodeGenHelpers.Quote(displayName),
+					$"{$"Field '{displayName}' must contain no more than ".Surround()} + FormatCount({maxLength}, {"character".Surround()}, {"characters".Surround()}) + {".".Surround()}",
+					displayName.Surround(),
 					maxLength.ToString(CultureInfo.InvariantCulture)
 				);
 
-				writer.WriteLine($"var {propertyValueName} = value.{propertyName};");
-				writer.WriteLine($"var {propertyLengthName} = {propertyValueName}.Length;");
-				using (writer.OpenBlockScope($"if ({propertyLengthName} > {maxLength})"))
+				writer.Assignment("var", propertyValueName, $"value.{propertyName}");
+				writer.Assignment("var", propertyLengthName, $"{propertyValueName}.Length");
+				using (writer.IfBlockScope($"{propertyLengthName} > {maxLength}"))
 				{
 					WriteValidationError(
 						writer,

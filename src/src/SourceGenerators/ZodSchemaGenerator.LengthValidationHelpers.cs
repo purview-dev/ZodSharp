@@ -25,7 +25,7 @@ partial class ZodSchemaGenerator
 		}
 
 		return !string.IsNullOrEmpty(validationAttribute.ErrorMessage)
-			? BuildFormatExpression(CodeGenHelpers.Quote(validationAttribute.ErrorMessage!), formatArguments)
+			? BuildFormatExpression(validationAttribute.ErrorMessage.Surround(), formatArguments)
 			: defaultMessageExpression;
 	}
 
@@ -49,8 +49,8 @@ partial class ZodSchemaGenerator
 		else
 		{
 			formatExpression = !string.IsNullOrEmpty(validationAttribute.ErrorMessage)
-				? CodeGenHelpers.Quote(validationAttribute.ErrorMessage!)
-				: CodeGenHelpers.Quote(defaultFormat);
+				? validationAttribute.ErrorMessage.Surround()
+				: defaultFormat.Surround();
 		}
 
 		// If there are no format arguments, we can return the format expression directly.
@@ -72,11 +72,18 @@ partial class ZodSchemaGenerator
 		int? maximum = null
 	)
 	{
-		writer.WriteLine(
-			$"errors ??= new global::System.Collections.Generic.List<global::ZodSharp.Core.ValidationError>();"
+		writer.IfBlock(
+			"errors is null",
+			ifBody =>
+				ifBody.Assignment(
+					"errors",
+					"new global::System.Collections.Generic.List<global::ZodSharp.Core.ValidationError>()"
+				)
 		);
-		writer.WriteLine(
-			$"errors.Add({TypeLibrary.ValidationError}.Create({CodeGenHelpers.Quote(errorCode)}, {messageExpression}, {pathFieldName}, origin: {CodeGenHelpers.Quote(origin)}, minimum: {(minimum.HasValue ? minimum.Value.ToString(CultureInfo.InvariantCulture) : "null")}, maximum: {(maximum.HasValue ? maximum.Value.ToString(CultureInfo.InvariantCulture) : "null")}, inclusive: true));"
+		writer.MethodCallOn(
+			"errors",
+			"Add",
+			$"{TypeLibrary.ValidationError}.Create({errorCode.Surround()}, {messageExpression}, {pathFieldName}, origin: {origin.Surround()}, minimum: {(minimum.HasValue ? minimum.Value.ToString(CultureInfo.InvariantCulture) : "null")}, maximum: {(maximum.HasValue ? maximum.Value.ToString(CultureInfo.InvariantCulture) : "null")}, inclusive: true)"
 		);
 	}
 
@@ -87,11 +94,18 @@ partial class ZodSchemaGenerator
 		string pathFieldName
 	)
 	{
-		writer.WriteLine(
-			$"errors ??= new global::System.Collections.Generic.List<global::ZodSharp.Core.ValidationError>();"
+		writer.IfBlock(
+			"errors is null",
+			ifBody =>
+				ifBody.Assignment(
+					"errors",
+					"new global::System.Collections.Generic.List<global::ZodSharp.Core.ValidationError>()"
+				)
 		);
-		writer.WriteLine(
-			$"errors.Add({TypeLibrary.ValidationError}.Create({CodeGenHelpers.Quote(errorCode)}, {messageExpression}, {pathFieldName}));"
+		writer.MethodCallOn(
+			"errors",
+			"Add",
+			$"{TypeLibrary.ValidationError}.Create({errorCode.Surround()}, {messageExpression}, {pathFieldName})"
 		);
 	}
 

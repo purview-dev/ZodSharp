@@ -1,7 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<IsPackable>true</IsPackable>
-		<!--<PackageId>ZodSharp</PackageId>-->
+		<PackageId>Purview.ZodSharp</PackageId>
+		<AssemblyName>Purview.ZodSharp</AssemblyName>
 		<Description>
 			A high-performance C# port of Zod schema validation library.
 			Features zero-allocation validation, struct-based rules, fluent API,

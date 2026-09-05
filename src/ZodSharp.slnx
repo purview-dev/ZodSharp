@@ -16,7 +16,7 @@
 		<Project Path="tests/NewtonsoftJson.UnitTests/NewtonsoftJson.UnitTests.csproj" />
 		<Project Path="tests/SourceGenerators.UnitTests/SourceGenerators.UnitTests.csproj" />
 		<Project Path="tests/SystemTextJson.UnitTests/SystemTextJson.UnitTests.csproj" />
-		<Project Path="tests/ZodSharp.PerformanceTests/ZodSharp.PerformanceTests.csproj" />
+		<Project Path="tests/ZodSharp.Benchmarks/ZodSharp.Benchmarks.csproj" />
 		<Project Path="tests/ZodSharp.UnitTests/ZodSharp.UnitTests.csproj" />
 	</Folder>
 	<Folder Name="/src/">

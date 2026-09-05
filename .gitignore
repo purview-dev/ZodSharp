@@ -658,3 +658,5 @@ sketch
 !scripts/*
 
 BenchmarkDotNet.Artifacts/
+
+.tools/purview-build/**

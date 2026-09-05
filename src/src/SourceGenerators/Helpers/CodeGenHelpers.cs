@@ -2,7 +2,7 @@ namespace ZodSharp.SourceGenerators.Helpers;
 
 static class CodeGenHelpers
 {
-	public static CodeWriter WriteRule(
+	public static CodeWriter Rule(
 		this CodeWriter writer,
 		string propertyName,
 		string comparison,
@@ -10,20 +10,26 @@ static class CodeGenHelpers
 		string errorMessage
 	)
 	{
-		using (writer.OpenBlockScope($"if ({comparison})"))
+		using (writer.IfBlockScope(comparison))
 		{
-			writer.WriteLine(
-				$"errors ??= new {TypeLibrary.Collections.List.MakeGeneric(TypeLibrary.ValidationError)}();"
+			writer.IfBlock(
+				"errors is null",
+				ifBody =>
+					ifBody.Assignment(
+						"errors",
+						$"new {TypeLibrary.Collections.List.MakeGeneric(TypeLibrary.ValidationError)}()"
+					)
 			);
+
 			writer.OpenDelimitedBlock(
 				$"errors.Add(new {TypeLibrary.ValidationError}",
 				"(",
 				"));",
 				bodyWriter =>
 				{
-					bodyWriter.Write(Quote(errorCode)).WriteLine(",");
-					bodyWriter.Write(Quote(errorMessage)).WriteLine(",");
-					bodyWriter.WriteLine($"new[] {{ \"{propertyName}\" }}");
+					bodyWriter.Write(errorCode.Surround()).Line(",");
+					bodyWriter.Write(errorMessage.Surround()).Line(",");
+					bodyWriter.Line($"new[] {{ \"{propertyName}\" }}");
 				}
 			);
 		}
@@ -37,8 +43,6 @@ static class CodeGenHelpers
 		string.IsNullOrEmpty(propertyName)
 			? suffix
 			: char.ToLowerInvariant(propertyName[0]) + propertyName.Substring(1) + suffix;
-
-	public static string Quote(string value) => $"\"{value.Replace("\\", "\\\\").Replace("\"", "\\\"")}\"";
 
 	public static string QuoteChar(char value)
 	{

@@ -4,7 +4,9 @@
 		<!-- Stops auto TUnit/ Bogus etc being included -->
 		<IsTestProject>false</IsTestProject>
 		<RootNamespace>ZodSharp</RootNamespace>
-		<NoWarn>$(NoWarn);CA1303;</NoWarn>
+		<NoWarn>$(NoWarn);CA1303;CA1707;CA1822;CA1515;</NoWarn>
+		<OutputType>Exe</OutputType>
+		<AssemblyName>Purview.ZodSharp.PerformanceBenchmark</AssemblyName>
 	</PropertyGroup>
 
 	<ItemGroup>

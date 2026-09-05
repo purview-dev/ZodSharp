@@ -22,4 +22,6 @@ public sealed record ZodSourceGeneratorTestOptions : SourceGeneratorTestOptions
 	}
 
 	public static readonly ZodSourceGeneratorTestOptions NoValidation = new() { ThrowOnGenerationException = false };
+
+	public static readonly ZodSourceGeneratorTestOptions Compile = new() { CompileToAssembly = true };
 }

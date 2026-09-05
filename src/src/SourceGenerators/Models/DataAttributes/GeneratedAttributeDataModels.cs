@@ -18,7 +18,7 @@ readonly partial record struct RequiredAttributeData(
 
 [Generate("System.ComponentModel.DataAnnotations.CompareAttribute")]
 readonly partial record struct CompareAttributeData(
-	[Argument("otherProperty")] string OtherProperty,
+	[Argument("otherProperty", DefaultValue = "")] string OtherProperty,
 	string? OtherPropertyDisplayName,
 	[NestedModel] ValidationAttributeData ValidationAttribute
 );

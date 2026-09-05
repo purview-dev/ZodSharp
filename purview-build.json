@@ -1,0 +1,54 @@
+{
+	"Build": {
+		"Solution": "src/ZodSharp.slnx",
+		"TestRoot": "src/tests",
+		"TestPatterns": "*Tests.csproj",
+		"TestFilter": "/*/*/*/*/"
+	},
+	"PackValidation": {
+		"RequireSymbolPackage": true,
+		"RequireSymbolFiles": true,
+		"RequiredContent": {
+			"purview.zodsharp": [
+				"lib/net10.0/Purview.ZodSharp.dll",
+				"lib/net10.0/Purview.ZodSharp.xml",
+				"lib/net9.0/Purview.ZodSharp.dll",
+				"lib/net9.0/Purview.ZodSharp.xml",
+				"lib/net8.0/Purview.ZodSharp.dll",
+				"lib/net8.0/Purview.ZodSharp.xml",
+				"analyzers/dotnet/cs/Purview.SourceGeneratorFramework.dll",
+				"analyzers/dotnet/cs/Purview.SourceGeneratorFramework.Shared.dll",
+				"analyzers/dotnet/cs/Purview.ZodSharp.SourceGenerators.dll",
+				"buildTransitive/Purview.ZodSharp.props"
+			],
+			"purview.zodsharp.aspnetcore": [
+				"lib/net10.0/Purview.ZodSharp.AspNetCore.dll",
+				"lib/net10.0/Purview.ZodSharp.AspNetCore.xml",
+				"lib/net9.0/Purview.ZodSharp.AspNetCore.dll",
+				"lib/net9.0/Purview.ZodSharp.AspNetCore.xml",
+				"lib/net8.0/Purview.ZodSharp.AspNetCore.dll",
+				"lib/net8.0/Purview.ZodSharp.AspNetCore.xml"
+			],
+			"purview.zodsharp.newtonsoftjson": [
+				"lib/net10.0/Purview.ZodSharp.NewtonsoftJson.dll",
+				"lib/net10.0/Purview.ZodSharp.NewtonsoftJson.xml",
+				"lib/net9.0/Purview.ZodSharp.NewtonsoftJson.dll",
+				"lib/net9.0/Purview.ZodSharp.NewtonsoftJson.xml",
+				"lib/net8.0/Purview.ZodSharp.NewtonsoftJson.dll",
+				"lib/net8.0/Purview.ZodSharp.NewtonsoftJson.xml"
+			],
+			"purview.zodsharp.systemtextjson": [
+				"lib/net10.0/Purview.ZodSharp.SystemTextJson.dll",
+				"lib/net10.0/Purview.ZodSharp.SystemTextJson.xml",
+				"lib/net9.0/Purview.ZodSharp.SystemTextJson.dll",
+				"lib/net9.0/Purview.ZodSharp.SystemTextJson.xml",
+				"lib/net8.0/Purview.ZodSharp.SystemTextJson.dll",
+				"lib/net8.0/Purview.ZodSharp.SystemTextJson.xml"
+			]
+		},
+		"ForbiddenContent": {}
+	},
+	"Release": {
+		"Mode": "None"
+	}
+}

@@ -3,8 +3,8 @@
 		<TargetFrameworks>$(ZodSharpNetTargetFrameworks)</TargetFrameworks>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<IsPackable>true</IsPackable>
-		<!--<PackageId>ZodSharp.AspNetCore</PackageId>
-	  <AssemblyName>ZodSharp.AspNetCore</AssemblyName>-->
+		<PackageId>Purview.ZodSharp.AspNetCore</PackageId>
+		<AssemblyName>Purview.ZodSharp.AspNetCore</AssemblyName>
 		<Description>ASP.NET Core ProblemDetails integration for ZodSharp validation results.</Description>
 		<PackageTags>zod;validation;aspnetcore;problemdetails</PackageTags>
 	</PropertyGroup>

@@ -22,7 +22,7 @@ partial class ZodSchemaGenerator
 
 		var propertyName = property.Name;
 		var propertyValueName = CodeGenHelpers.GetLocalIdentifier(propertyName, "Value");
-		writer.WriteLine($"var {propertyValueName} = value.{propertyName};");
+		writer.Assignment("var", propertyValueName, $"value.{propertyName}");
 
 		GenerateAllowedValuesValidation(writer, property);
 		GenerateDeniedValuesValidation(writer, property);
@@ -36,6 +36,7 @@ partial class ZodSchemaGenerator
 
 		if (
 			!TryBuildValueSetComparison(
+				writer,
 				property,
 				allowedValues.Value.Values,
 				out var comparisonExpression,
@@ -52,12 +53,12 @@ partial class ZodSchemaGenerator
 		var messageExpression = BuildErrorMessageExpression(
 			allowedValues.Value.ValidationAttribute,
 			"Field '{0}' must be one of the following values: {1}.",
-			CodeGenHelpers.Quote(displayName),
-			CodeGenHelpers.Quote(displayValues)
+			displayName.Surround(),
+			displayValues.Surround()
 		);
 
-		writer.WriteBlock(
-			$"if (!({comparisonExpression.Replace("propertyValue", propertyValueName)}))",
+		writer.IfBlock(
+			$"!({comparisonExpression.Replace("propertyValue", propertyValueName)})",
 			ifBody =>
 				WriteValidationError(
 					ifBody,
@@ -78,6 +79,7 @@ partial class ZodSchemaGenerator
 
 		if (
 			!TryBuildValueSetComparison(
+				writer,
 				property,
 				deniedValues.Value.Values,
 				out var comparisonExpression,
@@ -94,12 +96,12 @@ partial class ZodSchemaGenerator
 		var messageExpression = BuildErrorMessageExpression(
 			deniedValues.Value.ValidationAttribute,
 			"Field '{0}' contains a denied value. Disallowed values: {1}.",
-			CodeGenHelpers.Quote(displayName),
-			CodeGenHelpers.Quote(displayValues)
+			displayName.Surround(),
+			displayValues.Surround()
 		);
 
-		writer.WriteBlock(
-			$"if ({comparisonExpression.Replace("propertyValue", propertyValueName)})",
+		writer.IfBlock(
+			$"{comparisonExpression.Replace("propertyValue", propertyValueName)}",
 			ifBody =>
 				WriteValidationError(
 					ifBody,
@@ -113,6 +115,7 @@ partial class ZodSchemaGenerator
 	}
 
 	static bool TryBuildValueSetComparison(
+		CodeWriter writer,
 		ZodPropertyDescriptor property,
 		EquatableArray<TypedConstant> values,
 		out string comparisonExpression,
@@ -121,7 +124,9 @@ partial class ZodSchemaGenerator
 	{
 		var comparisons = new List<string>(values.Count);
 		var propertyTypeReference = property.PropertyType.AsTypeReference();
-		var propertyTypeForComparer = property.CanBeNull ? propertyTypeReference.Nullable() : propertyTypeReference;
+		var propertyTypeForComparer = property.CanBeNull
+			? propertyTypeReference.Nullable(writer)
+			: propertyTypeReference;
 
 		for (var i = 0; i < values.Count; i++)
 			if (TryBuildTypedConstantExpression(property, values[i], out var expression))
@@ -196,7 +201,7 @@ partial class ZodSchemaGenerator
 #pragma warning disable IDE0072 // Add missing cases
 		expression = property.PropertyType.SpecialType switch
 		{
-			SpecialType.System_String when constant.Value is string value => CodeGenHelpers.Quote(value),
+			SpecialType.System_String when constant.Value is string value => value.Surround(),
 			SpecialType.System_Char when constant.Value is char value => CodeGenHelpers.QuoteChar(value),
 			SpecialType.System_Boolean when constant.Value is bool value => value ? "true" : "false",
 			SpecialType.System_Byte when constant.Value is byte value => value.ToString(CultureInfo.InvariantCulture),

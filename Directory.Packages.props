@@ -1,9 +1,6 @@
 <Project>
 	<PropertyGroup>
-		<!--
-		  Set explicitly rather than relying on auto-detection otherwise
-		  operations with RestorePackagesWithLockFile fail.
-		-->
+		<!-- Set explicitly rather than relying on auto-detection. -->
 		<ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
 		<CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
 		<!--
@@ -14,12 +11,12 @@
 		<RoslynCompilerVersion>4.13.0</RoslynCompilerVersion>
 		<RoslynAnalyzersVersion>5.9.0</RoslynAnalyzersVersion>
 		<TUnitVersion>1.65.68</TUnitVersion>
-		<PurviewSourceGenFramework>1.0.0-prerelease.26</PurviewSourceGenFramework>
+		<PurviewSourceGenFramework>1.0.0-prerelease.35</PurviewSourceGenFramework>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageVersion Include="Bogus" Version="35.6.5" />
 		<PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.10" />
-		<PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.300" />
+		<PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.400" />
 		<PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="$(RoslynCompilerVersion)" />
 		<PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="$(RoslynAnalyzersVersion)" />
 		<PackageVersion Include="TUnit" Version="$(TUnitVersion)" />
