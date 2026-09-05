@@ -17,21 +17,21 @@ This folder contains comprehensive performance tests for the ZodSharp library us
 ### Build and Run
 
 ```bash
-# Build the project
-dotnet build ZodSharp\ZodSharp.sln
+# Build the solution
+dotnet build src/ZodSharp.slnx
 
 # Run all benchmarks
-dotnet run --project ZodSharp\performance\performance.csproj -c Release
+dotnet run --project src/tests/ZodSharp.Benchmarks/ZodSharp.Benchmarks.csproj -c Release
 ```
 
 ### Run Specific Benchmarks
 
 ```bash
 # Run only basic tests
-dotnet run --project ZodSharp\performance\performance.csproj -c Release --filter "*BasicPerformanceTests*"
+dotnet run --project src/tests/ZodSharp.Benchmarks/ZodSharp.Benchmarks.csproj -c Release --filter "*BasicPerformanceTests*"
 
 # Run only memory tests
-dotnet run --project ZodSharp\performance\performance.csproj -c Release --filter "*MemoryPerformanceTests*"
+dotnet run --project src/tests/ZodSharp.Benchmarks/ZodSharp.Benchmarks.csproj -c Release --filter "*MemoryPerformanceTests*"
 ```
 
 ## Results
@@ -101,7 +101,7 @@ To add new performance tests:
 4. Create methods marked with `[Benchmark]`
 5. Run and analyze the results
 
-Exemplo:
+Example:
 
 ```csharp
 [MemoryDiagnoser]

@@ -1,8 +1,12 @@
 # ZodSharp
 
-[![NuGet version](https://img.shields.io/nuget/v/ZodSharp.svg)](https://www.nuget.org/packages/ZodSharp)
+[![NuGet version](https://img.shields.io/nuget/v/Purview.ZodSharp.svg)](https://www.nuget.org/packages/Purview.ZodSharp)
 
 **ZodSharp** is a high-performance schema validation library for C#, ported from TypeScript [Zod](https://github.com/colinhacks/zod). It features zero-allocation validation, struct-based rules, fluent API, and source generator support for maximum performance.
+
+This project is a fork of [guinhx/ZodSharp](https://github.com/guinhx/ZodSharp), maintained at [github.com/purview-dev/ZodSharp](https://github.com/purview-dev/ZodSharp) under the `Purview.*` package IDs.
+
+[![Release](https://github.com/purview-dev/ZodSharp/actions/workflows/release.yml/badge.svg)](https://github.com/purview-dev/ZodSharp/actions/workflows/release.yml)
 
 ## Key Features
 
@@ -17,43 +21,46 @@
 
 ## Installation
 
-Install the core `ZodSharp` package, plus the optional JSON integration packages you need:
+Install the core `Purview.ZodSharp` package, plus the optional JSON integration packages you need:
 
 ### NuGet Package Manager
+
 ```powershell
-Install-Package ZodSharp
-Install-Package ZodSharp.SystemTextJson
-Install-Package ZodSharp.NewtonsoftJson
-Install-Package ZodSharp.AspNetCore
+Install-Package Purview.ZodSharp
+Install-Package Purview.ZodSharp.SystemTextJson
+Install-Package Purview.ZodSharp.NewtonsoftJson
+Install-Package Purview.ZodSharp.AspNetCore
 ```
 
 ### .NET CLI
+
 ```bash
-dotnet add package ZodSharp
-dotnet add package ZodSharp.SystemTextJson
-dotnet add package ZodSharp.NewtonsoftJson
-dotnet add package ZodSharp.AspNetCore
+dotnet add package Purview.ZodSharp
+dotnet add package Purview.ZodSharp.SystemTextJson
+dotnet add package Purview.ZodSharp.NewtonsoftJson
+dotnet add package Purview.ZodSharp.AspNetCore
 ```
 
 ### PackageReference
+
 ```xml
-<PackageReference Include="ZodSharp" Version="2.0.0" />
-<PackageReference Include="ZodSharp.SystemTextJson" Version="2.0.0" />
-<PackageReference Include="ZodSharp.NewtonsoftJson" Version="2.0.0" />
-<PackageReference Include="ZodSharp.AspNetCore" Version="2.0.0" />
+<PackageReference Include="Purview.ZodSharp" Version="2.0.0" />
+<PackageReference Include="Purview.ZodSharp.SystemTextJson" Version="2.0.0" />
+<PackageReference Include="Purview.ZodSharp.NewtonsoftJson" Version="2.0.0" />
+<PackageReference Include="Purview.ZodSharp.AspNetCore" Version="2.0.0" />
 ```
 
-- **ZodSharp** — Core validation library and source generator (`[ZodSchema]`).
-- **ZodSharp.SystemTextJson** — System.Text.Json integration and JSON Schema import.
-- **ZodSharp.NewtonsoftJson** — Newtonsoft.Json integration and JSON Schema import.
-- **ZodSharp.AspNetCore** — ASP.NET Core ProblemDetails integration.
+- **Purview.ZodSharp** — Core validation library and source generator (`[ZodSchema]`).
+- **Purview.ZodSharp.SystemTextJson** — System.Text.Json integration and JSON Schema import.
+- **Purview.ZodSharp.NewtonsoftJson** — Newtonsoft.Json integration and JSON Schema import.
+- **Purview.ZodSharp.AspNetCore** — ASP.NET Core ProblemDetails integration.
 
 ## Breaking Changes
 
 ### Target Frameworks: .NET Standard 2.1 → .NET 8, .NET 9, .NET 10
 
-Starting with **v2.0.0**, all ZodSharp library packages (`ZodSharp`, `ZodSharp.SystemTextJson`,
-`ZodSharp.NewtonsoftJson`, `ZodSharp.AspNetCore`) no longer target `netstandard2.1`. They now
+Starting with **v2.0.0**, all ZodSharp library packages (`Purview.ZodSharp`, `Purview.ZodSharp.SystemTextJson`,
+`Purview.ZodSharp.NewtonsoftJson`, `Purview.ZodSharp.AspNetCore`) no longer target `netstandard2.1`. They now
 multi-target `net8.0`, `net9.0` and `net10.0`. This is a breaking change for consumers running on
 older runtimes.
 
@@ -71,7 +78,8 @@ older runtimes.
 - **Ecosystem direction.** New libraries are encouraged to multi-target concrete, in-support runtimes
   instead of .NET Standard 2.1.
 
-The source generator (`ZodSharp.SourceGeneration`) is unaffected: it remains on `netstandard2.0`
+The source generator (`Purview.ZodSharp.SourceGenerators`) ships inside the `Purview.ZodSharp` package and is
+unaffected: it remains on `netstandard2.0`
 because Roslyn generators must run inside any compiler host, including .NET Framework-based tooling.
 
 **Migrating:** retarget your application to .NET 8 (LTS) or later. No API changes are required.
@@ -207,6 +215,7 @@ ZodSharp is designed for maximum performance with zero-allocation validation and
 ### Performance Characteristics
 
 **Typical validation times** (measured on .NET 10.0, Release mode):
+
 - Simple string validation: **~50-100 ns** per validation
 - Number validation: **~30-80 ns** per validation
 - Small arrays (10 items): **~500-800 ns** per validation
@@ -214,6 +223,7 @@ ZodSharp is designed for maximum performance with zero-allocation validation and
 - Complex objects (13 fields with nesting): **~3-5 μs** per validation
 
 **Memory efficiency**:
+
 - Zero allocations for simple validations (strings, numbers, booleans)
 - Minimal allocations for arrays and objects (only for error collections)
 - Struct-based rules avoid GC pressure
@@ -224,11 +234,13 @@ ZodSharp is designed for maximum performance with zero-allocation validation and
 ZodSharp implements several optimizations for maximum performance:
 
 #### 1. Zero-allocation Validation
+
 - Validation rules implemented as `struct` to avoid allocations
 - Use of `Span<T>` and `ReadOnlySpan<T>` when appropriate
 - Object pooling for reusable schemas
 
 #### 2. Struct-based Rules
+
 All validation rules are structs:
 
 ```csharp
@@ -239,6 +251,7 @@ public readonly struct MinLengthRule : IValidationRule<string>
 ```
 
 #### 3. Compiled Validators
+
 Use expression trees to compile validators at runtime for maximum speed:
 
 ```csharp
@@ -249,6 +262,7 @@ var result = compiled(value); // Ultra-fast validation
 ```
 
 #### 4. Fluent API
+
 Fluent API that allows schema composition:
 
 ```csharp
@@ -261,24 +275,25 @@ var schema = Z.String()
 
 ### Performance Benchmarks
 
-We maintain comprehensive performance tests in `src/tests/ZodSharp.PerformanceTests`. Run them yourself:
+We maintain comprehensive performance tests in `src/tests/ZodSharp.Benchmarks`. Run them yourself:
 
 ```bash
 # Run all performance benchmarks
-dotnet run --project src/tests/ZodSharp.PerformanceTests/ZodSharp.PerformanceTests.csproj -c Release
+dotnet run --project src/tests/ZodSharp.Benchmarks/ZodSharp.Benchmarks.csproj -c Release
 
 # Run specific test suites
-dotnet run --project src/tests/ZodSharp.PerformanceTests/ZodSharp.PerformanceTests.csproj -c Release --filter "*MemoryPerformanceTests*"
+dotnet run --project src/tests/ZodSharp.Benchmarks/ZodSharp.Benchmarks.csproj -c Release --filter "*MemoryPerformanceTests*"
 ```
 
 **Key performance highlights**:
+
 - **10x faster** than reflection-based validation libraries
 - **Zero allocations** for primitive validations
 - **Sub-microsecond** validation for simple types
 - **Minimal GC pressure** with struct-based architecture
 - **Scalable** performance even with complex nested schemas
 
-See the [performance README](performance/README.md) for detailed benchmark results and optimization tips.
+See the [performance README](src/tests/ZodSharp.Benchmarks/README.md) for detailed benchmark results and optimization tips.
 
 ## Architecture
 
@@ -301,6 +316,7 @@ The source generator itself targets `netstandard2.0` so it can run in any compil
 ## Advanced Features
 
 ### Transforms
+
 Transform values during validation:
 
 ```csharp
@@ -309,6 +325,7 @@ var result = schema.Validate("hello"); // "HELLO"
 ```
 
 ### Refinements
+
 Add custom validations:
 
 ```csharp
@@ -317,6 +334,7 @@ var result = schema.Validate(4); // Success
 ```
 
 ### Lazy Evaluation
+
 Create recursive and circular schemas:
 
 ```csharp
@@ -329,6 +347,7 @@ var categorySchema = Z.Lazy<Dictionary<string, object?>>(() =>
 ```
 
 ### Discriminated Unions
+
 Optimized unions with discriminator:
 
 ```csharp
@@ -339,6 +358,7 @@ var union = Z.DiscriminatedUnion("type")
 ```
 
 ### Default Values
+
 Default values when input is null:
 
 ```csharp
@@ -350,7 +370,7 @@ var result = schema.Validate(null); // "unknown"
 
 ZodSharp ships separate integration packages for the two major .NET JSON libraries.
 
-#### System.Text.Json (`ZodSharp.SystemTextJson`)
+#### System.Text.Json (`Purview.ZodSharp.SystemTextJson`)
 
 ```csharp
 using ZodSharp.Json;
@@ -365,7 +385,7 @@ var result2 = await schema.DeserializeAndValidateAsync(jsonStream);
 var converter = schema.CreateValidatingConverter();
 ```
 
-#### Newtonsoft.Json (`ZodSharp.NewtonsoftJson`)
+#### Newtonsoft.Json (`Purview.ZodSharp.NewtonsoftJson`)
 
 ```csharp
 using ZodSharp.Json;
@@ -387,7 +407,7 @@ var converter = schema.CreateValidatingConverter();
 
 Share schemas between TypeScript (Zod) and C# (ZodSharp) using JSON Schema. This enables infinite interoperability, allowing you to define a schema in one language and reuse it in another.
 
-The export API (`Z.ToJsonSchema`) lives in the core `ZodSharp` package. The import API (`Z.FromJsonSchema`) is provided by the JSON integration package you choose — either `ZodSharp.SystemTextJson` or `ZodSharp.NewtonsoftJson`.
+The export API (`Z.ToJsonSchema`) lives in the core `Purview.ZodSharp` package. The import API (`Z.FromJsonSchema`) is provided by the JSON integration package you choose — either `Purview.ZodSharp.SystemTextJson` or `Purview.ZodSharp.NewtonsoftJson`.
 
 #### Export to JSON Schema (ZodSharp -> JSON Schema)
 
@@ -406,18 +426,18 @@ var jsonSchema = Z.ToJsonSchema<Dictionary<string, object?>>(userSchema, new ToJ
 });
 
 // Serialize with your preferred JSON library
-// System.Text.Json (add ZodSharp.SystemTextJson):
+// System.Text.Json (add Purview.ZodSharp.SystemTextJson):
 using ZodSharp.JsonSchema;
 var systemTextJson = System.Text.Json.JsonSerializer.Serialize(jsonSchema, JsonSchemaSerializerOptions.Default);
 
-// Newtonsoft.Json (add ZodSharp.NewtonsoftJson):
+// Newtonsoft.Json (add Purview.ZodSharp.NewtonsoftJson):
 using ZodSharp.JsonSchema;
 var newtonsoftJson = JsonConvert.SerializeObject(jsonSchema, JsonSchemaSerializerOptions.Default);
 ```
 
 #### Import from JSON Schema (JSON Schema -> ZodSharp)
 
-Add either `ZodSharp.SystemTextJson` or `ZodSharp.NewtonsoftJson` to your project, then:
+Add either `Purview.ZodSharp.SystemTextJson` or `Purview.ZodSharp.NewtonsoftJson` to your project, then:
 
 ```csharp
 var jsonSchemaString = @"{
@@ -439,6 +459,7 @@ var result = userSchema.Validate(userData);
 #### Cross-Platform Scenario
 
 **Frontend (TypeScript/Zod):**
+
 ```typescript
 import { z } from "zod";
 
@@ -453,6 +474,7 @@ const jsonSchema = z.toJSONSchema(UserSchema);
 ```
 
 **Backend (C#/ZodSharp):**
+
 ```csharp
 // Receive jsonSchema...
 var userSchema = Z.FromJsonSchema(jsonSchemaString);
@@ -460,6 +482,7 @@ var result = userSchema.Validate(incomingData);
 ```
 
 ### Compiled Validators
+
 Compiled validators for maximum performance:
 
 ```csharp
@@ -470,6 +493,7 @@ var result = compiled(value); // Ultra-fast validation
 ```
 
 ### Schema Caching
+
 Intelligent schema caching:
 
 ```csharp
@@ -481,6 +505,7 @@ var schema = SchemaCache.GetOrCreate("user", () =>
 ```
 
 ### Source Generators
+
 Generate zero-allocation validators at compile time:
 
 ```csharp
@@ -513,6 +538,7 @@ var either = UserSchema.ApplyOr(user, u => u.Age < 18, "Must be an adult or a mi
 ```
 
 **Features:**
+
 - Automatic validation from DataAnnotations attributes
 - Zero-reflection, zero-allocation validators
 - Value-first composition methods (`.ApplyAnd()`, `.ApplyOr()`, `.ApplyRefine()`) plus instance schema-composing composition (`.Refine()`, `.SuperRefine()`, `.Pipe()`, `.Catch()`, `.Prefault()`, `.Default()`)
@@ -565,7 +591,7 @@ var result = BasketSchema.Validate(new Basket { Items = ["apple"] });
 
 ### ASP.NET Core ProblemDetails
 
-Install `ZodSharp.AspNetCore` to convert failed validation results into standard ASP.NET Core payloads while preserving structured issues:
+Install `Purview.ZodSharp.AspNetCore` to convert failed validation results into standard ASP.NET Core payloads while preserving structured issues:
 
 ```csharp
 using ZodSharp.AspNetCore;
@@ -585,6 +611,7 @@ if (!result.IsSuccess)
 ```
 
 ### Span<T> Validation
+
 Zero-allocation string validation using spans:
 
 ```csharp
@@ -609,4 +636,5 @@ Contributions are welcome! Please open an issue or pull request.
 
 ## Acknowledgments
 
+- [guinhx/ZodSharp](https://github.com/guinhx/ZodSharp) — the original project this repository was forked from.
 - [Zod](https://github.com/colinhacks/zod)
