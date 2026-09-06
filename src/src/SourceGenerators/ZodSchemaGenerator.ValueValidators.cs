@@ -53,8 +53,8 @@ partial class ZodSchemaGenerator
 		var messageExpression = BuildErrorMessageExpression(
 			allowedValues.Value.ValidationAttribute,
 			"Field '{0}' must be one of the following values: {1}.",
-			displayName.Surround(),
-			displayValues.Surround()
+			displayName.StringLiteral(),
+			displayValues.StringLiteral()
 		);
 
 		writer.IfBlock(
@@ -96,8 +96,8 @@ partial class ZodSchemaGenerator
 		var messageExpression = BuildErrorMessageExpression(
 			deniedValues.Value.ValidationAttribute,
 			"Field '{0}' contains a denied value. Disallowed values: {1}.",
-			displayName.Surround(),
-			displayValues.Surround()
+			displayName.StringLiteral(),
+			displayValues.StringLiteral()
 		);
 
 		writer.IfBlock(
@@ -201,7 +201,7 @@ partial class ZodSchemaGenerator
 #pragma warning disable IDE0072 // Add missing cases
 		expression = property.PropertyType.SpecialType switch
 		{
-			SpecialType.System_String when constant.Value is string value => value.Surround(),
+			SpecialType.System_String when constant.Value is string value => value.StringLiteral(),
 			SpecialType.System_Char when constant.Value is char value => CodeGenHelpers.QuoteChar(value),
 			SpecialType.System_Boolean when constant.Value is bool value => value ? "true" : "false",
 			SpecialType.System_Byte when constant.Value is byte value => value.ToString(CultureInfo.InvariantCulture),

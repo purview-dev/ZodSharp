@@ -197,6 +197,40 @@ namespace Testing
 	}
 
 	[Test]
+	public async Task Generate_GivenRegularExpressionWithBackslashes_EscapesEmittedStringLiteral(
+		CancellationToken cancellationToken
+	)
+	{
+		const string source =
+			@"
+using System.ComponentModel.DataAnnotations;
+
+namespace Testing
+{
+	[ZodSchema]
+	public sealed class BackslashPatternModel
+	{
+		[RegularExpression(@""^[\w\-.]+$"")]
+		public string? Identifier { get; set; }
+	}
+}
+";
+
+		var driverResult = await GenerateAsync(
+			source,
+			new ZodSourceGeneratorTestOptions().Compile(),
+			cancellationToken
+		);
+		var generatedSource = driverResult.GetSource("BackslashPatternModelSchema");
+
+		await Assert
+			.That(generatedSource)
+			.ContainsGeneratedCode(
+				@"new(""^[\\w\\-.]+$"", global::System.Text.RegularExpressions.RegexOptions.CultureInvariant)"
+			);
+	}
+
+	[Test]
 	public async Task GeneratedValidate_GivenDisplayAndResourceBackedDataAnnotations_UsesResolvedMessages(
 		CancellationToken cancellationToken
 	)
