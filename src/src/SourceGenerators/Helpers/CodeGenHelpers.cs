@@ -28,7 +28,7 @@ static class CodeGenHelpers
 				bodyWriter =>
 				{
 					bodyWriter.Write(errorCode.Surround()).Line(",");
-					bodyWriter.Write(errorMessage.Surround()).Line(",");
+					bodyWriter.Write(errorMessage.StringLiteral()).Line(",");
 					bodyWriter.Line($"new[] {{ \"{propertyName}\" }}");
 				}
 			);

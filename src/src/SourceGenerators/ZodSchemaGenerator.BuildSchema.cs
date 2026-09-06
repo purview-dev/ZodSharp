@@ -512,8 +512,8 @@ partial class ZodSchemaGenerator
 		var messageExpression = BuildErrorMessageExpression(
 			compare.ValidationAttribute,
 			"Field '{0}' must match '{1}'.",
-			displayName.Surround(),
-			otherDisplayName.Surround()
+			displayName.StringLiteral(),
+			otherDisplayName.StringLiteral()
 		);
 
 		writer.IfBlock(
@@ -658,14 +658,14 @@ partial class ZodSchemaGenerator
 
 			if (prop.ValidationAttributes.RegularExpression.ShouldProcess)
 			{
-				var pattern = prop.ValidationAttributes.RegularExpression.Value.Pattern;
+				var pattern = prop.ValidationAttributes.RegularExpression.Value.Pattern ?? string.Empty;
 				writer.Field(
 					new(GetRegexFieldName(prop.Name), regexType, TypeDeclarationAccessibility.Private)
 					{
 						IsStatic = true,
 						IsReadOnly = true,
 						Initializer =
-							$"new({pattern.Surround()}, global::System.Text.RegularExpressions.RegexOptions.CultureInvariant)",
+							$"new({pattern.StringLiteral()}, global::System.Text.RegularExpressions.RegexOptions.CultureInvariant)",
 					}
 				);
 			}
