@@ -24,8 +24,9 @@ partial class ZodSchemaGenerator
 			);
 		}
 
-		return !string.IsNullOrEmpty(validationAttribute.ErrorMessage)
-			? BuildFormatExpression(validationAttribute.ErrorMessage.Surround(), formatArguments)
+		var errorMessage = validationAttribute.ErrorMessage;
+		return errorMessage is { Length: > 0 }
+			? BuildFormatExpression(errorMessage.StringLiteral(), formatArguments)
 			: defaultMessageExpression;
 	}
 
@@ -48,9 +49,10 @@ partial class ZodSchemaGenerator
 		}
 		else
 		{
-			formatExpression = !string.IsNullOrEmpty(validationAttribute.ErrorMessage)
-				? validationAttribute.ErrorMessage.Surround()
-				: defaultFormat.Surround();
+			var errorMessage = validationAttribute.ErrorMessage;
+			formatExpression = errorMessage is { Length: > 0 }
+				? errorMessage.StringLiteral()
+				: defaultFormat.StringLiteral();
 		}
 
 		// If there are no format arguments, we can return the format expression directly.

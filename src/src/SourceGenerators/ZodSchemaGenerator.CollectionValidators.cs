@@ -48,15 +48,15 @@ partial class ZodSchemaGenerator
 				{
 					var tooSmallMessage = BuildMessageExpression(
 						length.ValidationAttribute,
-						$"{$"Field '{displayName}' must contain at least ".Surround()} + FormatCount({length.MinimumLength}, {"element".Surround()}, {"elements".Surround()}) + {".".Surround()}",
-						displayName.Surround(),
+						$"{$"Field '{displayName}' must contain at least ".StringLiteral()} + FormatCount({length.MinimumLength}, {"element".Surround()}, {"elements".Surround()}) + {".".Surround()}",
+						displayName.StringLiteral(),
 						length.MaximumLength.ToString(CultureInfo.InvariantCulture),
 						length.MinimumLength.ToString(CultureInfo.InvariantCulture)
 					);
 					var tooBigMessage = BuildMessageExpression(
 						length.ValidationAttribute,
-						$"{$"Field '{displayName}' must contain no more than ".Surround()} + FormatCount({length.MaximumLength}, {"element".Surround()}, {"elements".Surround()}) + {".".Surround()}",
-						displayName.Surround(),
+						$"{$"Field '{displayName}' must contain no more than ".StringLiteral()} + FormatCount({length.MaximumLength}, {"element".Surround()}, {"elements".Surround()}) + {".".Surround()}",
+						displayName.StringLiteral(),
 						length.MaximumLength.ToString(CultureInfo.InvariantCulture),
 						length.MinimumLength.ToString(CultureInfo.InvariantCulture)
 					);
@@ -94,8 +94,8 @@ partial class ZodSchemaGenerator
 				var minLength = minLengthAttr.Value.Length;
 				var messageExpression = BuildMessageExpression(
 					minLengthAttr.Value.ValidationAttribute,
-					$"{$"Field '{displayName}' must contain at least ".Surround()} + FormatCount({minLength}, {"element".Surround()}, {"elements".Surround()}) + {".".Surround()}",
-					displayName.Surround(),
+					$"{$"Field '{displayName}' must contain at least ".StringLiteral()} + FormatCount({minLength}, {"element".Surround()}, {"elements".Surround()}) + {".".Surround()}",
+					displayName.StringLiteral(),
 					minLength.ToString(CultureInfo.InvariantCulture)
 				);
 
@@ -117,8 +117,8 @@ partial class ZodSchemaGenerator
 				var maxLength = maxLengthAttr.Value.Length;
 				var messageExpression = BuildMessageExpression(
 					maxLengthAttr.Value.ValidationAttribute,
-					$"{$"Field '{displayName}' must contain no more than ".Surround()} + FormatCount({maxLength}, {"element".Surround()}, {"elements".Surround()}) + {".".Surround()}",
-					displayName.Surround(),
+					$"{$"Field '{displayName}' must contain no more than ".StringLiteral()} + FormatCount({maxLength}, {"element".Surround()}, {"elements".Surround()}) + {".".Surround()}",
+					displayName.StringLiteral(),
 					maxLength.ToString(CultureInfo.InvariantCulture)
 				);
 

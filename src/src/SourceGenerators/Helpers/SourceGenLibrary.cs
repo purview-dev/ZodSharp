@@ -838,27 +838,27 @@ static partial class SourceGenLibrary
 		return propertyType.SpecialType switch
 		{
 			SpecialType.System_Byte =>
-				$"global::System.Byte.Parse({value.Surround()}, global::System.Globalization.NumberStyles.Integer, {cultureExpression})",
+				$"global::System.Byte.Parse({value.StringLiteral()}, global::System.Globalization.NumberStyles.Integer, {cultureExpression})",
 			SpecialType.System_SByte =>
-				$"global::System.SByte.Parse({value.Surround()}, global::System.Globalization.NumberStyles.Integer, {cultureExpression})",
+				$"global::System.SByte.Parse({value.StringLiteral()}, global::System.Globalization.NumberStyles.Integer, {cultureExpression})",
 			SpecialType.System_Int16 =>
-				$"global::System.Int16.Parse({value.Surround()}, global::System.Globalization.NumberStyles.Integer, {cultureExpression})",
+				$"global::System.Int16.Parse({value.StringLiteral()}, global::System.Globalization.NumberStyles.Integer, {cultureExpression})",
 			SpecialType.System_UInt16 =>
-				$"global::System.UInt16.Parse({value.Surround()}, global::System.Globalization.NumberStyles.Integer, {cultureExpression})",
+				$"global::System.UInt16.Parse({value.StringLiteral()}, global::System.Globalization.NumberStyles.Integer, {cultureExpression})",
 			SpecialType.System_Int32 =>
-				$"global::System.Int32.Parse({value.Surround()}, global::System.Globalization.NumberStyles.Integer, {cultureExpression})",
+				$"global::System.Int32.Parse({value.StringLiteral()}, global::System.Globalization.NumberStyles.Integer, {cultureExpression})",
 			SpecialType.System_UInt32 =>
-				$"global::System.UInt32.Parse({value.Surround()}, global::System.Globalization.NumberStyles.Integer, {cultureExpression})",
+				$"global::System.UInt32.Parse({value.StringLiteral()}, global::System.Globalization.NumberStyles.Integer, {cultureExpression})",
 			SpecialType.System_Int64 =>
-				$"global::System.Int64.Parse({value.Surround()}, global::System.Globalization.NumberStyles.Integer, {cultureExpression})",
+				$"global::System.Int64.Parse({value.StringLiteral()}, global::System.Globalization.NumberStyles.Integer, {cultureExpression})",
 			SpecialType.System_UInt64 =>
-				$"global::System.UInt64.Parse({value.Surround()}, global::System.Globalization.NumberStyles.Integer, {cultureExpression})",
+				$"global::System.UInt64.Parse({value.StringLiteral()}, global::System.Globalization.NumberStyles.Integer, {cultureExpression})",
 			SpecialType.System_Single =>
-				$"global::System.Single.Parse({value.Surround()}, global::System.Globalization.NumberStyles.Float | global::System.Globalization.NumberStyles.AllowThousands, {cultureExpression})",
+				$"global::System.Single.Parse({value.StringLiteral()}, global::System.Globalization.NumberStyles.Float | global::System.Globalization.NumberStyles.AllowThousands, {cultureExpression})",
 			SpecialType.System_Double =>
-				$"global::System.Double.Parse({value.Surround()}, global::System.Globalization.NumberStyles.Float | global::System.Globalization.NumberStyles.AllowThousands, {cultureExpression})",
+				$"global::System.Double.Parse({value.StringLiteral()}, global::System.Globalization.NumberStyles.Float | global::System.Globalization.NumberStyles.AllowThousands, {cultureExpression})",
 			SpecialType.System_Decimal =>
-				$"global::System.Decimal.Parse({value.Surround()}, global::System.Globalization.NumberStyles.Number, {cultureExpression})",
+				$"global::System.Decimal.Parse({value.StringLiteral()}, global::System.Globalization.NumberStyles.Number, {cultureExpression})",
 			_ => string.Empty,
 		};
 	}
@@ -868,7 +868,7 @@ static partial class SourceGenLibrary
 		var cultureExpression = invariantCulture
 			? "global::System.Globalization.CultureInfo.InvariantCulture"
 			: "global::System.Globalization.CultureInfo.CurrentCulture";
-		return $"global::System.DateTime.Parse({value.Surround()}, {cultureExpression})";
+		return $"global::System.DateTime.Parse({value.StringLiteral()}, {cultureExpression})";
 	}
 
 	static string BuildDateOnlyParseExpression(string value, bool invariantCulture)
@@ -876,7 +876,7 @@ static partial class SourceGenLibrary
 		var cultureExpression = invariantCulture
 			? "global::System.Globalization.CultureInfo.InvariantCulture"
 			: "global::System.Globalization.CultureInfo.CurrentCulture";
-		return $"global::System.DateOnly.Parse({value.Surround()}, {cultureExpression})";
+		return $"global::System.DateOnly.Parse({value.StringLiteral()}, {cultureExpression})";
 	}
 
 	static string BuildTimeOnlyParseExpression(string value, bool invariantCulture)
@@ -884,6 +884,6 @@ static partial class SourceGenLibrary
 		var cultureExpression = invariantCulture
 			? "global::System.Globalization.CultureInfo.InvariantCulture"
 			: "global::System.Globalization.CultureInfo.CurrentCulture";
-		return $"global::System.TimeOnly.Parse({value.Surround()}, {cultureExpression})";
+		return $"global::System.TimeOnly.Parse({value.StringLiteral()}, {cultureExpression})";
 	}
 }
