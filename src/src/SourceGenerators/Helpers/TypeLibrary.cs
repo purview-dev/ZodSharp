@@ -9,11 +9,23 @@ public static partial class TypeLibraryGenerator
 
 	public const string ZodSharpSchemasNamespace = ZodSharpNamespace + ".Schemas";
 
+	// Simple name of the refinement context type declared in ZodSharpSchemasNamespace.
+	public const string ZodRefineContextName = "RefineCtx";
+
 	// Default custom async validation method name when none is explicitly configured.
 	public const string DefaultCustomValidationMethodName = "CustomValidationAsync";
 
-	// Default synchronous refinement method name when none is explicitly configured.
-	public const string DefaultSyncValidationMethodName = "Validate";
+	// Name of the generated partial refinement hook a [ZodSchema] target may implement. The generator
+	// declares it, so the IDE offers the implementation and the name is never resolved by convention.
+	public const string ZodRefinementHookName = "OnZodValidate";
+
+	// Name of the generated bridge that lets a schema class (a different type) invoke the private partial
+	// hook. Keeps the hook itself optional while giving the generated Validate a call target.
+	public const string ZodRefinementHookInvokerName = "InvokeZodRefinementHook";
+
+	// The pre-hook synchronous refinement method name. The generator no longer binds it; it is kept so the
+	// retirement diagnostic (ZODSGEN036) can recognise the old contract and point at the replacement.
+	public const string RetiredSyncRefinementMethodName = "Validate";
 
 	// This matches the name of the class, just so we can use the `nameof` for later...
 	[TypeRef(ZodSharpNamespace)]

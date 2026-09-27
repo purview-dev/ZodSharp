@@ -95,32 +95,11 @@ static class AttributeGenHelper
 							"generated <c>{TypeName}SchemaValidator</c> partial.",
 							"If null, the default name <c>CustomValidationAsync</c> is used.",
 							"No diagnostic is reported when the default name has no matching method.",
-							"Mutually exclusive with <c>RefinementMethodName</c> (ZODSGEN029)."
+							"Mutually exclusive with the <c>OnZodValidate</c> refinement hook (ZODSGEN029)."
 						)
 						.Property(
 							new(
 								nameof(ZodSchemaAttributeData.CustomValidationMethodName),
-								PurviewTypeLibrary.System.String.AsTypeReference().Nullable(body),
-								TypeDeclarationAccessibility.Public
-							)
-							{
-								IsInitOnly = true,
-							}
-						);
-
-					body.XmlSummary(
-							"Optional name of a synchronous refinement method to invoke",
-							"during synchronous validation. When set, the generator looks for an",
-							"instance method on the model type with the signature:",
-							"<c>IEnumerable&lt;ValidationError&gt; MethodName()</c> or",
-							"<c>IEnumerable&lt;ValidationError&gt; MethodName(RefineCtx&lt;T&gt; ctx)</c>.",
-							"If null, the default name <c>Validate</c> is used.",
-							"No diagnostic is reported when the default name has no matching method.",
-							"Mutually exclusive with <c>CustomValidationMethodName</c> (ZODSGEN029)."
-						)
-						.Property(
-							new(
-								nameof(ZodSchemaAttributeData.RefinementMethodName),
 								PurviewTypeLibrary.System.String.AsTypeReference().Nullable(body),
 								TypeDeclarationAccessibility.Public
 							)

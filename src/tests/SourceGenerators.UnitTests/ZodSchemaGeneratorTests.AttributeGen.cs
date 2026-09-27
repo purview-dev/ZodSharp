@@ -60,7 +60,7 @@ namespace Testing
 	}
 
 	[Test]
-	public async Task Generate_GivenAttributeFiles_ContainsRefinementMethodNameProperty(
+	public async Task Generate_GivenAttributeFiles_DoesNotContainRetiredRefinementMethodNameProperty(
 		CancellationToken cancellationToken
 	)
 	{
@@ -76,10 +76,11 @@ namespace Testing
 		// Act
 		var driverResult = await GenerateAsync(source, cancellationToken);
 
-		// Assert — the generated attribute exposes the refinement method name property
+		// Assert — the refinement name is no longer configured by convention; the OnZodValidate hook
+		// is declared by the generator instead.
 		var attributeSources = driverResult.AllSyntaxTrees.Select(static t => t.GetText().ToString()).ToList();
 		var allAttributeSource = string.Join("\n", attributeSources);
 
-		await Assert.That(allAttributeSource).Contains("RefinementMethodName");
+		await Assert.That(allAttributeSource).DoesNotContain("RefinementMethodName", StringComparison.Ordinal);
 	}
 }

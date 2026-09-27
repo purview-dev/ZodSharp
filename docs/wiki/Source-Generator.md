@@ -52,8 +52,7 @@ All options are optional.
 | `GenerateValidateMethod` | `true` | Set to `false` to omit `Validate` (and the members that depend on it). |
 | `GenerateParseMethod` | `true` | Set to `false` to omit `Parse`. `Parse` requires `Validate`, so it is also omitted when `GenerateValidateMethod = false`. |
 | `EnableComposition` | `true` | Emits `ApplyAnd`, `ApplyOr`, `ApplyRefine` value-first composition methods. |
-| `CustomValidationMethodName` | `null` | Name of an async custom validation method; default lookup name `CustomValidationAsync`. Mutually exclusive with the synchronous refinement method. |
-| `RefinementMethodName` | `null` | Name of a synchronous refinement method; default lookup name `Validate` (an instance method on the model). Mutually exclusive with the async custom validation method. |
+| `CustomValidationMethodName` | `null` | Name of an async custom validation method; default lookup name `CustomValidationAsync`. Mutually exclusive with the synchronous `OnZodValidate` refinement hook. |
 | `GenerateIValidateOptions` | `false` | Force `IValidateOptions<T>` generation. |
 | `SuppressIValidateOptions` | `false` | Opt out even when auto-detection would enable it. |
 
@@ -86,39 +85,51 @@ Requirements:
   merges the error sets.
 
 > [!WARNING]
-> The async custom validation method is mutually exclusive with the synchronous refinement method. A
+> The async custom validation method is mutually exclusive with the `OnZodValidate` refinement hook. A
 > model must declare exactly one of the two — declaring both is an error (ZODSGEN029).
 
-## Synchronous refinement
+## Refinement hook (`OnZodValidate`)
 
-Declare an instance method on the model (default name `Validate`) returning `IEnumerable<ValidationError>`:
+Refinement rules are written as a **generator-declared partial method** on the model. The generator emits the
+declaration, so the IDE offers the implementation with the correct signature and no name is resolved by
+convention:
 
 ```csharp
-[ZodSchema(RefinementMethodName = "Validate")]
-public class Order
+[ZodSchema]
+public partial class Order
 {
     public decimal Total { get; set; }
 
-    public IEnumerable<ValidationError> Validate()
+    partial void OnZodValidate(RefineCtx<Order> context)
     {
-        if (Total < 0)
-            yield return ValidationError.Create("invalid_range", "Total cannot be negative", []);
+        if (context.Value.Total < 0)
+            context.AddIssue("invalid_range", "Total cannot be negative", [nameof(Total)]);
     }
 }
 ```
 
 Requirements:
 
-- The method must be an **instance** method on the model type (it is invoked on the value being
-  validated). A `static` method is an error (ZODSGEN024).
-- Default lookup name `Validate` unless overridden with `RefinementMethodName` on the `[ZodSchema]`
-  attribute.
-- Parameterless or `IEnumerable<ValidationError> Validate(RefineCtx<Order> ctx)` variants are
-  supported.
+- The target type **and every containing type** must be declared `partial` (ZODSGEN034). This is the only
+  type-shape requirement the hook adds.
+- The signature must be `partial void OnZodValidate(RefineCtx<T> context)`, where `T` is the model type
+  (ZODSGEN035). The parameter is a plain by-value `RefineCtx<T>`.
+- The hook runs for **every** entry point into the generated schema — `Validate`, `Parse`, the
+  `IZodSchemaValidator` adapter, `IValidateOptions`, and any factory that validates through the schema — so
+  a rule written here behaves exactly like an attribute rule.
+- A type that does not implement the hook allocates nothing: the generated `Validate` only builds a
+  `RefineCtx<T>` and calls the hook when a body exists.
+- Issues are reported through `context.AddIssue(code, message, path)`, which is merged with the
+  attribute-rule issues into one result.
+- Refinements state is reported by **ZODSGEN036** if a member still uses the retired
+  `IEnumerable<ValidationError> Validate()` contract, which the generator no longer binds.
 
-> [!WARNING]
-> The synchronous refinement method is mutually exclusive with the async custom validation method. A
-> model must declare exactly one of the two — declaring both is an error (ZODSGEN029).
+> [!NOTE]
+> Alongside the hook, the generator emits one `internal static` bridge member,
+> `InvokeZodRefinementHook(T value, RefineCtx<T> context)`, on the target type. A classic `partial` method is
+> private and the generated `{Type}Schema` is a different type, so the bridge is what lets `Validate` reach
+> the hook while keeping the hook itself optional. It is not part of the type's API and must not be
+> implemented by hand.
 
 ## IValidateOptions support
 

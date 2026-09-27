@@ -3,24 +3,25 @@ namespace ZodSharp.SourceGenerators;
 partial class ZodSchemaGeneratorTests
 {
 	[Test]
-	public async Task ValidationMethods_GivenBothSyncAndAsync_EmitsSyncRefinementOnly(
-		CancellationToken cancellationToken
-	)
+	public async Task ValidationMethods_GivenHookAndAsync_EmitsHookOnly(CancellationToken cancellationToken)
 	{
 		var source = """
-			using System.Collections.Generic;
 			using System.Threading;
 			using System.Threading.Tasks;
 			using ZodSharp.Core;
+			using ZodSharp.Schemas;
 
 			namespace Testing
 			{
 				[ZodSchema]
-				public class WithBoth
+				public partial class WithBoth
 				{
 					public string? Name { get; set; }
 
-					public IEnumerable<ValidationError> Validate() => [];
+					partial void OnZodValidate(RefineCtx<WithBoth> context)
+					{
+						context.AddIssue("custom", "Nope.", [nameof(Name)]);
+					}
 
 					internal static ValueTask<ValidationResult<WithBoth>> CustomValidationAsync(
 						WithBoth value, CancellationToken ct) =>
@@ -32,8 +33,8 @@ partial class ZodSchemaGeneratorTests
 		var driverResult = await GenerateAsync(source, cancellationToken);
 		var generated = driverResult.GetSource("WithBothSchema");
 
-		// The synchronous refinement is honoured...
-		await Assert.That(generated).ContainsGeneratedCode("var refinementErrors = value.Validate();");
+		// The refinement hook is honoured...
+		await Assert.That(generated).ContainsGeneratedCode("InvokeZodRefinementHook(value, refineContext)");
 
 		// ...and the async custom method is dropped so the validator does not reference both.
 		await Assert.That(generated).DoesNotContain("CustomValidationAsync", StringComparison.Ordinal);

@@ -37,7 +37,7 @@ readonly record struct LengthAccessor(string LengthExpression, string Origin, bo
 /// <param name="IsValueType">Indicates whether the target type is a struct.</param>
 /// <param name="Properties">The validatable properties of the target type that will be included in the schema.</param>
 /// <param name="CustomValidationMethod">The custom validation method data, if any.</param>
-/// <param name="SyncValidationMethod">The synchronous refinement method data, if any.</param>
+/// <param name="RefinementHook">The <c>OnZodValidate</c> refinement hook data, if any.</param>
 /// <param name="GenerateIValidateOptions">Requested IValidateOptions generation: null = auto, true = force, false = opt out.</param>
 /// <param name="EnableComposition">Whether the value-first composition methods (ApplyAnd/ApplyOr/ApplyRefine) are generated.</param>
 /// <param name="GenerateValidateMethod">Whether the static <c>Validate</c> method is generated.</param>
@@ -56,7 +56,7 @@ readonly record struct ZodSchemaDescriptor(
 	bool IsValueType,
 	EquatableArray<GeneratorResult<ZodPropertyDescriptor>> Properties,
 	GeneratorResult<CustomValidationMethodData> CustomValidationMethod,
-	GeneratorResult<SyncValidationMethodData> SyncValidationMethod,
+	GeneratorResult<ZodRefinementHookData> RefinementHook,
 	bool? GenerateIValidateOptions,
 	bool EnableComposition,
 	bool GenerateValidateMethod,

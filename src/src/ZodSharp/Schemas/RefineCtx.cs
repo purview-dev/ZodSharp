@@ -17,7 +17,9 @@ namespace ZodSharp.Schemas;
 /// <param name="path">The base path prepended to any added issues.</param>
 public sealed class RefineCtx<T>(T value, ImmutableArray<string> path)
 {
-	readonly List<ValidationError> _issues = [];
+	// The issue list is allocated on the first issue rather than up front, so a refinement that passes
+	// costs a single context allocation and a refinement that never runs costs none.
+	List<ValidationError>? _issues;
 
 	/// <summary>
 	/// The value being validated.
@@ -32,12 +34,12 @@ public sealed class RefineCtx<T>(T value, ImmutableArray<string> path)
 	/// <summary>
 	/// The issues added by the refinement so far.
 	/// </summary>
-	public IReadOnlyList<ValidationError> Issues => _issues;
+	public IReadOnlyList<ValidationError> Issues => _issues ?? (IReadOnlyList<ValidationError>)[];
 
 	/// <summary>
 	/// True when at least one issue has been added.
 	/// </summary>
-	public bool HasIssues => _issues.Count > 0;
+	public bool HasIssues => _issues is { Count: > 0 };
 
 	/// <summary>
 	/// Adds a validation issue with the given code and message, prefixed by the
@@ -54,7 +56,7 @@ public sealed class RefineCtx<T>(T value, ImmutableArray<string> path)
 			throw new ArgumentException("Issue message must not be null or whitespace.", nameof(message));
 
 		var fullPath = BuildPath(Path, path);
-		_issues.Add(new ValidationError(code, message, fullPath));
+		(_issues ??= []).Add(new ValidationError(code, message, fullPath));
 	}
 
 	/// <summary>
@@ -86,5 +88,5 @@ public sealed class RefineCtx<T>(T value, ImmutableArray<string> path)
 		return combined;
 	}
 
-	internal ImmutableArray<ValidationError> ToImmutable() => [.. _issues];
+	internal ImmutableArray<ValidationError> ToImmutable() => _issues is { Count: > 0 } ? [.. _issues] : [];
 }
