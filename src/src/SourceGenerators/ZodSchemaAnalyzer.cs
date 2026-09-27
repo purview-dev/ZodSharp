@@ -30,11 +30,9 @@ public sealed class ZodSchemaAnalyzer : DiagnosticAnalyzer
 		DiagnosticLibrary.CustomValidationInvalidParameterModifier,
 		DiagnosticLibrary.ComparePropertyNotFound,
 		DiagnosticLibrary.DataAnnotationsReferenceNotFound,
-		DiagnosticLibrary.SyncValidationInvalidReturnType,
-		DiagnosticLibrary.SyncValidationInvalidParameterCount,
-		DiagnosticLibrary.SyncValidationInvalidStaticInstance,
-		DiagnosticLibrary.SyncValidationInaccessible,
-		DiagnosticLibrary.SyncValidationInvalidContextParameter,
+		DiagnosticLibrary.ZodRefinementHookTypeNotPartial,
+		DiagnosticLibrary.ZodRefinementHookInvalidSignature,
+		DiagnosticLibrary.SyncRefinementMethodRetired,
 		DiagnosticLibrary.IValidateOptionsReferenceNotFound,
 		DiagnosticLibrary.IValidateOptionsValueTypeTarget,
 		DiagnosticLibrary.AmbiguousValidationMethods,
@@ -117,24 +115,20 @@ public sealed class ZodSchemaAnalyzer : DiagnosticAnalyzer
 		foreach (var diagnosticInfo in customValidationResult.Diagnostics)
 			context.ReportDiagnostic(diagnosticInfo.ToDiagnostic());
 
-		var syncValidationResult = SourceGenLibrary.ResolveSyncValidationMethod(
-			type,
-			zodSchemaData,
-			zodSchemaAttribute!
-		);
-		foreach (var diagnosticInfo in syncValidationResult.Diagnostics)
+		var hookResult = ZodRefinementHookResolver.Resolve(type);
+		foreach (var diagnosticInfo in hookResult.Diagnostics)
 			context.ReportDiagnostic(diagnosticInfo.ToDiagnostic());
 
-		// A model may declare either a synchronous refinement method or an async custom
-		// validation method, but not both.
-		if (customValidationResult.Value.HasCustomValidation && syncValidationResult.Value.HasSyncValidation)
+		// A model may declare either the Zod refinement hook or an async custom validation method,
+		// but not both.
+		if (customValidationResult.Value.HasCustomValidation && hookResult.Value.IsImplemented)
 		{
 			context.ReportDiagnostic(
 				Diagnostic.Create(
 					DiagnosticLibrary.AmbiguousValidationMethods,
 					typeLocation,
 					type.Name,
-					syncValidationResult.Value.MethodName,
+					$"{TypeLibraryGenerator.ZodRefinementHookName}({TypeLibraryGenerator.ZodRefineContextName}<T>)",
 					customValidationResult.Value.MethodName
 				)
 			);

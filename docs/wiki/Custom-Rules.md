@@ -286,12 +286,17 @@ so `AssetId` is `IScalarValueObject<AssetId, Guid>`. Today the check is normally
 
 ```csharp
 // repeated on every Guid scalar
-internal IEnumerable<ValidationError> Validate()
+partial void OnZodValidate(RefineCtx<AssetId> context)
 {
-    if (Value == Guid.Empty)
-        yield return ErrorFactory.InvalidAssetId;
+    if (context.Value.Value == Guid.Empty)
+        context.AddIssue("invalid_asset_id", "AssetId must not be empty.", [nameof(Value)]);
 }
 ```
+
+> [!NOTE]
+> Refinements are written as the generator-declared `OnZodValidate` hook, not an
+> `IEnumerable<ValidationError> Validate()` method — see
+> [Source Generator](Source-Generator.md#refinement-hook-onzodvalidate).
 
 Type **one** rule on the value object and put the attribute on the **scalar type**:
 

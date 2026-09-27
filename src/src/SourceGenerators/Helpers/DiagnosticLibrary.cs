@@ -186,46 +186,27 @@ static class DiagnosticLibrary
 		isEnabledByDefault: true
 	);
 
-	public static readonly DiagnosticDescriptor SyncValidationInvalidReturnType = new(
-		id: "ZODSGEN022",
-		title: "Invalid synchronous refinement method return type",
-		messageFormat: "Synchronous refinement method '{0}' on schema type '{1}' must return 'IEnumerable<ValidationError>'",
+	/// <summary>
+	/// ZODSGEN034: the OnZodValidate hook is implemented on a type that is not partial (or whose
+	/// containing types are not all partial), so the generated declaration cannot be emitted.
+	/// </summary>
+	public static readonly DiagnosticDescriptor ZodRefinementHookTypeNotPartial = new(
+		id: "ZODSGEN034",
+		title: "Zod refinement hook requires a partial type",
+		messageFormat: "The '{0}' refinement hook on '{1}' requires '{1}' (and every containing type) to be declared 'partial' so the generated hook declaration can be emitted",
 		category: Category,
 		defaultSeverity: DiagnosticSeverity.Error,
 		isEnabledByDefault: true
 	);
 
-	public static readonly DiagnosticDescriptor SyncValidationInvalidParameterCount = new(
-		id: "ZODSGEN023",
-		title: "Invalid synchronous refinement method parameter count",
-		messageFormat: "Synchronous refinement method '{0}' on schema type '{1}' must not have more than one parameter",
-		category: Category,
-		defaultSeverity: DiagnosticSeverity.Error,
-		isEnabledByDefault: true
-	);
-
-	public static readonly DiagnosticDescriptor SyncValidationInvalidStaticInstance = new(
-		id: "ZODSGEN024",
-		title: "Invalid synchronous refinement method static/instance form",
-		messageFormat: "Synchronous refinement method '{0}' on schema type '{1}' must be an instance method",
-		category: Category,
-		defaultSeverity: DiagnosticSeverity.Error,
-		isEnabledByDefault: true
-	);
-
-	public static readonly DiagnosticDescriptor SyncValidationInaccessible = new(
-		id: "ZODSGEN025",
-		title: "Inaccessible synchronous refinement method",
-		messageFormat: "Synchronous refinement method '{0}' on schema type '{1}' must be public or internal",
-		category: Category,
-		defaultSeverity: DiagnosticSeverity.Error,
-		isEnabledByDefault: true
-	);
-
-	public static readonly DiagnosticDescriptor SyncValidationInvalidContextParameter = new(
-		id: "ZODSGEN026",
-		title: "Invalid synchronous refinement method context parameter",
-		messageFormat: "Synchronous refinement method '{0}' on schema type '{1}' must have a 'RefineCtx<T>' parameter when one is supplied",
+	/// <summary>
+	/// ZODSGEN035: the hook member exists but is not the generator-declared
+	/// <c>partial void OnZodValidate(RefineCtx&lt;T&gt; context)</c> form.
+	/// </summary>
+	public static readonly DiagnosticDescriptor ZodRefinementHookInvalidSignature = new(
+		id: "ZODSGEN035",
+		title: "Invalid Zod refinement hook declaration",
+		messageFormat: "The '{0}' refinement hook on '{1}' must be declared as 'partial void OnZodValidate(RefineCtx<T> context)'",
 		category: Category,
 		defaultSeverity: DiagnosticSeverity.Error,
 		isEnabledByDefault: true
@@ -291,6 +272,19 @@ static class DiagnosticLibrary
 		messageFormat: "The attribute '{0}' on '{1}' is mapped to a validation rule, but no schema is generated for '{1}', so the rule will not run. Apply [ZodSchema] to the type or reference it as a complex property of a schema.",
 		category: Category,
 		defaultSeverity: DiagnosticSeverity.Warning,
+		isEnabledByDefault: true
+	);
+
+	/// <summary>
+	/// Reports when a <c>[ZodSchema]</c> target declares the retired synchronous refinement method
+	/// (<c>IEnumerable&lt;ValidationError&gt; Validate()</c>) instead of the <c>OnZodValidate</c> hook.
+	/// </summary>
+	public static readonly DiagnosticDescriptor SyncRefinementMethodRetired = new(
+		id: "ZODSGEN036",
+		title: "Synchronous refinement method has been replaced by the OnZodValidate hook",
+		messageFormat: "Member '{0}' on '{1}' uses the retired synchronous refinement contract; implement 'partial void OnZodValidate(RefineCtx<T> context)' on a partial type instead",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Error,
 		isEnabledByDefault: true
 	);
 

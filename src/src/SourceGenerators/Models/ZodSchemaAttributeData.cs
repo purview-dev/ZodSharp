@@ -7,7 +7,6 @@ readonly partial record struct ZodSchemaAttributeData(
 	[Property(DefaultValue = true)] bool GenerateParseMethod,
 	[Property(DefaultValue = true)] bool EnableComposition,
 	string? CustomValidationMethodName,
-	string? RefinementMethodName,
 	[Property(DefaultValue = false)] bool GenerateIValidateOptions,
 	[Property(DefaultValue = false)] bool SuppressIValidateOptions
 );
