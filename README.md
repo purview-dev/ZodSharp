@@ -5,7 +5,7 @@
 
 **Purview.ZodSharp** is a high-performance schema validation library for C#, ported from TypeScript [Zod](https://github.com/colinhacks/zod). It features zero-allocation validation, struct-based rules, fluent API, and source generator support for maximum performance.
 
-This project is a fork of [guinhx/ZodSharp](https://github.com/guinhx/ZodSharp), maintained at [github.com/purview-dev/zodsharp](https://github.com/purview-dev/zodsharp) under the `Purview.*` package IDs.
+The library is developed and maintained at [github.com/purview-dev/zodsharp](https://github.com/purview-dev/zodsharp).
 
 ## Key Features
 
@@ -66,17 +66,15 @@ bun run generate-fixtures
 
 The fixture generator script is intentionally run via Bun rather than `npx tsx` or Node because it keeps the TypeScript workflow consistent with the repo's Bun-based setup.
 
-## Differences from the original fork
+## What's new in v2
 
-This repository is a fork of [guinhx/ZodSharp](https://github.com/guinhx/ZodSharp). Compared with the original, this version:
-
-- **Publishes `Purview.*` packages.** A single `ZodSharp` package is split into `Purview.ZodSharp` (core + source generator), plus `Purview.ZodSharp.SystemTextJson`, `Purview.ZodSharp.NewtonsoftJson`, and `Purview.ZodSharp.AspNetCore` integration packages.
-- **Multi-targets `net8.0`, `net9.0`, and `net10.0`.** The original targeted .NET 9.0 and .NET Standard 2.1. The source generator remains on `netstandard2.0` so it can run in any compiler host.
-- **Adds System.Text.Json integration.** The original shipped Newtonsoft.Json integration only; JSON deserialize-and-validate is now available for both major JSON libraries.
-- **Adds JSON Schema interoperability.** Schemas can be exported via `Z.ToJsonSchema` and imported via `Z.FromJsonSchema`, enabling cross-language reuse with TypeScript/Zod.
-- **Adds ASP.NET Core ProblemDetails integration.** Failed validation results convert directly to `HttpValidationProblemDetails` via `result.ToHttpValidationProblemDetails()`.
-- **Expands DataAnnotations support.** `[Length]`, `[MinLength]`, `[MaxLength]`, `[RegularExpression]`, `[AllowedValues]`, `[DeniedValues]`, `[EmailAddress]`, and more, with structured size failures (`Code`, `Origin`, `Minimum`/`Maximum`, `Inclusive`, `Path`).
-- **Changes generated composition methods.** The original `.And()`, `.Or()`, and `.Refine()` are superseded by value-first `.ApplyAnd()`, `.ApplyOr()`, and `.ApplyRefine()`.
+- **Packages are published under the `Purview.*` IDs.** The core `Purview.ZodSharp` package ships the validator and the source generator, with optional `Purview.ZodSharp.SystemTextJson`, `Purview.ZodSharp.NewtonsoftJson`, and `Purview.ZodSharp.AspNetCore` integration packages.
+- **Targets `net8.0`, `net9.0`, and `net10.0`.** The source generator remains on `netstandard2.0` so it can run in any compiler host.
+- **System.Text.Json integration.** JSON deserialize-and-validate is available for both major JSON libraries, including validating `JsonConverter<T>` instances.
+- **JSON Schema interoperability.** Schemas can be exported via `Z.ToJsonSchema` and imported via `Z.FromJsonSchema`, enabling cross-language reuse with TypeScript/Zod.
+- **ASP.NET Core ProblemDetails integration.** Failed validation results convert directly to `HttpValidationProblemDetails` via `result.ToHttpValidationProblemDetails()`.
+- **Expanded DataAnnotations support.** `[Length]`, `[MinLength]`, `[MaxLength]`, `[RegularExpression]`, `[AllowedValues]`, `[DeniedValues]`, `[EmailAddress]`, and more, with structured size failures (`Code`, `Origin`, `Minimum`/`Maximum`, `Inclusive`, `Path`).
+- **Value-first composition methods.** `.ApplyAnd()`, `.ApplyOr()`, and `.ApplyRefine()` are the supported composition surface.
 
 ## Usage Examples
 
@@ -641,5 +639,4 @@ Contributions are welcome! Please open an issue or pull request.
 
 ## Acknowledgments
 
-- [guinhx/ZodSharp](https://github.com/guinhx/ZodSharp) — the original project this repository was forked from.
 - [Zod](https://github.com/colinhacks/zod)

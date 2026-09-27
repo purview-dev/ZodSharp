@@ -8,7 +8,7 @@ If another instruction file (for example `.github/copilot-instructions.md`) conf
 
 Purview.ZodSharp is a high-performance schema validation library for C#, ported from TypeScript [Zod](https://github.com/colinhacks/zod). It uses struct-based rules and `Span<T>` to minimise allocations, and ships a compile-time source generator for maximum performance.
 
-- Fork of [guinhx/ZodSharp](https://github.com/guinhx/ZodSharp), maintained at `purview-dev/zodsharp`.
+- The project is maintained at `purview-dev/zodsharp`.
 - Public API namespaces are `ZodSharp.*`; packages and assemblies are published under the `Purview.ZodSharp.*` package IDs.
 - Multi-targets `net8.0`, `net9.0` and `net10.0`; the source generator targets `netstandard2.0` so it runs in any compiler host.
 
