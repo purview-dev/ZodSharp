@@ -16,3 +16,37 @@ jobs:
       release-mode: NuGet
       release-branch: main
     secrets: inherit
+
+  prerelease:
+    name: Mark prerelease versions
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: oven-sh/setup-bun@v2
+
+      - name: Flag the GitHub release as a prerelease when the package version is a prerelease
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION=$(bun -p "require('./package.json').version")
+          TAG="v$VERSION"
+
+          # Only prerelease versions (e.g. 2.0.0-prerelease.25) are flagged.
+          case "$VERSION" in
+            *-*) ;;
+            *) echo "Version $VERSION is not a prerelease; nothing to do."; exit 0 ;;
+          esac
+
+          # The tag and release only exist once the release pipeline has created them.
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            echo "No GitHub release for $TAG; nothing to do."
+            exit 0
+          fi
+
+          gh release edit "$TAG" --prerelease
+          echo "Marked $TAG as a prerelease."
