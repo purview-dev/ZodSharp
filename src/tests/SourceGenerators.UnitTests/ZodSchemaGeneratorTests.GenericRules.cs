@@ -102,7 +102,7 @@ partial class ZodSchemaGeneratorTests
 		// Assert
 		await Assert.That((bool)emptyResult.GetType().GetProperty("IsSuccess")!.GetValue(emptyResult)!).IsFalse();
 
-		var errors = (System.Collections.Immutable.ImmutableArray<ZodSharp.Core.ValidationError>)
+		var errors = (System.Collections.Immutable.ImmutableArray<Core.ValidationError>)
 			emptyResult.GetType().GetProperty("Errors")!.GetValue(emptyResult)!;
 		await Assert.That(errors).HasSingleItem();
 		await Assert.That(errors[0].Code).IsEqualTo("invalid_asset_id");

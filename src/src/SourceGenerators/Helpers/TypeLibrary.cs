@@ -1,7 +1,12 @@
 namespace ZodSharp.SourceGenerators.Helpers;
 
+// Deliberately not public (the default accessibility for a top-level type): the generated type
+// library exposes Purview.SourceGeneratorFramework type identities, which the IL merge internalizes,
+// so a public spec would leave the merged analyzer with a public member whose signature references
+// an internal type. The BuildSdk generates InternalsVisibleTo for the matching unit-test assembly, so
+// tests still use it.
 [GenerateTypeLibrary]
-public static partial class TypeLibraryGenerator
+static partial class TypeLibraryGenerator
 {
 	public const string ZodSharpNamespace = "ZodSharp";
 

@@ -75,7 +75,7 @@ static class ZodRefinementHookResolver
 			diagnostics.Add(
 				ReportableDiagnostic.Create(
 					DiagnosticLibrary.SyncRefinementMethodRetired,
-					true,
+					false,
 					retiredMethod.Locations.FirstOrDefault(static location => location.IsInSource)
 						?? GetTypeLocation(classSymbol),
 					retiredMethod.Name,
@@ -249,6 +249,7 @@ static class ZodRefinementHookResolver
 			return false;
 		}
 
+		// The RefineCtx<T> type argument must be the same as the containing type, but the containing type may be
 		return SymbolEqualityComparer.Default.Equals(named.TypeArguments[0], classSymbol);
 	}
 

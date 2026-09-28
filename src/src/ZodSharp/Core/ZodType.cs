@@ -115,6 +115,7 @@ public abstract class ZodType<TOutput, TInput> : IZodSchema<TOutput, TInput>, IO
 		if (rule is null)
 			throw new ArgumentNullException(nameof(rule));
 
+		// We can safely cast to IValidationRule<TOutput> because TRule is constrained to that interface.
 		return AddRule(rule);
 	}
 

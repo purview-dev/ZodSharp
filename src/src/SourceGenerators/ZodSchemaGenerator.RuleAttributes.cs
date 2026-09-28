@@ -153,6 +153,7 @@ partial class ZodSchemaGenerator
 			return literal;
 		}
 
+		// If the parameter has no default value, we still need to provide an initializer for the attribute property.
 		return parameter.Type.IsValueType ? "default!" : "null!";
 	}
 
@@ -195,6 +196,7 @@ partial class ZodSchemaGenerator
 		if (unwrapped.ToDisplayString() == "System.Type")
 			return true;
 
+		// Only primitive types and string are supported as attribute properties.
 		return unwrapped.SpecialType
 			is SpecialType.System_Boolean
 				or SpecialType.System_Byte

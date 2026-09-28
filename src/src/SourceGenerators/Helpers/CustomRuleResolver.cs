@@ -274,7 +274,7 @@ static class CustomRuleResolver
 		out string? unmappedParameterName
 	)
 	{
-		arguments = new(ImmutableArray<string>.Empty);
+		arguments = new([]);
 		unmappedParameterName = null;
 
 		var constructor = ruleType

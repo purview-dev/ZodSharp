@@ -1,5 +1,3 @@
-using System.Collections.Immutable;
-
 namespace ZodSharp.Core;
 
 public class ValidationErrorTests
@@ -25,12 +23,7 @@ public class ValidationErrorTests
 		const string category = "invalid_value";
 
 		// Act
-		var error = ValidationError.Create(
-			"invalid_tenant_id",
-			"The tenant id is invalid.",
-			ImmutableArray<string>.Empty,
-			category: category
-		);
+		var error = ValidationError.Create("invalid_tenant_id", "The tenant id is invalid.", [], category: category);
 
 		// Assert
 		await Assert.That(error.Category).IsEqualTo(category);
@@ -40,7 +33,7 @@ public class ValidationErrorTests
 	public async Task Create_GivenNoCategory_LeavesCategoryNull()
 	{
 		// Act
-		var error = ValidationError.Create("too_small", "Too small.", ImmutableArray<string>.Empty);
+		var error = ValidationError.Create("too_small", "Too small.", []);
 
 		// Assert
 		await Assert.That(error.Category).IsNull();

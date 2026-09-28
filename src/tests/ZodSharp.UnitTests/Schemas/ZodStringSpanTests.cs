@@ -31,7 +31,7 @@ public class ZodStringSpanTests
 		// Regression: an empty span previously bypassed the rules and always succeeded.
 		var schema = Z.String().Min(3);
 
-		var result = schema.ValidateSpan(ReadOnlySpan<char>.Empty);
+		var result = schema.ValidateSpan([]);
 
 		await Assert.That(result.IsSuccess).IsFalse();
 	}

@@ -28,6 +28,7 @@ public readonly record struct CreditCardRule : Core.IValidationRule<string>, Cor
 		if (string.IsNullOrWhiteSpace(value))
 			return false;
 
+		// Use AsSpan to avoid allocations
 		return IsValid(value.AsSpan());
 	}
 

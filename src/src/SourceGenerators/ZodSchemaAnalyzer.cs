@@ -241,7 +241,7 @@ public sealed class ZodSchemaAnalyzer : DiagnosticAnalyzer
 			}
 		}
 
-		return reachable.ToImmutableHashSet();
+		return [.. reachable];
 	}
 
 	static IEnumerable<INamedTypeSymbol> EnumerateNamedTypes(INamespaceSymbol root)
