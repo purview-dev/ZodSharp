@@ -639,4 +639,5 @@ Contributions are welcome! Please open an issue or pull request.
 
 ## Acknowledgments
 
-- [Zod](https://github.com/colinhacks/zod)
+- [Zod](https://github.com/colinhacks/zod) - the original JavaScript/TypeScript schema validation library.
+- [ZodSharp](https://github.com/guinhx/ZodSharp) - the C# port of the Zod schema validation library, the fork this repository is based on.
