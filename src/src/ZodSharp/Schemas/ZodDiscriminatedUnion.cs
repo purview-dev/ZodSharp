@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -28,7 +28,7 @@ public class ZodDiscriminatedUnion(
 	static readonly ConditionalWeakTable<
 		Type,
 		ConcurrentDictionary<string, Func<object, string?>>
-	> DiscriminatorAccessors = new();
+	> DiscriminatorAccessors = [];
 
 	static readonly Func<object, string?> MissingDiscriminatorAccessor = static _ => null;
 

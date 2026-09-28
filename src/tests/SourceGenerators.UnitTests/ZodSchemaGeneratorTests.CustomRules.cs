@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+using ZodSharp.Core;
 using ZodSharp.SourceGenerators.Infra;
 
 namespace ZodSharp.SourceGenerators;
@@ -75,8 +77,7 @@ partial class ZodSchemaGeneratorTests
 		var isSuccess = (bool)result.GetType().GetProperty("IsSuccess")!.GetValue(result)!;
 		await Assert.That(isSuccess).IsFalse();
 
-		var errors = (System.Collections.Immutable.ImmutableArray<ZodSharp.Core.ValidationError>)
-			result.GetType().GetProperty("Errors")!.GetValue(result)!;
+		var errors = (ImmutableArray<ValidationError>)result.GetType().GetProperty("Errors")!.GetValue(result)!;
 		await Assert.That(errors).HasSingleItem();
 		await Assert.That(errors[0].Code).IsEqualTo("invalid_string");
 		await Assert.That(errors[0].Origin).IsEqualTo("string");

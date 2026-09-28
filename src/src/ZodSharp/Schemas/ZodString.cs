@@ -70,6 +70,7 @@ public class ZodString : ZodType<string>
 		if (!SupportsSpanRules)
 			return Validate(value.ToString());
 
+		// Every rule supports the span contract, so validate the span directly and return a string result.
 		return IsValidSpan(value, out var errors)
 			? ValidationResult<string>.Success(value.ToString())
 			: ValidationResult<string>.Failure(errors);
@@ -85,6 +86,7 @@ public class ZodString : ZodType<string>
 	/// This is the allocation-free span entry point: it validates the span directly when every rule
 	/// implements <see cref="IStringValidationRule"/>, and otherwise falls back to the string path once.
 	/// </remarks>
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1021:Avoid out parameters")]
 	public bool IsValidSpan(ReadOnlySpan<char> value, out ImmutableArray<ValidationError> errors)
 	{
 		errors = [];
