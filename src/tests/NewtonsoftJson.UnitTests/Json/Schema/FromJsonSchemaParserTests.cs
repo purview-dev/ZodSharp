@@ -86,18 +86,36 @@ public class FromJsonSchemaParserTests
 	}
 
 	[Test]
-	public async Task JsonSchemaSerializerOptions_Default_UsesCamelCasePropertyNames()
+	public async Task JsonSchemaSerializerOptions_Default_UsesJsonSchemaKeywordAndCamelCaseNames()
 	{
 		// Arrange
+		JsonSchemaDefinition definition = new() { MinLength = 3 };
 
 		// Act
-		var options = JsonSchemaSerializerOptions.Default;
-		var usesCamelCaseResolver =
-			options.ContractResolver is Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver;
+		var json = Newtonsoft.Json.JsonConvert.SerializeObject(definition, JsonSchemaSerializerOptions.Default);
 
 		// Assert
-		await Assert.That(usesCamelCaseResolver).IsTrue();
-		await Assert.That(options.Formatting).IsEqualTo(Newtonsoft.Json.Formatting.Indented);
+		await Assert.That(json).Contains("\"minLength\"");
+		await Assert
+			.That(JsonSchemaSerializerOptions.Default.Formatting)
+			.IsEqualTo(Newtonsoft.Json.Formatting.Indented);
+	}
+
+	[Test]
+	public async Task Parse_GivenNullSubSchema_ThrowsArgumentException()
+	{
+		// Arrange
+		JsonSchemaDefinition definition = new()
+		{
+			Type = "object",
+			Properties = new Dictionary<string, JsonSchemaDefinition> { ["name"] = null! },
+		};
+
+		// Act
+		var exception = Assert.Throws<ArgumentException>(() => FromJsonSchemaParser.Parse(definition));
+
+		// Assert
+		await Assert.That(exception!.Message).Contains("null sub-schema");
 	}
 
 	[Test]

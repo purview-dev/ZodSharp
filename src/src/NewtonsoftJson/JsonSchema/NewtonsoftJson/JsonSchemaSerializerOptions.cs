@@ -4,10 +4,10 @@ using Newtonsoft.Json.Serialization;
 namespace ZodSharp.JsonSchema.NewtonsoftJson;
 
 /// <summary>
-/// Resolves the JSON Schema keyword property names (<c>$schema</c>, <c>$id</c>, <c>$ref</c> and
-/// <c>$defs</c>) while keeping camelCase naming for every other member.
+/// Names the JSON Schema keyword properties with their specification names (<c>$schema</c>, <c>$id</c>,
+/// <c>$ref</c> and <c>$defs</c>) and camelCase for every other member.
 /// </summary>
-sealed class JsonSchemaKeywordContractResolver : Newtonsoft.Json.Serialization.CamelCasePropertyNamesContractResolver
+sealed class JsonSchemaNamingStrategy : CamelCaseNamingStrategy
 {
 	static readonly Dictionary<string, string> KeywordNames = new(StringComparer.Ordinal)
 	{
@@ -17,28 +17,10 @@ sealed class JsonSchemaKeywordContractResolver : Newtonsoft.Json.Serialization.C
 		["Defs"] = "$defs",
 	};
 
-	protected override IList<JsonProperty> CreateProperties(Type type, MemberSerialization memberSerialization)
-	{
-		var properties = base.CreateProperties(type, memberSerialization);
-
-		if (type != typeof(ZodSharp.JsonSchema.JsonSchemaDefinition))
-		{
-			return properties;
-		}
-
-		foreach (var property in properties)
-		{
-			if (
-				property.UnderlyingName != null
-				&& KeywordNames.TryGetValue(property.UnderlyingName, out var keywordName)
-			)
-			{
-				property.PropertyName = keywordName;
-			}
-		}
-
-		return properties;
-	}
+	public override string GetPropertyName(string name, bool hasSpecifiedName) =>
+		KeywordNames.TryGetValue(name, out var keywordName)
+			? keywordName
+			: base.GetPropertyName(name, hasSpecifiedName);
 }
 
 /// <summary>
@@ -48,14 +30,15 @@ public static class JsonSchemaSerializerOptions
 {
 	/// <summary>
 	/// Default settings for JSON Schema serialization.
-	/// Uses camelCase property naming and ignores null values.
+	/// Writes the JSON Schema keyword names (<c>$schema</c>, <c>$id</c>, <c>$ref</c>, <c>$defs</c>) and
+	/// camelCase for every other member, and ignores null values.
 	/// </summary>
 	public static readonly JsonSerializerSettings Default = new()
 	{
 		NullValueHandling = NullValueHandling.Ignore,
 		Formatting = Formatting.Indented,
 		MetadataPropertyHandling = MetadataPropertyHandling.Ignore,
-		ContractResolver = new JsonSchemaKeywordContractResolver(),
+		ContractResolver = new DefaultContractResolver { NamingStrategy = new JsonSchemaNamingStrategy() },
 	};
 
 	/// <summary>
@@ -66,6 +49,6 @@ public static class JsonSchemaSerializerOptions
 		NullValueHandling = NullValueHandling.Ignore,
 		MissingMemberHandling = MissingMemberHandling.Ignore,
 		MetadataPropertyHandling = MetadataPropertyHandling.Ignore,
-		ContractResolver = new JsonSchemaKeywordContractResolver(),
+		ContractResolver = new DefaultContractResolver { NamingStrategy = new JsonSchemaNamingStrategy() },
 	};
 }

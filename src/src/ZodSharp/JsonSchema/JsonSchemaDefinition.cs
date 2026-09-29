@@ -1,5 +1,3 @@
-using System.Text.Json.Serialization;
-
 namespace ZodSharp.JsonSchema;
 
 /// <summary>
@@ -11,15 +9,12 @@ namespace ZodSharp.JsonSchema;
 public class JsonSchemaDefinition
 {
 	/// <summary>$schema - The JSON Schema version URI</summary>
-	[JsonPropertyName("$schema")]
 	public string? Schema { get; set; }
 
 	/// <summary>$id - Schema identifier</summary>
-	[JsonPropertyName("$id")]
 	public string? Id { get; set; }
 
 	/// <summary>$ref - Reference to another schema</summary>
-	[JsonPropertyName("$ref")]
 	public string? Ref { get; set; }
 
 	/// <summary>type - The data type (string, number, integer, boolean, object, array, null)</summary>
@@ -112,7 +107,6 @@ public class JsonSchemaDefinition
 	// ========== Definitions ==========
 
 	/// <summary>$defs - Schema definitions (Draft 2020-12)</summary>
-	[JsonPropertyName("$defs")]
 	public Dictionary<string, JsonSchemaDefinition>? Defs { get; set; }
 
 	/// <summary>definitions - Schema definitions (Draft 07 and earlier)</summary>

@@ -63,7 +63,7 @@ using ZodSharp.JsonSchema.NewtonsoftJson;
 var json = JsonConvert.SerializeObject(jsonSchema, JsonSchemaSerializerOptions.Default);
 ```
 
-`JsonSchemaSerializerOptions.Default` (camelCase, ignore nulls, indented) and `.Reading` (camelCase, ignore nulls) are provided by each integration package. Both packages write the JSON Schema keyword names `$schema`, `$id`, `$ref`, and `$defs`, with camelCase for every other keyword, so exported definitions round-trip through the matching import API.
+`JsonSchemaSerializerOptions.Default` (camelCase, ignore nulls, indented) and `.Reading` (camelCase, ignore nulls) are provided by each integration package and map the JSON Schema keyword names (`$schema`, `$id`, `$ref`, `$defs`), with camelCase for every other keyword. `JsonSchemaDefinition` itself carries no serializer annotations, so use these options when serializing it — that also keeps exported definitions round-tripping through the matching import API.
 
 ## Round-trip
 

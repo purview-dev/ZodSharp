@@ -85,15 +85,37 @@ public class FromJsonSchemaParserTests
 	}
 
 	[Test]
-	public async Task JsonSchemaSerializerOptions_Default_UsesCamelCasePropertyNames()
+	public async Task JsonSchemaSerializerOptions_Default_UsesJsonSchemaKeywordAndCamelCaseNames()
 	{
 		// Arrange
+		var namingPolicy = JsonSchemaSerializerOptions.Default.PropertyNamingPolicy;
 
 		// Act
-		var options = JsonSchemaSerializerOptions.Default;
+		var refName = namingPolicy!.ConvertName(nameof(JsonSchemaDefinition.Ref));
+		var defsName = namingPolicy.ConvertName(nameof(JsonSchemaDefinition.Defs));
+		var minLengthName = namingPolicy.ConvertName(nameof(JsonSchemaDefinition.MinLength));
 
 		// Assert
-		await Assert.That(options.PropertyNamingPolicy).IsEqualTo(System.Text.Json.JsonNamingPolicy.CamelCase);
+		await Assert.That(refName).IsEqualTo("$ref");
+		await Assert.That(defsName).IsEqualTo("$defs");
+		await Assert.That(minLengthName).IsEqualTo("minLength");
+	}
+
+	[Test]
+	public async Task Parse_GivenNullSubSchema_ThrowsArgumentException()
+	{
+		// Arrange
+		JsonSchemaDefinition definition = new()
+		{
+			Type = "object",
+			Properties = new Dictionary<string, JsonSchemaDefinition> { ["name"] = null! },
+		};
+
+		// Act
+		var exception = Assert.Throws<ArgumentException>(() => FromJsonSchemaParser.Parse(definition));
+
+		// Assert
+		await Assert.That(exception!.Message).Contains("null sub-schema");
 	}
 
 	[Test]

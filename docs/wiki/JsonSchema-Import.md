@@ -52,7 +52,7 @@ var result = userSchema.Validate(userData);
   ```
 
   Inline the referenced schema, or move it under the root `$defs`, before importing. Local references may be cyclic — a reference that is still being resolved becomes a lazy schema.
-- The reader binds the JSON Schema keyword names `$schema`, `$id`, `$ref`, and `$defs` (plus the draft-07 `definitions`); `Z.ToJsonSchema` writes them back with the same names, so exported definitions round-trip through either integration package.
+- The reader binds the JSON Schema keyword names `$schema`, `$id`, `$ref`, and `$defs` (plus the draft-07 `definitions`) through the integration package's `JsonSchemaSerializerOptions`, and the same options write them back, so exported definitions round-trip through either package. `JsonSchemaDefinition` itself carries no serializer annotations, so serialize it with `JsonSchemaSerializerOptions` to get keyword-compliant output.
 
 ## Cross-platform reuse
 

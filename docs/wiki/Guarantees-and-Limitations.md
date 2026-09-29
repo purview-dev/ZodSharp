@@ -49,7 +49,7 @@ Rules evaluated by the base `Validate` pipeline produce `validation_failed` erro
 
 ### JSON Schema import scope
 
-`Z.FromJsonSchema` supports **local** `$ref` (`#/...`) references only; external `$ref` targets throw a `NotSupportedException` that names the unsupported reference. The reader binds the JSON Schema keyword names (`$schema`, `$id`, `$ref`, `$defs`), and `Z.ToJsonSchema` writes them with the same names, so exported definitions round-trip. Import types live in package-specific namespaces (`ZodSharp.JsonSchema.SystemTextJson` / `ZodSharp.JsonSchema.NewtonsoftJson`).
+`Z.FromJsonSchema` supports **local** `$ref` (`#/...`) references only; external `$ref` targets throw a `NotSupportedException` that names the unsupported reference. The integration packages' `JsonSchemaSerializerOptions` read and write the JSON Schema keyword names (`$schema`, `$id`, `$ref`, `$defs`), so exported definitions round-trip; the core `JsonSchemaDefinition` type itself stays free of serializer annotations. Import types live in package-specific namespaces (`ZodSharp.JsonSchema.SystemTextJson` / `ZodSharp.JsonSchema.NewtonsoftJson`).
 
 ### Referencing both JSON integration packages
 

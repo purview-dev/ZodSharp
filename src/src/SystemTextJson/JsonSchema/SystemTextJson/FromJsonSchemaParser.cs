@@ -56,6 +56,14 @@ public static class FromJsonSchemaParser
 
 	static IZodSchema<object, object> ConvertSchema(JsonSchemaDefinition schema, ConversionContext ctx)
 	{
+		if (schema is null)
+		{
+			throw new ArgumentException(
+				"The JSON Schema definition contains a null sub-schema, which cannot be converted",
+				nameof(schema)
+			);
+		}
+
 		// Handle $ref
 		if (schema.Ref != null)
 		{
