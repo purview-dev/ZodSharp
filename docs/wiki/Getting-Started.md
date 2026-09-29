@@ -25,7 +25,7 @@ dotnet add package Purview.ZodSharp.AspNetCore
 - `Purview.ZodSharp.AspNetCore` — failed validation results converted to standard `ProblemDetails` / `HttpValidationProblemDetails` payloads.
 
 > [!TIP]
-> JSON Schema import (`Z.FromJsonSchema`) is provided by whichever JSON integration package you reference, so pick one. Export (`Z.ToJsonSchema`) lives in the core package.
+> JSON Schema import (`Z.FromJsonSchema`) is provided by whichever JSON integration package you reference, so pick one, and import its JSON Schema namespace (`ZodSharp.JsonSchema.SystemTextJson` or `ZodSharp.JsonSchema.NewtonsoftJson`). Export (`Z.ToJsonSchema`) lives in the core package.
 
 ## First schema
 
@@ -116,6 +116,7 @@ var result = userSchema.DeserializeAndValidate(json);
 var jsonSchema = Z.ToJsonSchema(userSchema, new ToJsonSchemaOptions { Title = "User" });
 
 // JSON Schema import (requires an integration package)
+// using ZodSharp.JsonSchema.SystemTextJson; // or ZodSharp.JsonSchema.NewtonsoftJson
 var imported = Z.FromJsonSchema(jsonSchemaString);
 ```
 

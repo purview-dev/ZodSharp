@@ -1,6 +1,6 @@
 # Newtonsoft.Json Integration
 
-The `Purview.ZodSharp.NewtonsoftJson` package adds Newtonsoft.Json deserialize-and-validate, validating converters, and JSON Schema import to the core library. All extension methods live in the `ZodSharp` namespace.
+The `Purview.ZodSharp.NewtonsoftJson` package adds Newtonsoft.Json deserialize-and-validate, validating converters, and JSON Schema import to the core library. The deserialize/serialize extension methods live in the `ZodSharp` namespace; the JSON Schema import types (and `Z.FromJsonSchema`) live in the `ZodSharp.JsonSchema.NewtonsoftJson` namespace.
 
 ## Install
 
@@ -68,7 +68,14 @@ Deserialize/validation failures produce `ValidationError` entries with codes `de
 
 ## JSON Schema import
 
-`Z.FromJsonSchema` is available with this package referenced; see [JSON Schema Import](JsonSchema-Import.md).
+```csharp
+using ZodSharp;
+using ZodSharp.JsonSchema.NewtonsoftJson;
+
+var schema = Z.FromJsonSchema(jsonSchemaString);
+```
+
+See [JSON Schema Import](JsonSchema-Import.md) for the supported keywords, `$ref` handling, and the `JsonSchemaSerializerOptions` defaults.
 
 ## System.Text.Json vs Newtonsoft.Json
 
@@ -82,5 +89,5 @@ Deserialize/validation failures produce `ValidationError` entries with codes `de
 | Invalid-data exception | `System.Text.Json.JsonException` | `JsonSerializationException` |
 | JSON plumbing | `JsonElement` | `JToken`/`JObject`/`JArray` |
 
-> [!WARNING]
-> Both packages declare types with identical full names (`ZodSharp.ZExtensions`, `ZodSharp.JsonSchema.FromJsonSchemaOptions`, `ZodSharp.JsonSchema.FromJsonSchemaParser`, `ZodSharp.JsonSchema.JsonSchemaSerializerOptions`). Referencing both packages in one project creates type ambiguity unless `extern alias` is used — reference one JSON integration package.
+> [!NOTE]
+> `Purview.ZodSharp.SystemTextJson` and `Purview.ZodSharp.NewtonsoftJson` are mutually exclusive integrations — pick the one that matches your JSON library. Both packages can be referenced from the same project without `extern alias` (their JSON Schema types live in the `ZodSharp.JsonSchema.SystemTextJson` / `ZodSharp.JsonSchema.NewtonsoftJson` namespaces), but the deserialize/serialize extension overloads share names, so import exactly one package namespace per file.

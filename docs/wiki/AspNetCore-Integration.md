@@ -196,10 +196,21 @@ The generated `Create` builds a typed `ErrorTypeParameters` instance (validated 
 parameter types and exposed through `ValidationError.Parameters`) and sets the message from
 `ErrorType.FormatMessage`, so `error.Message` already reads
 `Aggregate 'agg-123' (of type Invoice) failed to save` and mapping through the registry produces the
-`409 Conflict` response described below. The analyzers `ZODSASP001`/`ZODSASP002`/`ZODSASP003`
-(shipped with the core package) warn when a `MessageFormat` placeholder is not declared in
-`Parameters`, when an `[ErrorType]` field's containing class is not `partial`, or when the field is not
-`static readonly`.
+`409 Conflict` response described below.
+
+### ErrorType diagnostics
+
+The `ErrorType` factory, its source generator, and its analyzers ship with the core `Purview.ZodSharp` package:
+
+| ID | Severity | Meaning |
+|---|---|---|
+| `ZODSASP001` | Warning | A `MessageFormat` placeholder is not declared in `ErrorType.Parameters` |
+| `ZODSASP002` | Warning | The containing type of an `[ErrorType]` field is not declared `partial` |
+| `ZODSASP003` | Warning | An `[ErrorType]` field is not declared `static readonly` |
+| `ZODSASP100` | Error | Unhandled exception in the `ErrorType` source generator |
+| `ZODSASP101` | Error | The `Parameters` of an `[ErrorType]` field could not be extracted |
+
+`ZODSASP001`–`ZODSASP003` explain why `Create`/`Throw` helpers were not generated; `ZODSASP100`/`ZODSASP101` are fatal generator failures that name the field they failed on.
 
 Produces a `409 Conflict` `HttpValidationProblemDetails` with:
 

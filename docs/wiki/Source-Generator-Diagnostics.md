@@ -1,6 +1,6 @@
 # Source Generator Diagnostics
 
-The `[ZodSchema]` generator ships an analyzer (category `ZodSharp.SourceGenerator`) that reports configuration and usage problems at compile time. All diagnostics below are errors, enabled by default.
+The `[ZodSchema]` generator ships an analyzer (category `ZodSharp.SourceGenerator`) that reports configuration and usage problems at compile time. Every diagnostic below is enabled by default; `ZODSGEN033` is a warning and the rest are errors.
 
 | ID | Meaning |
 |---|---|
@@ -34,6 +34,8 @@ The `[ZodSchema]` generator ships an analyzer (category `ZodSharp.SourceGenerato
 | ZODSGEN034 | The `OnZodValidate` refinement hook is implemented on a type that is not `partial` (or whose containing types are not all `partial`), so the generated declaration cannot be emitted |
 | ZODSGEN035 | The `OnZodValidate` refinement hook is not declared as `partial void OnZodValidate(RefineCtx<T> context)` (wrong modifiers, return type, or parameters) |
 | ZODSGEN036 | A member still uses the retired synchronous refinement contract (`IEnumerable<ValidationError> Validate()`); implement `OnZodValidate` instead |
+
+IDs `ZODSGEN002` and `ZODSGEN022`–`ZODSGEN026` are intentionally unused; rule identifiers are never renumbered or re-used.
 
 ## Suppressing
 
