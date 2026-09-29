@@ -1,6 +1,6 @@
 # System.Text.Json Integration
 
-The `Purview.ZodSharp.SystemTextJson` package adds System.Text.Json deserialize-and-validate, validating converters, and JSON Schema import to the core library. All extension methods live in the `ZodSharp` namespace.
+The `Purview.ZodSharp.SystemTextJson` package adds System.Text.Json deserialize-and-validate, validating converters, and JSON Schema import to the core library. The deserialize/serialize extension methods live in the `ZodSharp` namespace; the JSON Schema import types (and `Z.FromJsonSchema`) live in the `ZodSharp.JsonSchema.SystemTextJson` namespace.
 
 ## Install
 
@@ -65,7 +65,14 @@ Deserialize/validation failures produce `ValidationError` entries with codes `de
 
 ## JSON Schema import
 
-`Z.FromJsonSchema` is available with this package referenced; see [JSON Schema Import](JsonSchema-Import.md).
+```csharp
+using ZodSharp;
+using ZodSharp.JsonSchema.SystemTextJson;
+
+var schema = Z.FromJsonSchema(jsonSchemaString);
+```
+
+See [JSON Schema Import](JsonSchema-Import.md) for the supported keywords, `$ref` handling, and the `JsonSchemaSerializerOptions` defaults.
 
 ## Comparing with Newtonsoft
 

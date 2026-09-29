@@ -46,6 +46,9 @@ var value = JsonSerializer.Deserialize<User>(json, options);
 ## Import from JSON Schema
 
 ```csharp
+using ZodSharp;
+using ZodSharp.JsonSchema.SystemTextJson;
+
 var schema = Z.FromJsonSchema(jsonSchemaString);
 var result = schema.Validate(data);
 ```

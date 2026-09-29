@@ -4,15 +4,7 @@ using System.Text.RegularExpressions;
 using ZodSharp.Core;
 using ZodSharp.Schemas;
 
-namespace ZodSharp.JsonSchema;
-
-/// <summary>
-/// Options for parsing JSON Schema to ZodSharp schemas.
-/// </summary>
-public class FromJsonSchemaOptions
-{
-	// Reserved for future options
-}
+namespace ZodSharp.JsonSchema.SystemTextJson;
 
 /// <summary>
 /// Parses JSON Schema (Draft 2020-12) to ZodSharp schemas using System.Text.Json.
@@ -24,13 +16,8 @@ public static class FromJsonSchemaParser
 	/// Parses a JSON Schema definition to a ZodSharp schema.
 	/// </summary>
 	/// <param name="schema">The JSON Schema definition</param>
-	/// <param name="options">Parsing options</param>
 	/// <returns>A ZodSharp schema that validates according to the JSON Schema</returns>
-	public static IZodSchema<object, object> Parse(JsonSchemaDefinition schema,
-#pragma warning disable IDE0060 // Remove unused parameter
-		FromJsonSchemaOptions? options = null
-#pragma warning restore IDE0060 // Remove unused parameter
-	)
+	public static IZodSchema<object, object> Parse(JsonSchemaDefinition schema)
 	{
 		if (schema is null)
 		{
@@ -46,15 +33,14 @@ public static class FromJsonSchemaParser
 	/// Parses a JSON Schema string to a ZodSharp schema.
 	/// </summary>
 	/// <param name="jsonSchema">The JSON Schema as a string</param>
-	/// <param name="options">Parsing options</param>
 	/// <returns>A ZodSharp schema that validates according to the JSON Schema</returns>
-	public static IZodSchema<object, object> Parse(string jsonSchema, FromJsonSchemaOptions? options = null)
+	public static IZodSchema<object, object> Parse(string jsonSchema)
 	{
 		var schema = JsonSerializer.Deserialize<JsonSchemaDefinition>(jsonSchema, JsonSchemaSerializerOptions.Reading);
 
 		return schema == null
 			? throw new ArgumentException("Invalid JSON Schema: could not parse JSON", nameof(jsonSchema))
-			: Parse(schema, options);
+			: Parse(schema);
 	}
 
 	sealed class ConversionContext(JsonSchemaDefinition rootSchema, Dictionary<string, JsonSchemaDefinition> defs)
@@ -70,6 +56,14 @@ public static class FromJsonSchemaParser
 
 	static IZodSchema<object, object> ConvertSchema(JsonSchemaDefinition schema, ConversionContext ctx)
 	{
+		if (schema is null)
+		{
+			throw new ArgumentException(
+				"The JSON Schema definition contains a null sub-schema, which cannot be converted",
+				nameof(schema)
+			);
+		}
+
 		// Handle $ref
 		if (schema.Ref != null)
 		{
@@ -254,7 +248,9 @@ public static class FromJsonSchemaParser
 	{
 		if (!refPath.StartsWith('#'))
 		{
-			throw new NotSupportedException("External $ref is not supported, only local refs (#/...) are allowed");
+			throw new NotSupportedException(
+				$"External $ref '{refPath}' is not supported. Only local references ('#/...', for example '#/$defs/Name') can be resolved; inline or pre-resolve external schemas before importing."
+			);
 		}
 
 		// Check if already resolved

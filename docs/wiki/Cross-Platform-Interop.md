@@ -41,7 +41,7 @@ If the C# output directory is empty, the vitest suite emits a note instructing y
 The same interop goal is available without fixtures via JSON Schema:
 
 - Export: `Z.ToJsonSchema` (core package) → JSON Schema, or `z.toJSONSchema` on the TypeScript side (Zod v4+).
-- Import: `Z.FromJsonSchema` (in the System.Text.Json or Newtonsoft.Json package).
+- Import: `Z.FromJsonSchema` (in the System.Text.Json or Newtonsoft.Json package — namespace `ZodSharp.JsonSchema.SystemTextJson` / `ZodSharp.JsonSchema.NewtonsoftJson`).
 
 See [JSON Schema Export](JsonSchema-Export.md) and [JSON Schema Import](JsonSchema-Import.md).
 

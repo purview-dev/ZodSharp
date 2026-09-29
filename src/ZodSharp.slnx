@@ -14,6 +14,7 @@
 	</Folder>
 	<Folder Name="/tests/">
 		<Project Path="tests/AspNetCore.UnitTests/AspNetCore.UnitTests.csproj" />
+		<Project Path="tests/JsonInterop.UnitTests/JsonInterop.UnitTests.csproj" />
 		<Project Path="tests/NewtonsoftJson.UnitTests/NewtonsoftJson.UnitTests.csproj" />
 		<Project Path="tests/SourceGenerators.UnitTests/SourceGenerators.UnitTests.csproj" />
 		<Project Path="tests/SystemTextJson.UnitTests/SystemTextJson.UnitTests.csproj" />

@@ -49,11 +49,11 @@ Rules evaluated by the base `Validate` pipeline produce `validation_failed` erro
 
 ### JSON Schema import scope
 
-`Z.FromJsonSchema` supports **local** `$ref` (`#/...`) references only; external `$ref` targets throw `NotSupportedException`. `FromJsonSchemaOptions` is currently empty (reserved for future options).
+`Z.FromJsonSchema` supports **local** `$ref` (`#/...`) references only; external `$ref` targets throw a `NotSupportedException` that names the unsupported reference. The integration packages' `JsonSchemaSerializerOptions` read and write the JSON Schema keyword names (`$schema`, `$id`, `$ref`, `$defs`), so exported definitions round-trip; the core `JsonSchemaDefinition` type itself stays free of serializer annotations. Import types live in package-specific namespaces (`ZodSharp.JsonSchema.SystemTextJson` / `ZodSharp.JsonSchema.NewtonsoftJson`).
 
 ### Referencing both JSON integration packages
 
-`Purview.ZodSharp.SystemTextJson` and `Purview.ZodSharp.NewtonsoftJson` both declare types with identical full names (`ZodSharp.ZExtensions`, `ZodSharp.JsonSchema.FromJsonSchemaOptions`, `FromJsonSchemaParser`, `JsonSchemaSerializerOptions`). Reference one JSON integration package; referencing both requires `extern alias`.
+`Purview.ZodSharp.SystemTextJson` and `Purview.ZodSharp.NewtonsoftJson` are **mutually exclusive** integrations — pick the one that matches your JSON library. Both packages can be referenced from the same project **without `extern alias`**, because every JSON Schema import type is declared in a package-specific namespace (`ZodSharp.JsonSchema.SystemTextJson`, `ZodSharp.JsonSchema.NewtonsoftJson`) rather than an identical full name. The deserialize/serialize extension methods remain in the `ZodSharp` namespace in both packages, so import exactly one package namespace per file: importing both makes calls such as `schema.DeserializeAndValidate(json)` or `Z.FromJsonSchema(...)` ambiguous at the call site.
 
 ## Custom rules
 

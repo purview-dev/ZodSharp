@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<RootNamespace>ZodSharp</RootNamespace>
+		<AssemblyName>Purview.ZodSharp.JsonInterop.UnitTests</AssemblyName>
+		<NoWarn>$(NoWarn);CA1849;CA1002;CA2227;</NoWarn>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<!-- Referencing both JSON integration packages from one project is deliberate: it proves that the
+		     packages no longer collide (no `extern alias` required) now that each one declares its JSON
+		     Schema import types in a package-specific namespace. -->
+		<ProjectReference Include="..\..\src\NewtonsoftJson\NewtonsoftJson.csproj" />
+		<ProjectReference Include="..\..\src\SystemTextJson\SystemTextJson.csproj" />
+		<ProjectReference Include="..\..\src\ZodSharp\ZodSharp.csproj" />
+	</ItemGroup>
+</Project>

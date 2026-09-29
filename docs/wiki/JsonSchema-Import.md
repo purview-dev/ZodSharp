@@ -1,9 +1,10 @@
 # JSON Schema Import
 
-Import a JSON Schema into a Purview.ZodSharp schema with `Z.FromJsonSchema`. This API is provided by the JSON integration packages — reference either `Purview.ZodSharp.SystemTextJson` or `Purview.ZodSharp.NewtonsoftJson` (both expose the same surface).
+Import a JSON Schema into a Purview.ZodSharp schema with `Z.FromJsonSchema`. This API is provided by the JSON integration packages — reference either `Purview.ZodSharp.SystemTextJson` or `Purview.ZodSharp.NewtonsoftJson`. The two JSON integrations are mutually exclusive; pick one and import its JSON Schema namespace (`ZodSharp.JsonSchema.SystemTextJson` or `ZodSharp.JsonSchema.NewtonsoftJson`).
 
 ```csharp
 using ZodSharp;
+using ZodSharp.JsonSchema.SystemTextJson; // or ZodSharp.JsonSchema.NewtonsoftJson
 
 var jsonSchemaString = """
     {
@@ -24,17 +25,15 @@ var result = userSchema.Validate(userData);
 
 | Signature | Notes |
 |---|---|
-| `IZodSchema<object, object> FromJsonSchema(string jsonSchema, FromJsonSchemaOptions? options = null)` | parses the JSON string into a `JsonSchemaDefinition`, then into a schema |
-| `IZodSchema<object, object> FromJsonSchema(JsonSchemaDefinition schema, FromJsonSchemaOptions? options = null)` | import from an already-deserialized definition |
-
-`FromJsonSchemaOptions` is currently an empty placeholder reserved for future options.
+| `IZodSchema<object, object> FromJsonSchema(string jsonSchema)` | parses the JSON string into a `JsonSchemaDefinition`, then into a schema |
+| `IZodSchema<object, object> FromJsonSchema(JsonSchemaDefinition schema)` | import from an already-deserialized definition |
 
 > [!NOTE]
 > `Z.FromJsonSchema` is implemented as a C# 14 extension member on `Z`, so it only exists when a JSON integration package is referenced. `Z.ToJsonSchema` is a real static member on `Z` in the core package.
 
 ## Supported keywords
 
-`FromJsonSchemaParser` (namespace `ZodSharp.JsonSchema`) maps:
+`FromJsonSchemaParser` (namespace `ZodSharp.JsonSchema.SystemTextJson` or `ZodSharp.JsonSchema.NewtonsoftJson`) maps:
 
 - `type` — `string` / `number` / `integer` / `boolean` / `null` / `object` / `array`.
 - `enum` → `ZodUnion` of literals (a single member becomes a literal); `const` → literal.
@@ -46,8 +45,14 @@ var result = userSchema.Validate(userData);
 
 ## Limitations
 
-- `$ref` is supported only for **local** references (`#/...`); external `$ref` targets throw `NotSupportedException`.
-- The options type is currently empty; behaviour is fixed by the supported keyword set above.
+- `$ref` is supported only for **local** references (`#/...`, for example `#/$defs/Name`). External `$ref` targets throw `NotSupportedException` naming the unsupported reference:
+
+  ```text
+  External $ref 'external.json#/$defs/name' is not supported. Only local references ('#/...', for example '#/$defs/Name') can be resolved; inline or pre-resolve external schemas before importing.
+  ```
+
+  Inline the referenced schema, or move it under the root `$defs`, before importing. Local references may be cyclic — a reference that is still being resolved becomes a lazy schema.
+- The reader binds the JSON Schema keyword names `$schema`, `$id`, `$ref`, and `$defs` (plus the draft-07 `definitions`) through the integration package's `JsonSchemaSerializerOptions`, and the same options write them back, so exported definitions round-trip through either package. `JsonSchemaDefinition` itself carries no serializer annotations, so serialize it with `JsonSchemaSerializerOptions` to get keyword-compliant output.
 
 ## Cross-platform reuse
 

@@ -48,6 +48,9 @@ var value = JsonConvert.DeserializeObject<User>(json, converter);
 ## Import from JSON Schema
 
 ```csharp
+using ZodSharp;
+using ZodSharp.JsonSchema.NewtonsoftJson;
+
 var schema = Z.FromJsonSchema(jsonSchemaString);
 var result = schema.Validate(data);
 ```

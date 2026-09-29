@@ -71,7 +71,7 @@ The fixture generator script is intentionally run via Bun rather than `npx tsx` 
 - **Packages are published under the `Purview.*` IDs.** The core `Purview.ZodSharp` package ships the validator and the source generator, with optional `Purview.ZodSharp.SystemTextJson`, `Purview.ZodSharp.NewtonsoftJson`, and `Purview.ZodSharp.AspNetCore` integration packages.
 - **Targets `net8.0`, `net9.0`, and `net10.0`.** The source generator remains on `netstandard2.0` so it can run in any compiler host.
 - **System.Text.Json integration.** JSON deserialize-and-validate is available for both major JSON libraries, including validating `JsonConverter<T>` instances.
-- **JSON Schema interoperability.** Schemas can be exported via `Z.ToJsonSchema` and imported via `Z.FromJsonSchema`, enabling cross-language reuse with TypeScript/Zod.
+- **JSON Schema interoperability.** Schemas can be exported via `Z.ToJsonSchema` and imported via `Z.FromJsonSchema`, enabling cross-language reuse with TypeScript/Zod. The import API lives in the JSON integration package's namespace (`ZodSharp.JsonSchema.SystemTextJson` or `ZodSharp.JsonSchema.NewtonsoftJson`); export stays in the core package.
 - **ASP.NET Core ProblemDetails integration.** Failed validation results convert directly to `HttpValidationProblemDetails` via `result.ToHttpValidationProblemDetails()`.
 - **Expanded DataAnnotations support.** `[Length]`, `[MinLength]`, `[MaxLength]`, `[RegularExpression]`, `[AllowedValues]`, `[DeniedValues]`, `[EmailAddress]`, and more, with structured size failures (`Code`, `Origin`, `Minimum`/`Maximum`, `Inclusive`, `Path`).
 - **Value-first composition methods.** `.ApplyAnd()`, `.ApplyOr()`, and `.ApplyRefine()` are the supported composition surface.
@@ -430,19 +430,22 @@ var jsonSchema = Z.ToJsonSchema<Dictionary<string, object?>>(userSchema, new ToJ
 
 // Serialize with your preferred JSON library
 // System.Text.Json (add Purview.ZodSharp.SystemTextJson):
-using ZodSharp.JsonSchema;
+using ZodSharp.JsonSchema.SystemTextJson;
 var systemTextJson = System.Text.Json.JsonSerializer.Serialize(jsonSchema, JsonSchemaSerializerOptions.Default);
 
 // Newtonsoft.Json (add Purview.ZodSharp.NewtonsoftJson):
-using ZodSharp.JsonSchema;
+using ZodSharp.JsonSchema.NewtonsoftJson;
 var newtonsoftJson = JsonConvert.SerializeObject(jsonSchema, JsonSchemaSerializerOptions.Default);
 ```
 
 #### Import from JSON Schema (JSON Schema -> Purview.ZodSharp)
 
-Add either `Purview.ZodSharp.SystemTextJson` or `Purview.ZodSharp.NewtonsoftJson` to your project, then:
+Add either `Purview.ZodSharp.SystemTextJson` or `Purview.ZodSharp.NewtonsoftJson` to your project, then import that package's JSON Schema namespace:
 
 ```csharp
+using ZodSharp;
+using ZodSharp.JsonSchema.SystemTextJson; // or ZodSharp.JsonSchema.NewtonsoftJson
+
 var jsonSchemaString = @"{
     ""type"": ""object"",
     ""properties"": {
