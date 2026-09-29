@@ -1,7 +1,6 @@
 using ZodSharp.Core;
-using ZodSharp.JsonSchema;
 
-namespace ZodSharp;
+namespace ZodSharp.JsonSchema.NewtonsoftJson;
 
 [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1034:Nested types should not be visible")]
 #if !NETSTANDARD2_1_OR_GREATER
@@ -15,18 +14,14 @@ public static class ZExtensions
 		/// Creates a ZodSharp schema from a JSON Schema definition.
 		/// Enables consuming schemas defined in TypeScript Zod.
 		/// </summary>
-		public static IZodSchema<object, object> FromJsonSchema(
-			JsonSchemaDefinition schema,
-			FromJsonSchemaOptions? options = null
-		) => FromJsonSchemaParser.Parse(schema, options);
+		public static IZodSchema<object, object> FromJsonSchema(JsonSchemaDefinition schema) =>
+			FromJsonSchemaParser.Parse(schema);
 
 		/// <summary>
 		/// Creates a ZodSharp schema from a JSON Schema string.
 		/// Enables consuming schemas defined in TypeScript Zod via JSON files or APIs.
 		/// </summary>
-		public static IZodSchema<object, object> FromJsonSchema(
-			string jsonSchema,
-			FromJsonSchemaOptions? options = null
-		) => FromJsonSchemaParser.Parse(jsonSchema, options);
+		public static IZodSchema<object, object> FromJsonSchema(string jsonSchema) =>
+			FromJsonSchemaParser.Parse(jsonSchema);
 	}
 }

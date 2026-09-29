@@ -1,6 +1,6 @@
 using System.Text.Json;
 
-namespace ZodSharp.JsonSchema;
+namespace ZodSharp.JsonSchema.SystemTextJson;
 
 /// <summary>
 /// Options for JSON serialization/deserialization of JSON Schema using System.Text.Json.

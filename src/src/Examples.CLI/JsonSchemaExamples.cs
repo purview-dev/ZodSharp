@@ -1,5 +1,6 @@
 using Newtonsoft.Json;
 using ZodSharp.JsonSchema;
+using ZodSharp.JsonSchema.NewtonsoftJson;
 
 namespace ZodSharp.Examples.CLI;
 
