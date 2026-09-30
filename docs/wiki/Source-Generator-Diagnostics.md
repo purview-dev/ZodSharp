@@ -34,6 +34,10 @@ The `[ZodSchema]` generator ships an analyzer (category `ZodSharp.SourceGenerato
 | ZODSGEN034 | The `OnZodValidate` refinement hook is implemented on a type that is not `partial` (or whose containing types are not all `partial`), so the generated declaration cannot be emitted |
 | ZODSGEN035 | The `OnZodValidate` refinement hook is not declared as `partial void OnZodValidate(RefineCtx<T> context)` (wrong modifiers, return type, or parameters) |
 | ZODSGEN036 | A member still uses the retired synchronous refinement contract (`IEnumerable<ValidationError> Validate()`); implement `OnZodValidate` instead |
+| ZODSGEN037 | (warning) A rule marked `[ZodRule]` derives an attribute name (`XRule` → `XAttribute`) that a hand-authored type already declares, so no attribute is generated and that declaration's own `[ZodRule]` mapping governs every usage |
+| ZODSGEN038 | (warning) A hand-authored rule attribute's `[ZodRule(typeof(...))]` mapping does not address every rule declared under the name the attribute encodes (`XAttribute` → `XRule`), so some usages of the attribute resolve to no rule |
+| ZODSGEN039 | (warning) A rule accepts a `code`/`origin` constructor parameter but does not implement `IZodRule`, so the value never reaches the reported error identity |
+| ZODSGEN040 | (warning) An attribute argument has no effect: the resolved rule has no matching constructor parameter and the value is not part of the reported error identity |
 
 IDs `ZODSGEN002` and `ZODSGEN022`–`ZODSGEN026` are intentionally unused; rule identifiers are never renumbered or re-used.
 

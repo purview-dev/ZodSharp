@@ -61,6 +61,12 @@ public partial class AnalyzerReleaseTrackingTests
 		"ZODSASP101",
 	];
 
+	/// <summary>
+	/// Rules added since the last stable release. Each identifier must also appear in
+	/// <c>AnalyzerReleases.Unshipped.md</c> so the Roslyn release-tracking analyzers stay satisfied.
+	/// </summary>
+	static readonly string[] ExpectedUnshippedRuleIds = ["ZODSGEN037", "ZODSGEN038", "ZODSGEN039", "ZODSGEN040"];
+
 	[Test]
 	public async Task ShippedReleases_GivenStableRelease_DeclareRelease2_0_0WithEveryDiagnosticId(
 		CancellationToken cancellationToken
@@ -78,7 +84,9 @@ public partial class AnalyzerReleaseTrackingTests
 	}
 
 	[Test]
-	public async Task UnshippedRelease_GivenStableRelease_DeclaresNoNewRules(CancellationToken cancellationToken)
+	public async Task UnshippedRelease_GivenRulesAddedSinceTheStableRelease_DeclaresOnlyThoseRules(
+		CancellationToken cancellationToken
+	)
 	{
 		// Arrange
 		var markdown = await ReadReleaseFileAsync("AnalyzerReleases.Unshipped.md", cancellationToken);
@@ -89,7 +97,7 @@ public partial class AnalyzerReleaseTrackingTests
 		// Assert
 		await Assert.That(markdown).Contains("### New Rules");
 		await Assert.That(markdown).Contains("; Unshipped analyzer release");
-		await Assert.That(ruleIds.Length).IsEqualTo(0);
+		await Assert.That(SortedRuleIds(ruleIds)).IsEqualTo(SortedRuleIds(ExpectedUnshippedRuleIds));
 	}
 
 	[Test]
@@ -117,6 +125,7 @@ public partial class AnalyzerReleaseTrackingTests
 		await Assert.That(string.Join(",", duplicatedShippedRuleIds)).IsEqualTo(string.Empty);
 		await Assert.That(string.Join(",", rulesInBothFiles)).IsEqualTo(string.Empty);
 		await Assert.That(shippedRuleIds.Length).IsEqualTo(ExpectedShippedRuleIds.Length);
+		await Assert.That(unshippedRuleIds.Length).IsEqualTo(ExpectedUnshippedRuleIds.Length);
 	}
 
 	static async Task<string> ReadReleaseFileAsync(string fileName, CancellationToken cancellationToken) =>

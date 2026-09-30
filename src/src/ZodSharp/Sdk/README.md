@@ -137,6 +137,58 @@ public partial record struct AssetId
 
 `[NotEmpty]` on a `Guid` property emits `NotEmptyRule<Guid>`; on an `int` property it emits `NotEmptyRule<int>`. See the [Custom Rules](https://purview.dev/docs/zodsharp/custom-rules/) page for the full precedence rules and the scalar value-object walkthrough.
 
+### One attribute for a primitive and a scalar value object
+
+A constraint can be *self-referential* (`where TSelf : IScalarValueObject<TSelf, string>`), which a primitive can never satisfy. Declare both halves of the rule side by side and the generator resolves the member that fits the annotated type — so a single attribute works on a `string` member (non-generic sibling) and on a scalar value object (generic closed with that type):
+
+```csharp
+public readonly record struct NonWhiteSpaceStringRule(string? Message = null)
+    : IValidationRule<string?>
+{
+    public bool IsValid(in string? value) => value != null && !string.IsNullOrWhiteSpace(value);
+    public string GetErrorMessage(in string? value) => Message ?? "Value must not be empty.";
+}
+
+public readonly record struct NonWhiteSpaceStringRule<TSelf>(string? Code = null, string? Message = null)
+    : IValidationRule<TSelf>
+    where TSelf : IScalarValueObject<TSelf, string>
+{
+    public bool IsValid(in TSelf value) => value.Value != null && !string.IsNullOrWhiteSpace(value.Value);
+    public string GetErrorMessage(in TSelf value) => Message ?? "Value must not be empty.";
+}
+
+[ZodRule(typeof(NonWhiteSpaceStringRule<>))]
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Property)]
+public sealed class NonWhiteSpaceStringAttribute : ValidationAttribute
+{
+    public string? Code { get; set; }
+    public string? Message { get; set; }
+}
+```
+
+Resolution is symmetric (mapping the attribute to the non-generic rule still finds the generic member for a scalar target). When nothing in the family can validate the target type, `ZODSGEN030` is reported and no rule is emitted. Marking an arity-1 **generic** rule with the parameterless `[ZodRule]` generates the attribute mapped to the open generic for you; if a hand-authored type already claims the derived name, the generated attribute is suppressed and reported as `ZODSGEN037` rather than silently re-mapping every usage; a hand-authored attribute whose mapping does not address the whole family is reported as `ZODSGEN038`; and a rule that accepts a `code`/`origin` constructor parameter without implementing `IZodRule` is reported as `ZODSGEN039`, because the value would be supplied and never read back.
+
+Implement `ZodSharp.Core.IZodRuleAttribute` on a hand-authored attribute to declare its `Code`/`Origin` as the reported error identity (the compiler then guarantees the properties the generator reads exist). Any argument an attribute supplies that the resolved rule cannot consume — no matching constructor parameter and not identity — is reported as `ZODSGEN040` instead of being dropped silently.
+
+Add `[ZodRule(AllowMultiple = true)]` to emit `AttributeUsage(..., AllowMultiple = true)` so the generated attribute may be applied more than once. Each application becomes its own rule, configured from that application's arguments and evaluated in source order:
+
+```csharp
+[ZodRule(AllowMultiple = true)]
+public readonly record struct MultipleOfRule(int Factor = 1, string? Message = null) : IValidationRule<int>
+{
+    public bool IsValid(in int value) => Factor != 0 && value % Factor == 0;
+    public string GetErrorMessage(in int value) => Message ?? "Not a multiple.";
+}
+
+[ZodSchema]
+public partial class Sample
+{
+    [MultipleOf(Factor = 3)]
+    [MultipleOf(Factor = 5)]
+    public int Value { get; set; }   // must be a multiple of both 3 and 5
+}
+```
+
 ## Type-level rules (validating the value object)
 
 Rules can be attached to the **`[ZodSchema]` type itself**; they validate the whole value with an empty path, which is the right shape for a scalar whose single value *is* the value object:

@@ -152,4 +152,230 @@ public partial class ZodSchemaAnalyzerTests
 		var result = await AnalyzeAsync(source, cancellationToken);
 		await Assert.That(result).DoesNotHaveDiagnostic(DiagnosticLibrary.RuleAttributeWithoutSchema);
 	}
+
+	[Test]
+	public async Task CustomRule_GivenValueObjectConstraintUnsatisfiableByPropertyType_ProducesZODSGEN030(
+		CancellationToken cancellationToken
+	)
+	{
+		// The rule is constrained to a scalar value object, so a `string` property cannot satisfy it and no
+		// non-generic sibling exists to fall back to.
+		const string source = """
+			using System;
+			using System.ComponentModel.DataAnnotations;
+			using ZodSharp.Core;
+
+			namespace Testing
+			{
+				public interface IScalarValueObject<TSelf, TValue>
+					where TSelf : IScalarValueObject<TSelf, TValue>
+				{
+					TValue Value { get; }
+				}
+
+				public readonly record struct NonWhiteSpaceStringRule<TSelf>(string? Code = null, string? Message = null)
+					: IValidationRule<TSelf>
+					where TSelf : IScalarValueObject<TSelf, string>
+				{
+					public bool IsValid(in TSelf value) => value.Value != null && !string.IsNullOrWhiteSpace(value.Value);
+
+					public string GetErrorMessage(in TSelf value) => Message ?? "Value must not be empty.";
+				}
+
+				[ZodRule(typeof(NonWhiteSpaceStringRule<>))]
+				[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Property)]
+				public sealed class NonWhiteSpaceStringAttribute : ValidationAttribute { }
+
+				[ZodSchema]
+				public sealed class Repository
+				{
+					[NonWhiteSpaceString]
+					public string? Name { get; set; }
+				}
+			}
+			""";
+
+		var result = await AnalyzeAsync(source, cancellationToken);
+		await Assert.That(result).HasDiagnostic(DiagnosticLibrary.UnsupportedCustomRuleTarget);
+	}
+
+	[Test]
+	public async Task CustomRule_GivenValueObjectConstraintWithNonGenericSibling_ProducesNoDiagnostic(
+		CancellationToken cancellationToken
+	)
+	{
+		// The same rule shape plus a non-generic sibling that validates the string member.
+		const string source = """
+			using System;
+			using System.ComponentModel.DataAnnotations;
+			using ZodSharp.Core;
+
+			namespace Testing
+			{
+				public interface IScalarValueObject<TSelf, TValue>
+					where TSelf : IScalarValueObject<TSelf, TValue>
+				{
+					TValue Value { get; }
+				}
+
+				public readonly record struct NonWhiteSpaceStringRule(string? Message = null)
+					: IValidationRule<string?>
+				{
+					public bool IsValid(in string? value) => value != null && !string.IsNullOrWhiteSpace(value);
+
+					public string GetErrorMessage(in string? value) => Message ?? "Value must not be empty.";
+				}
+
+				public readonly record struct NonWhiteSpaceStringRule<TSelf>(string? Code = null, string? Message = null)
+					: IValidationRule<TSelf>
+					where TSelf : IScalarValueObject<TSelf, string>
+				{
+					public bool IsValid(in TSelf value) => value.Value != null && !string.IsNullOrWhiteSpace(value.Value);
+
+					public string GetErrorMessage(in TSelf value) => Message ?? "Value must not be empty.";
+				}
+
+				[ZodRule(typeof(NonWhiteSpaceStringRule<>))]
+				[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Property)]
+				public sealed class NonWhiteSpaceStringAttribute : ValidationAttribute { }
+
+				[ZodSchema]
+				public sealed class Repository
+				{
+					[NonWhiteSpaceString]
+					public string? Name { get; set; }
+				}
+			}
+			""";
+
+		var result = await AnalyzeAsync(source, cancellationToken);
+		await Assert.That(result).DoesNotHaveDiagnostic(DiagnosticLibrary.UnsupportedCustomRuleTarget);
+	}
+
+	[Test]
+	public async Task CustomRule_GivenArgumentTheRuleCannotConsume_ProducesZODSGEN040(
+		CancellationToken cancellationToken
+	)
+	{
+		// `Threshold` is neither a rule constructor parameter nor part of the error identity, so the value has
+		// no effect on validation.
+		const string source = """
+			using System;
+			using System.ComponentModel.DataAnnotations;
+			using ZodSharp.Core;
+
+			namespace Testing
+			{
+				public readonly record struct RankRule(string? Message = null) : IValidationRule<int>
+				{
+					public bool IsValid(in int value) => value > 0;
+
+					public string GetErrorMessage(in int value) => Message ?? "Invalid rank.";
+				}
+
+				[ZodRule(typeof(RankRule))]
+				[AttributeUsage(AttributeTargets.Property)]
+				public sealed class RankAttribute : ValidationAttribute
+				{
+					public string? Code { get; set; }
+
+					public int Threshold { get; set; }
+				}
+
+				[ZodSchema]
+				public sealed class Sample
+				{
+					[Rank(Threshold = 3)]
+					public int Value { get; set; }
+				}
+			}
+			""";
+
+		var result = await AnalyzeAsync(source, cancellationToken);
+		await Assert.That(result).HasDiagnostic(DiagnosticLibrary.UnusedRuleAttributeArgument);
+	}
+
+	[Test]
+	public async Task CustomRule_GivenArgumentsTheRuleConsumes_ProducesNoZODSGEN040(CancellationToken cancellationToken)
+	{
+		// `Code` is error identity, `Message` and `ErrorMessage` feed the message, so nothing is unused.
+		const string source = """
+			using System;
+			using System.ComponentModel.DataAnnotations;
+			using ZodSharp.Core;
+
+			namespace Testing
+			{
+				public readonly record struct RankRule(string? Code = null, string? Message = null)
+					: IValidationRule<int>
+				{
+					public bool IsValid(in int value) => value > 0;
+
+					public string GetErrorMessage(in int value) => Message ?? "Invalid rank.";
+				}
+
+				[ZodRule(typeof(RankRule))]
+				[AttributeUsage(AttributeTargets.Property)]
+				public sealed class RankAttribute : ValidationAttribute
+				{
+					public string? Code { get; set; }
+
+					public string? Message { get; set; }
+				}
+
+				[ZodSchema]
+				public sealed class Sample
+				{
+					[Rank(Code = "invalid_rank", Message = "Bad.")]
+					public int Value { get; set; }
+
+					[Rank(ErrorMessage = "Also bad.")]
+					public int Other { get; set; }
+				}
+			}
+			""";
+
+		var result = await AnalyzeAsync(source, cancellationToken);
+		await Assert.That(result).DoesNotHaveDiagnostic(DiagnosticLibrary.UnusedRuleAttributeArgument);
+	}
+
+	[Test]
+	public async Task CustomRule_GivenIdentityContractMembers_ProducesNoZODSGEN040(CancellationToken cancellationToken)
+	{
+		// The attribute implements IZodRuleAttribute, so its members are identity properties by contract.
+		const string source = """
+			using System;
+			using System.ComponentModel.DataAnnotations;
+			using ZodSharp.Core;
+
+			namespace Testing
+			{
+				public readonly record struct RankRule(string? Message = null) : IValidationRule<int>
+				{
+					public bool IsValid(in int value) => value > 0;
+
+					public string GetErrorMessage(in int value) => Message ?? "Invalid rank.";
+				}
+
+				[ZodRule(typeof(RankRule))]
+				[AttributeUsage(AttributeTargets.Property)]
+				public sealed class RankAttribute : ValidationAttribute, IZodRuleAttribute
+				{
+					public string? Code { get; set; }
+
+					public string? Origin { get; set; }
+				}
+
+				[ZodSchema]
+				public sealed class Sample
+				{
+					[Rank(Code = "invalid_rank", Origin = "ranking")]
+					public int Value { get; set; }
+				}
+			}
+			""";
+
+		var result = await AnalyzeAsync(source, cancellationToken);
+		await Assert.That(result).DoesNotHaveDiagnostic(DiagnosticLibrary.UnusedRuleAttributeArgument);
+	}
 }

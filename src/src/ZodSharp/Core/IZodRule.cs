@@ -7,9 +7,17 @@ namespace ZodSharp.Core;
 /// different error code per annotated member.
 /// </summary>
 /// <remarks>
+/// <para>
 /// Rules are constructed in the generated code, so the identity can depend on the rule's constructor
 /// arguments. The interface may be implemented explicitly; the generated code casts to
 /// <see cref="IZodRule"/> when reading the values.
+/// </para>
+/// <para>
+/// This interface is the only path for a constructor argument to reach the reported identity: a rule that
+/// accepts a <c>code</c> or <c>origin</c> parameter without implementing it is reported as <c>ZODSGEN039</c>,
+/// because the value would be supplied by the generated validation and then never read. See
+/// <see cref="IZodRuleAttribute"/> for the attribute-side counterpart.
+/// </para>
 /// </remarks>
 public interface IZodRule
 {

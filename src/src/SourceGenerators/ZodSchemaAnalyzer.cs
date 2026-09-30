@@ -38,6 +38,7 @@ public sealed class ZodSchemaAnalyzer : DiagnosticAnalyzer
 		DiagnosticLibrary.AmbiguousValidationMethods,
 		DiagnosticLibrary.UnsupportedCustomRuleTarget,
 		DiagnosticLibrary.UnmappableCustomRuleArgument,
+		DiagnosticLibrary.UnusedRuleAttributeArgument,
 		DiagnosticLibrary.RuleAttributeWithoutSchema,
 	];
 

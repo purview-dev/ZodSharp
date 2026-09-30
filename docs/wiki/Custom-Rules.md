@@ -157,6 +157,28 @@ public readonly record struct NotEmptyRule<T>(string? Code = null, string? Messa
 }
 ```
 
+### Declaring the identity contract
+
+A hand-authored attribute supplies those named arguments by exposing `Code` / `Origin` properties. Implement `ZodSharp.Core.IZodRuleAttribute` to make that contract explicit — the interface requires both members, so the compiler guarantees the properties the generator reads are present, and any member added to the interface is treated as identity rather than as an unconsumed argument:
+
+```csharp
+public sealed class NoWhitespaceAttribute : ValidationAttribute, IZodRuleAttribute
+{
+    public string? Code { get; set; }
+
+    public string? Origin { get; set; }
+}
+```
+
+Attributes that do not implement the interface are still read through the documented `Code` / `Origin` names, so existing declarations keep working.
+
+Two warnings keep the identity honest rather than silently dropped:
+
+| Situation | Diagnostic |
+|---|---|
+| A rule accepts a `code`/`origin` constructor parameter but does not implement `IZodRule`, so the generated validation supplies the value and never reads it back. | `ZODSGEN039` |
+| An attribute supplies an argument the resolved rule never consumes: no matching constructor parameter, and not part of the error identity (`Code`/`Origin`/`IZodRuleAttribute` members) or the inherited `ErrorMessage`/`ErrorMessageResourceName`/`ErrorMessageResourceType` members. | `ZODSGEN040` |
+
 ## Generic rules
 
 Map an **unbound generic** rule type and the generator closes it with the property type, so one rule serves every underlying primitive:
@@ -174,6 +196,47 @@ public sealed class NotEmptyAttribute : ValidationAttribute
 
 - `[NotEmpty]` on a `Guid` property instantiates `NotEmptyRule<Guid>`; on an `int` property it instantiates `NotEmptyRule<int>`.
 - The rule must expose exactly one type parameter. A type argument that cannot satisfy the rule's constraints (for example `NotEmptyRule<T> where T : struct` applied to a `string`) is reported as `ZODSGEN030` and no rule is emitted, so the generated code always compiles.
+
+### Rule families: one attribute for a primitive and a scalar value object
+
+A constraint can also be *self-referential* (`where TSelf : IScalarValueObject<TSelf, string>`), which a primitive can never satisfy — `string` does not implement `IScalarValueObject<string, string>`. Declare both halves of the rule side by side and the generator resolves the member that fits the annotated type:
+
+```csharp
+namespace MyRules;
+
+// Member-level half: validates the underlying primitive.
+public readonly record struct NonWhiteSpaceStringRule(string? Message = null)
+    : IValidationRule<string?>
+{
+    public bool IsValid(in string? value) => value != null && !string.IsNullOrWhiteSpace(value);
+
+    public string GetErrorMessage(in string? value) => Message ?? "Value must not be empty.";
+}
+
+// Value-object half: validates the scalar as a unit.
+public readonly record struct NonWhiteSpaceStringRule<TSelf>(string? Code = null, string? Message = null)
+    : IValidationRule<TSelf>
+    where TSelf : IScalarValueObject<TSelf, string>
+{
+    public bool IsValid(in TSelf value) => value.Value != null && !string.IsNullOrWhiteSpace(value.Value);
+
+    public string GetErrorMessage(in TSelf value) => Message ?? "Value must not be empty.";
+}
+
+[ZodRule(typeof(NonWhiteSpaceStringRule<>))]
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Property)]
+public sealed class NonWhiteSpaceStringAttribute : ValidationAttribute
+{
+    public string? Code { get; set; }
+
+    public string? Message { get; set; }
+}
+```
+
+- `[NonWhiteSpaceString]` on a `string`/`string?` member resolves to `NonWhiteSpaceStringRule` (the non-generic sibling).
+- `[NonWhiteSpaceString]` on a scalar type resolves to `NonWhiteSpaceStringRule<ThatScalar>`.
+- Resolution is symmetric: mapping the attribute to the *non-generic* rule still resolves the generic member for a scalar target.
+- When no member of the family can validate the target type, `ZODSGEN030` is reported and nothing is emitted.
 
 ## Generating the attribute from the rule
 
@@ -216,7 +279,31 @@ Mapping rules:
 
 - The attribute name is the rule name with a trailing `Rule` replaced by `Attribute` (`NoWhitespaceRule` → `NoWhitespaceAttribute`). Override it with `[ZodRule(AttributeName = "…")]`.
 - Each public constructor parameter becomes a settable property, Pascal-cased, with the parameter's default value preserved. A parameter named `message` is omitted — use the inherited `ValidationAttribute.ErrorMessage` instead.
-- The rule must be non-generic, non-nested, and non-abstract, and every parameter type must be a legal attribute-argument type (primitive, `string`, `enum`, `System.Type`).
+- The rule must be non-nested and non-abstract, and every parameter type must be a legal attribute-argument type (primitive, `string`, `enum`, `System.Type`).
+- An **arity-1 generic rule** can be marked as well: the generated attribute maps to the open generic (`[ZodRule(typeof(NonWhiteSpaceStringRule<>))]`), which is the form that serves both a primitive member and a scalar value object. Rules with two or more type parameters are rejected (`ZODSGEN032`).
+- When both halves of a [rule family](#rule-families-one-attribute-for-a-primitive-and-a-scalar-value-object) are marked, only the generic half emits the attribute; the two mappings would otherwise claim the same name.
+- If a hand-authored type already declares the derived name, the generated attribute is suppressed and reported as `ZODSGEN037`. The hand-authored declaration's own `[ZodRule]` mapping then governs every usage of that attribute name, so confirm it still matches what the call sites expect.
+- `[ZodRule(AllowMultiple = true)]` emits `AttributeUsage(..., AllowMultiple = true)`, so the attribute may be applied to a member more than once. Each application becomes its own rule, configured from that application's arguments and evaluated in source order:
+
+```csharp
+[ZodRule(AllowMultiple = true)]
+public readonly record struct MultipleOfRule(int Factor = 1, string? Message = null) : IValidationRule<int>
+{
+    public bool IsValid(in int value) => Factor != 0 && value % Factor == 0;
+
+    public string GetErrorMessage(in int value) => Message ?? "Not a multiple.";
+}
+
+[ZodSchema]
+public partial class Sample
+{
+    [MultipleOf(Factor = 3)]
+    [MultipleOf(Factor = 5)]
+    public int Value { get; set; }   // must be a multiple of both 3 and 5
+}
+```
+
+- A **hand-authored** attribute whose name encodes a rule name (`XAttribute` → `XRule`) must map to a rule that addresses every rule declared under that name. A mapping that declares only a non-generic rule while an arity-1 generic sibling exists (or that declares an unrelated rule) is reported as `ZODSGEN038`, because some usages of the attribute would resolve to no rule. An attribute name that does not encode a declared rule family is left alone, so free-form names remain valid.
 
 > [!IMPORTANT]
 > The generated attribute lives in the same assembly as the rule, but Roslyn generators cannot read another generator's output as a symbol. To *consume* the generated attribute with `[ZodSchema]`, reference the rule from a separate assembly (a rules library) — or hand-author the attribute and mark it with `[ZodRule(typeof(...))]`.
@@ -371,6 +458,10 @@ Because the rule is closed with `TSelf` (`NotEmptyRule<AssetId>`), it *sees the 
 | ZODSGEN031 | Error | A rule constructor parameter could not be mapped from the attribute. |
 | ZODSGEN032 | Error | A validation attribute could not be generated for the rule. |
 | ZODSGEN033 | Warning | A rule-mapped attribute is applied to a type that gets no generated schema (no `[ZodSchema]` and not referenced as a complex property), so the rule never runs. |
+| ZODSGEN037 | Warning | A rule marked `[ZodRule]` derives an attribute name that is already declared by hand, so the generated attribute is suppressed and the hand-authored declaration's own `[ZodRule]` mapping governs every usage. |
+| ZODSGEN038 | Warning | A hand-authored rule attribute's `[ZodRule(typeof(...))]` mapping does not address every rule declared under the name the attribute encodes (`XAttribute` → `XRule`), leaving some usages of the attribute unresolved. |
+| ZODSGEN039 | Warning | A rule accepts a `code`/`origin` constructor parameter without implementing `IZodRule`, so the value never reaches the reported error identity. |
+| ZODSGEN040 | Warning | An attribute argument has no effect: the resolved rule has no matching constructor parameter and the value is not part of the reported error identity. |
 
 See [Source Generator Diagnostics](Source-Generator-Diagnostics.md) for the full list.
 

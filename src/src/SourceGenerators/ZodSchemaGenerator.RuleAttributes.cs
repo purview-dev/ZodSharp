@@ -50,19 +50,25 @@ partial class ZodSchemaGenerator
 	{
 		cancellationToken.ThrowIfCancellationRequested();
 
-		if (context.TargetSymbol is not INamedTypeSymbol ruleType)
-			return default;
-
-		// Only the parameterless form (marking a rule) is handled here; the mapping form carries a rule
-		// type and is resolved per property by CustomRuleResolver.
-		if (!IsValidationRule(ruleType))
+		if (context.TargetSymbol is not INamedTypeSymbol target)
 			return default;
 
 		var attribute = context.Attributes[0];
+
+		// The mapping form ([ZodRule(typeof(...))]) declares which rule an attribute addresses rather than
+		// marking a rule; CustomRuleResolver resolves it per property. A hand-authored attribute must still
+		// address every rule declared under the name it derives from, otherwise some usages of that attribute
+		// resolve to no rule at all.
 		if (attribute.ConstructorArguments.Length > 0)
+			return GetMappingFormResult(target, attribute);
+
+		var ruleType = target;
+
+		// Only the parameterless form (marking a rule) is handled here.
+		if (!IsValidationRule(ruleType))
 			return default;
 
-		if (ruleType.IsGenericType || ruleType.ContainingType is not null || ruleType.IsAbstract)
+		if (ruleType.ContainingType is not null || ruleType.IsAbstract)
 		{
 			return GeneratorResult<RuleAttributeGenerationModel>.Create(
 				default(RuleAttributeGenerationModel),
@@ -71,14 +77,73 @@ partial class ZodSchemaGenerator
 					true,
 					ruleType,
 					ruleType.Name,
-					"only non-generic, non-nested, non-abstract rules are supported"
+					"only non-nested, non-abstract rules are supported"
+				)
+			);
+		}
+
+		// A generic rule is supported when it has a single type parameter: the generated attribute maps to the
+		// open generic, so the same attribute serves a primitive member (resolved to the non-generic family
+		// member) and a scalar value object (closed with that type).
+		if (ruleType.IsGenericType && ruleType.Arity != 1)
+		{
+			return GeneratorResult<RuleAttributeGenerationModel>.Create(
+				default(RuleAttributeGenerationModel),
+				ReportableDiagnostic.Create(
+					DiagnosticLibrary.UnsupportedRuleAttributeGeneration,
+					true,
+					ruleType,
+					ruleType.Name,
+					"only non-generic rules and generic rules with a single type parameter are supported"
 				)
 			);
 		}
 
 		var attributeName = ResolveAttributeName(ruleType, attribute);
-		if (attributeName is null)
+
+		// A hand-authored declaration of the same name wins: the generator cannot emit a duplicate type and the
+		// hand-authored declaration's own [ZodRule] mapping governs every usage. Report it so that re-mapping
+		// is never silent.
+		if (ruleType.ContainingNamespace.GetTypeMembers(attributeName) is { Length: > 0 } claimed)
+		{
+			return GeneratorResult<RuleAttributeGenerationModel>.Create(
+				default(RuleAttributeGenerationModel),
+				ReportableDiagnostic.Create(
+					DiagnosticLibrary.RuleAttributeNameAlreadyDeclared,
+					false,
+					ruleType,
+					ruleType.Name,
+					attributeName,
+					claimed[0].ToDisplayString()
+				)
+			);
+		}
+
+		// Both halves of a rule pair derive the same attribute name. The open generic mapping subsumes the
+		// non-generic one, so only the generic rule emits the attribute.
+		if (!ruleType.IsGenericType && HasMarkedGenericSibling(ruleType, attributeName))
 			return default;
+
+		// A code/origin constructor parameter is only surfaced through IZodRule: the generated validation
+		// supplies the value as a constructor argument and reads it back through the interface, so without the
+		// interface the parameter is inert. Report it and keep generating, so the attribute still exists.
+		ImmutableArray<ReportableDiagnostic> identityWarnings = [];
+		if (
+			!CustomRuleResolver.IsZodRule(ruleType)
+			&& CustomRuleResolver.TryGetIdentityParameter(ruleType, out var identityParameter)
+		)
+		{
+			identityWarnings =
+			[
+				ReportableDiagnostic.Create(
+					DiagnosticLibrary.RuleIdentityParameterNotImplemented,
+					false,
+					ruleType,
+					ruleType.Name,
+					identityParameter
+				),
+			];
+		}
 
 		var properties = ImmutableArray.CreateBuilder<GeneratedAttributeProperty>();
 		var constructor = ruleType
@@ -95,15 +160,21 @@ partial class ZodSchemaGenerator
 
 				if (!IsSupportedAttributePropertyType(parameter.Type))
 				{
-					return GeneratorResult<RuleAttributeGenerationModel>.Create(
-						default(RuleAttributeGenerationModel),
+					ImmutableArray<ReportableDiagnostic> propertyDiagnostics =
+					[
 						ReportableDiagnostic.Create(
 							DiagnosticLibrary.UnsupportedRuleAttributeGeneration,
 							true,
 							ruleType,
 							ruleType.Name,
 							$"constructor parameter '{parameter.Name}' has type '{parameter.Type.ToDisplayString()}', which cannot be represented as an attribute property"
-						)
+						),
+						.. identityWarnings,
+					];
+
+					return GeneratorResult<RuleAttributeGenerationModel>.Create(
+						default(RuleAttributeGenerationModel),
+						propertyDiagnostics
 					);
 				}
 
@@ -127,8 +198,10 @@ partial class ZodSchemaGenerator
 					: TypeDeclarationAccessibility.Internal,
 				GetNamedString(attribute, "Code"),
 				GetNamedString(attribute, "Origin"),
+				GetNamedBool(attribute, "AllowMultiple"),
 				new(properties.ToImmutable())
-			)
+			),
+			identityWarnings
 		);
 	}
 
@@ -171,7 +244,167 @@ partial class ZodSchemaGenerator
 		return null;
 	}
 
-	static string? ResolveAttributeName(INamedTypeSymbol ruleType, AttributeData attribute)
+	static bool GetNamedBool(AttributeData attribute, string name)
+	{
+		foreach (var pair in attribute.NamedArguments)
+		{
+			if (pair.Key == name && pair.Value.Value is bool value)
+				return value;
+		}
+
+		return false;
+	}
+
+	/// <summary>
+	/// Validates the <c>[ZodRule(typeof(...))]</c> mapping form: an attribute whose name encodes a rule name
+	/// (<c>XAttribute</c> → <c>XRule</c>) must address every rule declared under that name.
+	/// </summary>
+	/// <param name="attributeClass">The type carrying the mapping.</param>
+	/// <param name="attribute">The <c>[ZodRule(typeof(...))]</c> mapping.</param>
+	/// <returns>
+	/// A result carrying ZODSGEN038 when the mapping leaves family members unaddressed, and ZODSGEN039 when the
+	/// mapped rule declares an identity parameter it cannot surface.
+	/// </returns>
+	static GeneratorResult<RuleAttributeGenerationModel> GetMappingFormResult(
+		INamedTypeSymbol attributeClass,
+		AttributeData attribute
+	)
+	{
+		if (
+			!TypeHelpers.InheritsFrom(
+				attributeClass,
+				TypeLibrary.System.ComponentModel.DataAnnotations.ValidationAttribute
+			) || attribute.ConstructorArguments[0].Value is not INamedTypeSymbol mapped
+		)
+		{
+			return default;
+		}
+
+		ImmutableArray<ReportableDiagnostic>.Builder? diagnostics = null;
+
+		if (TryGetIncompleteFamilyCoverage(attributeClass, mapped, out var expectedMapping))
+		{
+			diagnostics = ImmutableArray.CreateBuilder<ReportableDiagnostic>();
+			diagnostics.Add(
+				ReportableDiagnostic.Create(
+					DiagnosticLibrary.RuleAttributeMappingIncomplete,
+					false,
+					attributeClass,
+					attributeClass.Name,
+					mapped.Name,
+					expectedMapping.Name,
+					expectedMapping.RenderFullName
+				)
+			);
+		}
+
+		// The mapped rule is the one that must surface the identity. A rule marked with [ZodRule] is already
+		// checked at its own declaration, so only unmarked rules are reported here.
+		var ruleDefinition = mapped.OriginalDefinition ?? mapped;
+		if (
+			!CustomRuleResolver.IsRuleMarker(ruleDefinition)
+			&& !CustomRuleResolver.IsZodRule(ruleDefinition)
+			&& CustomRuleResolver.TryGetIdentityParameter(ruleDefinition, out var identityParameter)
+		)
+		{
+			diagnostics ??= ImmutableArray.CreateBuilder<ReportableDiagnostic>();
+			diagnostics.Add(
+				ReportableDiagnostic.Create(
+					DiagnosticLibrary.RuleIdentityParameterNotImplemented,
+					false,
+					ruleDefinition,
+					ruleDefinition.Name,
+					identityParameter
+				)
+			);
+		}
+
+		return diagnostics is null
+			? default
+			: GeneratorResult<RuleAttributeGenerationModel>.Create(
+				default(RuleAttributeGenerationModel),
+				diagnostics.ToImmutable()
+			);
+	}
+
+	/// <summary>
+	/// Determines whether a rule attribute's mapping fails to address every rule declared as
+	/// <c>{attribute-name-without-Attribute}Rule</c>.
+	/// </summary>
+	/// <param name="attributeClass">The attribute carrying the mapping.</param>
+	/// <param name="mapped">The rule type the mapping declares.</param>
+	/// <param name="expectedMapping">
+	/// The mapping that would address the whole family: the arity-1 open generic when the family declares one,
+	/// otherwise the non-generic rule.
+	/// </param>
+	/// <returns>
+	/// <see langword="true"/> when the mapping leaves a family member unaddressed; <see langword="false"/> when
+	/// it covers the family or the attribute name does not encode a declared rule family.
+	/// </returns>
+	/// <remarks>
+	/// The check is skipped when no rule is declared under the encoded name, so an attribute may be named
+	/// freely and mapped to any rule. When a family does exist, only the open generic reaches both halves of a
+	/// primitive / scalar value-object pair, and an arity of two or more can never be closed from an attribute.
+	/// </remarks>
+	static bool TryGetIncompleteFamilyCoverage(
+		INamedTypeSymbol attributeClass,
+		INamedTypeSymbol mapped,
+		out TypeIdentity expectedMapping
+	)
+	{
+		const string attributeSuffix = "Attribute";
+		const string ruleSuffix = "Rule";
+
+		var attributeName = attributeClass.Name;
+		var baseName =
+			attributeName.EndsWith(attributeSuffix, StringComparison.Ordinal)
+			&& attributeName.Length > attributeSuffix.Length
+				? attributeName.Substring(0, attributeName.Length - attributeSuffix.Length)
+				: attributeName;
+
+		expectedMapping = default;
+
+		var definition = mapped.OriginalDefinition ?? mapped;
+		var namespaceName = definition.ContainingNamespace.ToDisplayString();
+		var family = definition.ContainingNamespace.GetTypeMembers($"{baseName}{ruleSuffix}");
+
+		// The attribute name does not encode a rule family, so there is nothing for the mapping to cover.
+		if (family.Length == 0)
+			return false;
+
+		var hasOpenGeneric = family.Any(static member => member.Arity == 1);
+		expectedMapping = new TypeIdentity($"{baseName}{ruleSuffix}", namespaceName, hasOpenGeneric ? 1 : 0);
+
+		var isOpenGeneric =
+			mapped.IsUnboundGenericType
+			|| (
+				mapped.IsGenericType
+				&& mapped.TypeArguments.Any(static argument => argument.TypeKind == TypeKind.TypeParameter)
+			);
+
+		// A differently named rule, or a family member whose arity can never be closed from an attribute, is
+		// not addressable through this attribute.
+		if (
+			!string.Equals(definition.Name, expectedMapping.Name, StringComparison.Ordinal)
+			|| family.Any(static member => member.Arity > 1)
+		)
+		{
+			return true;
+		}
+
+		// A single closed instantiation cannot stand in for the open generic the rest of the family needs.
+		return hasOpenGeneric && !isOpenGeneric;
+	}
+
+	/// <summary>
+	/// Resolves the validation attribute name for a rule marked with <c>[ZodRule]</c>: the explicit
+	/// <c>AttributeName</c> when set, otherwise the rule name with a trailing <c>Rule</c> replaced by
+	/// <c>Attribute</c>.
+	/// </summary>
+	/// <param name="ruleType">The marked rule.</param>
+	/// <param name="attribute">The <c>[ZodRule]</c> marker.</param>
+	/// <returns>The validation attribute name declared by the marker.</returns>
+	static string ResolveAttributeName(INamedTypeSymbol ruleType, AttributeData attribute)
 	{
 		const string ruleSuffix = "Rule";
 
@@ -181,10 +414,39 @@ partial class ZodSchemaGenerator
 			: ruleType.Name.EndsWith(ruleSuffix, StringComparison.Ordinal) && ruleType.Name.Length > ruleSuffix.Length
 				? ruleType.Name.Substring(0, ruleType.Name.Length - ruleSuffix.Length)
 			: ruleType.Name;
-		var attributeName = $"{baseName}Attribute";
 
-		// A hand-authored attribute already claims the name: leave it untouched.
-		return ruleType.ContainingNamespace.GetTypeMembers(attributeName).Length > 0 ? null : attributeName;
+		return $"{baseName}Attribute";
+	}
+
+	/// <summary>
+	/// Determines whether the non-generic rule is the primitive half of a rule pair whose arity-1 generic
+	/// sibling is marked with <c>[ZodRule]</c> for the same attribute name. The generic marker maps that
+	/// attribute to the open generic rule, which serves both forms, so the non-generic rule must not emit a
+	/// competing attribute (the two would share a hint name).
+	/// </summary>
+	/// <param name="ruleType">The marked non-generic rule.</param>
+	/// <param name="attributeName">The attribute name the non-generic rule derives.</param>
+	/// <returns><see langword="true"/> when a marked generic sibling emits the same attribute name.</returns>
+	static bool HasMarkedGenericSibling(INamedTypeSymbol ruleType, string attributeName)
+	{
+		foreach (var candidate in ruleType.ContainingNamespace.GetTypeMembers(ruleType.Name))
+		{
+			if (candidate.Arity != 1 || !CustomRuleResolver.IsRuleMarker(candidate))
+				continue;
+
+			foreach (var attribute in candidate.GetAttributes())
+			{
+				if (!CustomRuleResolver.IsRuleMarkerAttribute(attribute))
+					continue;
+
+				if (string.Equals(ResolveAttributeName(candidate, attribute), attributeName, StringComparison.Ordinal))
+				{
+					return true;
+				}
+			}
+		}
+
+		return false;
 	}
 
 	static bool IsSupportedAttributePropertyType(ITypeSymbol type)
@@ -242,7 +504,11 @@ partial class ZodSchemaGenerator
 									false
 								),
 								new AttributeArgumentOptions("true", "Inherited", true),
-								new AttributeArgumentOptions("false", "AllowMultiple", true),
+								new AttributeArgumentOptions(
+									model.AllowMultiple ? "true" : "false",
+									"AllowMultiple",
+									true
+								),
 							],
 						},
 						new AttributeDeclarationOptions(TypeLibrary.ZodSharp.Core.ZodRuleAttribute)

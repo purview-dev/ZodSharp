@@ -9,6 +9,10 @@ namespace ZodSharp.SourceGenerators.Models;
 /// <param name="Accessibility">The accessibility of the generated attribute.</param>
 /// <param name="Code">The error code the mapping reports, when explicitly configured.</param>
 /// <param name="Origin">The structured origin the mapping reports, when explicitly configured.</param>
+/// <param name="AllowMultiple">
+/// Whether the generated attribute may be applied to a member more than once, taken from the rule marker's
+/// <c>[ZodRule(AllowMultiple = ...)]</c>.
+/// </param>
 /// <param name="Properties">The generated attribute properties, mirroring the rule constructor parameters.</param>
 readonly record struct RuleAttributeGenerationModel(
 	TypeIdentity RuleType,
@@ -16,6 +20,7 @@ readonly record struct RuleAttributeGenerationModel(
 	TypeDeclarationAccessibility Accessibility,
 	string? Code,
 	string? Origin,
+	bool AllowMultiple,
 	EquatableArray<GeneratedAttributeProperty> Properties
 );
 
