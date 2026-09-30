@@ -100,6 +100,10 @@ public sealed class ZodSchemaAnalyzer : DiagnosticAnalyzer
 
 		var typeLocation = GetTypeLocation(type);
 
+		// Type-level rules validate the whole value. The generator resolves the same attributes to emit those
+		// validations, so a rule that resolves to nothing is reported here rather than dropped silently.
+		ReportTypeRuleDiagnostics(context, type, typeLocation);
+
 		if (!hasDataAnnotations)
 		{
 			context.ReportDiagnostic(
@@ -179,6 +183,35 @@ public sealed class ZodSchemaAnalyzer : DiagnosticAnalyzer
 
 				context.ReportDiagnostic(diagnostic);
 			}
+		}
+	}
+
+	/// <summary>
+	/// Reports the diagnostics produced while resolving the type-level rule attributes on
+	/// <paramref name="type"/>. The generator resolves the same attributes to emit the whole-value
+	/// validations, so reporting them here keeps a rule that never runs visible in the build.
+	/// </summary>
+	/// <param name="context">The analysis context the diagnostics are reported to.</param>
+	/// <param name="type">The schema type whose type-level rules are resolved.</param>
+	/// <param name="typeLocation">The location to fall back to when a diagnostic carries none.</param>
+	static void ReportTypeRuleDiagnostics(SymbolAnalysisContext context, INamedTypeSymbol type, Location typeLocation)
+	{
+		var diagnostics = ImmutableArray.CreateBuilder<ReportableDiagnostic>();
+		_ = CustomRuleResolver.Resolve(type, type, diagnostics);
+
+		foreach (var diagnosticInfo in diagnostics)
+		{
+			var diagnostic = diagnosticInfo.ToDiagnostic();
+			if (diagnostic.Location == Location.None)
+			{
+				diagnostic = Diagnostic.Create(
+					diagnostic.Descriptor,
+					typeLocation,
+					diagnosticInfo.MessageArgs.ToArray()
+				);
+			}
+
+			context.ReportDiagnostic(diagnostic);
 		}
 	}
 

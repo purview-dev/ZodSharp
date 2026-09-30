@@ -69,6 +69,80 @@ partial class ZodSchemaGeneratorTests
 		await Assert.That(generated).DoesNotContain("NotEmptyRule<global::System.Guid>");
 	}
 
+	/// <summary>
+	/// A value object whose interface implementation is contributed by another generator still gets its
+	/// type-level rule. The scalar value-object generators add
+	/// <c>IScalarValueObject&lt;TSelf, TValue&gt;</c> in a separate generator run this generator cannot see,
+	/// so the self-referential constraint cannot be verified from the declarations here. It is deferred to
+	/// the compiler (which does see the completed type) instead of dropping the rule, which is what made a
+	/// generated validator silently validate nothing.
+	/// </summary>
+	[Test]
+	public async Task TypeRule_GivenPartialValueObjectWhoseInterfaceIsGenerated_EmitsTheRule(
+		CancellationToken cancellationToken
+	)
+	{
+		const string source = """
+			using System;
+			using System.ComponentModel.DataAnnotations;
+			using ZodSharp;
+			using ZodSharp.Core;
+
+			namespace Testing
+			{
+				public interface IScalarValueObject<TSelf, TValue>
+					where TSelf : IScalarValueObject<TSelf, TValue>
+				{
+					TValue Value { get; }
+				}
+
+				public readonly record struct NotEmptyRule<TSelf>(string? Code = null, string? Message = null)
+					: IValidationRule<TSelf>, IZodRule
+					where TSelf : IScalarValueObject<TSelf, Guid>
+				{
+					public bool IsValid(in TSelf value) => value.Value != Guid.Empty;
+
+					public string GetErrorMessage(in TSelf value) => Message ?? "Value must not be empty.";
+
+					string? IZodRule.Code => Code;
+
+					string? IZodRule.Origin => null;
+				}
+
+				[ZodRule(typeof(NotEmptyRule<>))]
+				[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Property)]
+				public sealed class NotEmptyAttribute : ValidationAttribute
+				{
+					public string? Code { get; set; }
+
+					public string? Message { get; set; }
+				}
+
+				// The interface implementation comes from the value object generator, so the partial
+				// declaration here is all this compilation shows.
+				[NotEmpty(Code = "invalid_asset_id", Message = "AssetId must not be empty.")]
+				[ZodSchema]
+				public readonly partial record struct AssetId
+				{
+					public Guid Value { get; init; }
+				}
+			}
+			""";
+
+		// Act — the harness normally compiles the generated code, which a single synthetic compilation cannot
+		// do for this shape: the interface the constraint asks for is contributed by another generator, so the
+		// emitted rule is asserted instead of compiled.
+		var driverResult = await GenerateAsync(source, ZodSourceGeneratorTestOptions.NoValidation, cancellationToken);
+		var generated = driverResult.GetSource("AssetIdSchema");
+
+		// Assert — the rule still closes over the value object and validates the whole value.
+		await Assert
+			.That(generated)
+			.ContainsGeneratedCode("new global::Testing.NotEmptyRule<global::Testing.AssetId>(");
+		await Assert.That(generated).ContainsGeneratedCode(".IsValid(value)");
+		await Assert.That(generated).ContainsGeneratedCode("EmptyPath");
+	}
+
 	[Test]
 	public async Task TypeRule_GivenEmptyValueObject_FailsAtRuntimeWithTypeLevelIdentity(
 		CancellationToken cancellationToken

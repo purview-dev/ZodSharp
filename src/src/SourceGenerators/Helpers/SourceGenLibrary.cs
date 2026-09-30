@@ -173,9 +173,10 @@ static partial class SourceGenLibrary
 			var properties = GetZodProperties(symbol, externalSchemas);
 
 			// Type-level rules ([ZodRule]-mapped attributes on the target itself) validate the whole value
-			// rather than a property, which is what makes a scalar value object validatable as a unit.
-			var typeRuleDiagnostics = ImmutableArray.CreateBuilder<ReportableDiagnostic>();
-			var typeRules = CustomRuleResolver.Resolve(symbol, symbol, typeRuleDiagnostics);
+			// rather than a property, which is what makes a scalar value object validatable as a unit. The
+			// generator only needs the descriptors: ZodSchemaAnalyzer resolves the same attributes and
+			// reports the diagnostics, so a dropped rule is visible in the build instead of failing silently.
+			var typeRules = CustomRuleResolver.Resolve(symbol, symbol);
 			var accessibility = symbol.ContainingType is null
 				? symbol.DeclaredAccessibility == Accessibility.Public
 					? TypeDeclarationAccessibility.Public

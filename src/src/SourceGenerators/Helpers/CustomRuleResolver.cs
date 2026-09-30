@@ -1,6 +1,8 @@
 using System.Collections.Immutable;
 using System.Globalization;
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using ZodSharp.SourceGenerators.Models;
 using ZodSharp.SourceGenerators.Models.DataAttributes;
 
@@ -24,6 +26,21 @@ namespace ZodSharp.SourceGenerators.Helpers;
 /// </remarks>
 static class CustomRuleResolver
 {
+	/// <summary>
+	/// Resolves the custom rules declared by <paramref name="symbol"/>, discarding the diagnostics a failed
+	/// resolution produces.
+	/// </summary>
+	/// <param name="symbol">The symbol whose rule attributes are resolved.</param>
+	/// <param name="ruleTargetType">The type the rules are applied to.</param>
+	/// <returns>The resolved rule descriptors.</returns>
+	/// <remarks>
+	/// Used by the generator, which only needs the descriptors: the same resolution runs in
+	/// <c>ZodSchemaAnalyzer</c>, which reports the diagnostics, so a rule that resolves to nothing is still
+	/// visible in the build.
+	/// </remarks>
+	public static EquatableArray<CustomRuleDescriptor> Resolve(ISymbol symbol, ITypeSymbol ruleTargetType) =>
+		Resolve(symbol, ruleTargetType, ImmutableArray.CreateBuilder<ReportableDiagnostic>());
+
 	public static EquatableArray<CustomRuleDescriptor> Resolve(
 		ISymbol symbol,
 		ITypeSymbol ruleTargetType,
@@ -272,12 +289,52 @@ static class CustomRuleResolver
 				if (substituted is null)
 					continue;
 
-				if (!IsOrImplements(type, substituted))
-					return false;
+				if (IsOrImplements(type, substituted))
+					continue;
+
+				// A constraint can be satisfied by a declaration this generator cannot see: a type declared
+				// partial in this compilation may receive the interface implementation from another generator
+				// (a scalar value object gets IScalarValueObject<TSelf, TValue> from the value object
+				// generator, which does not run in this compilation's view). Defer those to the compiler
+				// instead of dropping a rule that the consumer's compilation can satisfy.
+				if (ContainsTypeParameter(constraint) && CanReceiveGeneratedMembers(type))
+					continue;
+
+				return false;
 			}
 		}
 
 		return true;
+	}
+
+	/// <summary>
+	/// Determines whether <paramref name="type"/> can be completed by another source generator, which means
+	/// it can end up satisfying a constraint this compilation does not yet show.
+	/// </summary>
+	/// <param name="type">The candidate type to close the rule with.</param>
+	/// <returns><see langword="true"/> when the type is declared <c>partial</c> in this compilation.</returns>
+	/// <remarks>
+	/// Only a type declared in the compilation being generated for can receive further declarations, and
+	/// only a <c>partial</c> declaration can be extended. A primitive or a type from a referenced assembly
+	/// can never gain the members a rule's constraint asks for, so it keeps the strict check.
+	/// </remarks>
+	static bool CanReceiveGeneratedMembers(ITypeSymbol type)
+	{
+		if (type is not INamedTypeSymbol named)
+			return false;
+
+		foreach (var reference in named.DeclaringSyntaxReferences)
+		{
+			if (
+				reference.GetSyntax() is TypeDeclarationSyntax declaration
+				&& declaration.Modifiers.Any(SyntaxKind.PartialKeyword)
+			)
+			{
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/// <summary>

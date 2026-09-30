@@ -378,4 +378,113 @@ public partial class ZodSchemaAnalyzerTests
 		var result = await AnalyzeAsync(source, cancellationToken);
 		await Assert.That(result).DoesNotHaveDiagnostic(DiagnosticLibrary.UnusedRuleAttributeArgument);
 	}
+
+	/// <summary>
+	/// A type-level rule on a value object whose interface implementation is contributed by another generator
+	/// resolves without a diagnostic: the rule is emitted and the consumer's compilation verifies the
+	/// constraint, because the generator cannot see the completed type.
+	/// </summary>
+	[Test]
+	public async Task TypeRule_GivenPartialValueObjectWhoseInterfaceIsGenerated_ProducesNoDiagnostic(
+		CancellationToken cancellationToken
+	)
+	{
+		const string source = """
+			using System;
+			using System.ComponentModel.DataAnnotations;
+			using ZodSharp.Core;
+
+			namespace Testing
+			{
+				public interface IScalarValueObject<TSelf, TValue>
+					where TSelf : IScalarValueObject<TSelf, TValue>
+				{
+					TValue Value { get; }
+				}
+
+				public readonly record struct NotEmptyRule<TSelf>(string? Code = null, string? Message = null)
+					: IValidationRule<TSelf>, IZodRule
+					where TSelf : IScalarValueObject<TSelf, Guid>
+				{
+					public bool IsValid(in TSelf value) => value.Value != Guid.Empty;
+
+					public string GetErrorMessage(in TSelf value) => Message ?? "Value must not be empty.";
+
+					string? IZodRule.Code => Code;
+				}
+
+				[ZodRule(typeof(NotEmptyRule<>))]
+				[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Property)]
+				public sealed class NotEmptyAttribute : ValidationAttribute
+				{
+					public string? Code { get; set; }
+
+					public string? Message { get; set; }
+				}
+
+				// The interface implementation comes from the value object generator, so this compilation
+				// cannot see it.
+				[NotEmpty(Code = "invalid_asset_id")]
+				[ZodSchema]
+				public readonly partial record struct AssetId
+				{
+					public Guid Value { get; init; }
+				}
+			}
+			""";
+
+		var result = await AnalyzeAsync(source, cancellationToken);
+		await Assert.That(result).DoesNotHaveDiagnostic(DiagnosticLibrary.UnsupportedCustomRuleTarget);
+	}
+
+	/// <summary>
+	/// A type-level rule on a type no generator can complete still reports ZODSGEN030, so a rule that can
+	/// never run is never dropped silently.
+	/// </summary>
+	[Test]
+	public async Task TypeRule_GivenTypeThatCannotImplementTheConstraint_ProducesZODSGEN030(
+		CancellationToken cancellationToken
+	)
+	{
+		// The type is not partial, so nothing can add the interface the rule's constraint asks for.
+		const string source = """
+			using System;
+			using System.ComponentModel.DataAnnotations;
+			using ZodSharp.Core;
+
+			namespace Testing
+			{
+				public interface IScalarValueObject<TSelf, TValue>
+					where TSelf : IScalarValueObject<TSelf, TValue>
+				{
+					TValue Value { get; }
+				}
+
+				public readonly record struct NotEmptyRule<TSelf>(string? Code = null, string? Message = null)
+					: IValidationRule<TSelf>, IZodRule
+					where TSelf : IScalarValueObject<TSelf, Guid>
+				{
+					public bool IsValid(in TSelf value) => value.Value != Guid.Empty;
+
+					public string GetErrorMessage(in TSelf value) => Message ?? "Value must not be empty.";
+
+					string? IZodRule.Code => Code;
+				}
+
+				[ZodRule(typeof(NotEmptyRule<>))]
+				[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Property)]
+				public sealed class NotEmptyAttribute : ValidationAttribute { }
+
+				[NotEmpty]
+				[ZodSchema]
+				public readonly record struct NotAValueObject
+				{
+					public Guid Value { get; init; }
+				}
+			}
+			""";
+
+		var result = await AnalyzeAsync(source, cancellationToken);
+		await Assert.That(result).HasDiagnostic(DiagnosticLibrary.UnsupportedCustomRuleTarget);
+	}
 }
