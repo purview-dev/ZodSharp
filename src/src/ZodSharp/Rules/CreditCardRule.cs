@@ -83,4 +83,7 @@ public readonly record struct CreditCardRule : Core.IValidationRule<string>, Cor
 	/// <returns>The error message</returns>
 	public string GetErrorMessage(ReadOnlySpan<char> value) =>
 		_message ?? $"Invalid credit card number format: {value}";
+
+	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
+	public string Code => "invalid_string";
 }

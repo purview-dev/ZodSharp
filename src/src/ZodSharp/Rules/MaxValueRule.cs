@@ -32,4 +32,7 @@ public readonly record struct MaxValueRule<T> : Core.IValidationRule<T>
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
 	public string GetErrorMessage(in T value) => $"Value must be at most {_maxValue}, but got {value}";
+
+	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
+	public string Code => "too_big";
 }

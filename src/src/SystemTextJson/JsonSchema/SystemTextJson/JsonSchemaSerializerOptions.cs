@@ -17,9 +17,7 @@ sealed class JsonSchemaNamingPolicy : JsonNamingPolicy
 	};
 
 	public override string ConvertName(string name) =>
-		KeywordNames.TryGetValue(name, out var keywordName)
-			? keywordName
-			: JsonNamingPolicy.CamelCase.ConvertName(name);
+		KeywordNames.TryGetValue(name, out var keywordName) ? keywordName : CamelCase.ConvertName(name);
 }
 
 /// <summary>

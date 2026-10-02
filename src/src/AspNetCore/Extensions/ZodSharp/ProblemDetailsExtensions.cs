@@ -88,6 +88,25 @@ public static class ProblemDetailsExtensions
 			var details = result.ToHttpValidationProblemDetails(lookup, statusCode);
 			return ToValidationProblemDetails(details);
 		}
+
+		/// <summary>
+		/// Converts a failed validation result into a minimal-API <see cref="IResult"/> that renders the
+		/// standard ASP.NET Core validation-problem payload (status 400, <c>errors</c> keyed by path, and the
+		/// structured <c>issues</c> extension).
+		/// </summary>
+		/// <returns>An <see cref="IResult"/> suitable for returning from a minimal-API handler.</returns>
+		public IResult ToValidationProblem()
+		{
+			var details = result.ToHttpValidationProblemDetails();
+			return Results.ValidationProblem(
+				details.Errors,
+				detail: details.Detail,
+				instance: details.Instance,
+				title: details.Title,
+				type: details.Type,
+				extensions: details.Extensions
+			);
+		}
 	}
 
 	static void EnsureFailed<T>(ValidationResult<T> result)

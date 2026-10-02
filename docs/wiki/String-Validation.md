@@ -13,7 +13,7 @@ var result = schema.Validate("user@example.com");
 
 | Method | Signature | Rule added |
 |---|---|---|
-| `Min` | `Min(int minLength)` | `MinLengthRule` — `too_small` via `validation_failed` when too short |
+| `Min` | `Min(int minLength)` | `MinLengthRule` — `too_small` when too short |
 | `Max` | `Max(int maxLength)` | `MaxLengthRule` |
 | `Length` | `Length(int length)` | exact length (both bounds) |
 | `Email` | `Email()` | `EmailRule` — static compiled regex |
@@ -26,6 +26,18 @@ var result = schema.Validate("user@example.com");
 | `UUID` | `UUID(UuidVersion version, string? message)` | `UUIDRule` — requires a specific version (e.g. `V7`), variant nibble `8-9/a-b`, nil/max rejected |
 | `StartsWith` | `StartsWith(string prefix, string? message)` | `StartsWithRule` — ordinal comparison |
 | `EndsWith` | `EndsWith(string suffix, string? message)` | `EndsWithRule` — ordinal comparison |
+| `Includes` | `Includes(string substring, string? message)` | `IncludesRule` — ordinal substring containment |
+| `IP` | `IP(string? message)` | `IPAddressRule` — IPv4 or IPv6 address |
+| `JWT` | `JWT(string? message)` | `JWTRule` — three base64url-encoded segments |
+| `Hex` | `Hex(string? message)` | `HexRule` — hexadecimal characters (empty string is valid, matching Zod) |
+| `Base64Url` | `Base64Url(string? message)` | `Base64UrlRule` — URL-safe base64, no padding (groups of 4 plus a 2-3 character tail) |
+| `ULID` | `ULID(string? message)` | `ULIDRule` — 26 Crockford base32 characters, first character `0`-`7` |
+| `Datetime` | `Datetime(string? message)` | `DatetimeStringRule` — ISO 8601 date-time (`yyyy-MM-ddTHH:mm:ss[.fff]Z`) |
+| `Date` | `Date(string? message)` | `DateStringRule` — ISO 8601 date (`yyyy-MM-dd`) |
+| `Time` | `Time(string? message)` | `TimeStringRule` — ISO 8601 time (`HH:mm`, optionally `:ss` and fractional seconds) |
+| `Nanoid` | `Nanoid(string? message)` | `NanoidRule` — 21 URL-safe characters |
+| `Cuid2` | `Cuid2(string? message)` | `Cuid2Rule` — lowercase alphanumeric characters |
+| `E164` | `E164(string? message)` | `E164Rule` — `+` followed by 7-15 digits |
 | `ToLower` | `ToLower()` | wraps a transform (`ToLowerInvariant`), returns a `ZodString` |
 | `ToUpper` | `ToUpper()` | wraps a transform (`ToUpperInvariant`) |
 | `Trim` | `Trim()` | wraps a transform (`Trim`) |
@@ -59,7 +71,7 @@ var spanResult = Z.String().Min(3).Max(50).Email().ValidateSpan(span);
 
 ## Error messages
 
-Rules produce `ValidationError` entries with code `validation_failed` and an empty path. Many methods accept a custom `message` parameter. Rule structs live in `ZodSharp.Rules` and can be reused standalone with `IValidationRule<T>`.
+Rules produce `ValidationError` entries with an empty path. Size validations emit `too_small` or `too_big`; string-format validations emit `invalid_string`. Many methods accept a custom `message` parameter. Rule structs live in `ZodSharp.Rules` and can be reused standalone with `IValidationRule<T>`.
 
 ## Span validation
 

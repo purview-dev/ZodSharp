@@ -39,6 +39,27 @@ var userSchema = Z.Object()
     .Build();
 ```
 
+## Native unions (.NET 11+)
+
+When targeting `net11.0` or later, `Z.NativeUnion` returns a native C# 15 union instead of the hand-rolled `ZodSharp.Unions.Union<T1, T2>`:
+
+```csharp
+var schema = Z.NativeUnion(Z.String().Min(1), Z.Object().Build());
+var result = schema.Validate("hello");
+
+if (result.IsSuccess)
+{
+    var length = result.Value switch
+    {
+        string s => s.Length,
+        Dictionary<string, object?> o => o.Count,
+        _ => -1,
+    };
+}
+```
+
+Use it when **both option types are reference types**: the native union is allocation-free and supports exhaustive pattern matching. Value-type cases box, so keep `Z.Union` when a case is a value type, or when you need `Tag`/`Match`/`Switch`/`TryGetValue`/equality. The analyzer reports `ZODSGEN041` and offers a code fix when a reference-type-only `Z.Union` can be switched to `Z.NativeUnion`.
+
 ## Source generator
 
 Mark a class, struct, or record with `[ZodSchema]` and a zero-allocation validator is generated at compile time:

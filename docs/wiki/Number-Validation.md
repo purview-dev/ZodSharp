@@ -15,6 +15,10 @@ var result = schema.Validate(30.0);
 |---|---|---|
 | `Min` | `Min(double minValue)` | `MinValueRule<double>` — `Value must be at least ...` |
 | `Max` | `Max(double maxValue)` | `MaxValueRule<double>` |
+| `Gt` | `Gt(double value)` | `GreaterThanRule<double>` — strictly greater than `value` |
+| `Gte` | `Gte(double value)` | `MinValueRule<double>` — greater than or equal to `value` |
+| `Lt` | `Lt(double value)` | `LessThanRule<double>` — strictly less than `value` |
+| `Lte` | `Lte(double value)` | `MaxValueRule<double>` — less than or equal to `value` |
 | `Int` | `Int()` | `IntRule` — `value == Math.Truncate(value)` |
 | `Positive` | `Positive()` | `GreaterThanRule<double>(0.0)` — strictly greater than zero |
 | `Negative` | `Negative()` | `LessThanRule<double>(0.0)` — strictly less than zero |

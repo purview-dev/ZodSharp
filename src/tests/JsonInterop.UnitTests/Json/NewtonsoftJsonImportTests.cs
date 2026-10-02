@@ -38,7 +38,7 @@ public class NewtonsoftJsonImportTests
 	{
 		// Arrange
 		var newtonsoftParser = typeof(FromJsonSchemaParser);
-		var systemTextJsonParser = typeof(ZodSharp.JsonSchema.SystemTextJson.FromJsonSchemaParser);
+		var systemTextJsonParser = typeof(JsonSchema.SystemTextJson.FromJsonSchemaParser);
 
 		// Act
 		var newtonsoftFullName = newtonsoftParser.FullName;
@@ -55,7 +55,7 @@ public class NewtonsoftJsonImportTests
 	{
 		// Arrange
 		var newtonsoftOptions = JsonSchemaSerializerOptions.Default;
-		var systemTextJsonOptions = ZodSharp.JsonSchema.SystemTextJson.JsonSchemaSerializerOptions.Default;
+		var systemTextJsonOptions = JsonSchema.SystemTextJson.JsonSchemaSerializerOptions.Default;
 
 		// Act
 		var newtonsoftOptionsType = newtonsoftOptions.GetType();

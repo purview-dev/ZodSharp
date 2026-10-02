@@ -69,4 +69,7 @@ public readonly record struct PhoneRule : Core.IValidationRule<string>, Core.ISt
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
 	public string GetErrorMessage(ReadOnlySpan<char> value) => _message ?? $"Invalid phone number format: {value}";
+
+	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
+	public string Code => "invalid_string";
 }

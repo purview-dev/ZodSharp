@@ -46,6 +46,54 @@ public class ZodNumber : ZodType<double>
 	}
 
 	/// <summary>
+	/// Adds a strictly-greater-than validation.
+	/// Equivalent to Zod's <c>z.number().gt(value)</c>.
+	/// </summary>
+	/// <param name="value">The exclusive lower bound</param>
+	/// <returns>This schema for method chaining</returns>
+	public ZodNumber Gt(double value)
+	{
+		AddRule(new GreaterThanRule<double>(value));
+		return this;
+	}
+
+	/// <summary>
+	/// Adds a greater-than-or-equal validation.
+	/// Equivalent to Zod's <c>z.number().gte(value)</c>.
+	/// </summary>
+	/// <param name="value">The inclusive lower bound</param>
+	/// <returns>This schema for method chaining</returns>
+	public ZodNumber Gte(double value)
+	{
+		AddRule(new MinValueRule<double>(value));
+		return this;
+	}
+
+	/// <summary>
+	/// Adds a strictly-less-than validation.
+	/// Equivalent to Zod's <c>z.number().lt(value)</c>.
+	/// </summary>
+	/// <param name="value">The exclusive upper bound</param>
+	/// <returns>This schema for method chaining</returns>
+	public ZodNumber Lt(double value)
+	{
+		AddRule(new LessThanRule<double>(value));
+		return this;
+	}
+
+	/// <summary>
+	/// Adds a less-than-or-equal validation.
+	/// Equivalent to Zod's <c>z.number().lte(value)</c>.
+	/// </summary>
+	/// <param name="value">The inclusive upper bound</param>
+	/// <returns>This schema for method chaining</returns>
+	public ZodNumber Lte(double value)
+	{
+		AddRule(new MaxValueRule<double>(value));
+		return this;
+	}
+
+	/// <summary>
 	/// Adds an integer validation (must be a whole number).
 	/// </summary>
 	/// <returns>This schema for method chaining</returns>

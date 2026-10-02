@@ -51,9 +51,10 @@ This wiki is the project documentation hub for the core API, source generator, J
 
 - **Zero-allocation validation** — validation rules are `readonly record struct`s and hot paths use `Span<T>`; every valid input path validates without allocating.
 - **Fluent API** — `Z.String().Min(3).Max(50).Email()`, composable objects, arrays, unions, tuples, records, discriminators, and more.
+- **Native C# 15 unions (.NET 11+)** — `Z.NativeUnion<T1, T2>` returns an allocation-free native union for reference-type cases, with exhaustive pattern matching; `Z.Union` stays the zero-allocation choice for value-type cases. The analyzer reports `ZODSGEN041` and offers a code fix.
 - **Structured issues** — failures carry machine-readable `Code`, `Path`, `Origin`, `Minimum`/`Maximum`, and `Inclusive` metadata in addition to a human message.
 - **JSON Schema interoperability** — export via `Z.ToJsonSchema` (core package) and import via `Z.FromJsonSchema` (in either JSON integration package), enabling cross-language reuse with TypeScript/Zod.
 - **Compile-time source generation** — the `[ZodSchema]` attribute turns a class, struct, or record into a zero-allocation static validator, honouring DataAnnotations attributes such as `[Required]`, `[Length]`, `[Range]`, and `[EmailAddress]`.
 - **Integration packages** — `Purview.ZodSharp.SystemTextJson`, `Purview.ZodSharp.NewtonsoftJson`, and `Purview.ZodSharp.AspNetCore` (ProblemDetails).
 - **Cross-platform tests** — a shared TypeScript/Zod fixture set is generated into the repo and asserted against from both the C# test suite and a vitest suite.
-- **Multi-target** — packages target `net8.0`, `net9.0`, and `net10.0`; the source generator targets `netstandard2.0` so it runs in any compiler host.
+- **Multi-target** — packages target `net8.0`, `net9.0`, `net10.0`, and `net11.0`; the source generator targets `netstandard2.0` so it runs in any compiler host.

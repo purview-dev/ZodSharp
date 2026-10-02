@@ -172,10 +172,7 @@ partial class ZodSchemaGenerator
 						.. identityWarnings,
 					];
 
-					return GeneratorResult<RuleAttributeGenerationModel>.Create(
-						default(RuleAttributeGenerationModel),
-						propertyDiagnostics
-					);
+					return GeneratorResult<RuleAttributeGenerationModel>.Create(default, propertyDiagnostics);
 				}
 
 				properties.Add(
@@ -321,10 +318,7 @@ partial class ZodSchemaGenerator
 
 		return diagnostics is null
 			? default
-			: GeneratorResult<RuleAttributeGenerationModel>.Create(
-				default(RuleAttributeGenerationModel),
-				diagnostics.ToImmutable()
-			);
+			: GeneratorResult<RuleAttributeGenerationModel>.Create(default, diagnostics.ToImmutable());
 	}
 
 	/// <summary>

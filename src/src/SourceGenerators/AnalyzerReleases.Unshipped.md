@@ -9,3 +9,4 @@
 | ZODSGEN038 | ZodSharp.SourceGenerator | Warning | A hand-authored rule attribute's [ZodRule] mapping does not address every rule declared under the name the attribute derives from |
 | ZODSGEN039 | ZodSharp.SourceGenerator | Warning | A rule accepts a code/origin constructor parameter without implementing IZodRule, so the value never reaches the reported error identity |
 | ZODSGEN040 | ZodSharp.SourceGenerator | Warning | An attribute argument is not consumed by the resolved rule: no matching constructor parameter and not part of the error identity |
+| ZODSGEN041 | ZodSharp.SourceGenerator | Info | A typed union whose option types are all reference types can use the native C# 15 union returned by Z.NativeUnion on net11+ (allocation-free, exhaustive pattern matching) |

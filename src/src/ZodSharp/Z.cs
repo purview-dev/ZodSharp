@@ -32,6 +32,18 @@ public static class Z
 	public static ZodNull Null() => new();
 
 	/// <summary>
+	/// Creates a date schema.
+	/// Equivalent to Zod's <c>z.date()</c>.
+	/// </summary>
+	public static ZodDate Date() => new();
+
+	/// <summary>
+	/// Creates a 64-bit integer (bigint) schema.
+	/// Equivalent to Zod's <c>z.bigint()</c>.
+	/// </summary>
+	public static ZodBigInt BigInt() => new();
+
+	/// <summary>
 	/// Creates an array schema for the specified element type.
 	/// </summary>
 	public static ZodArray<T> Array<T>(IZodSchema<T, T> elementSchema) => new(elementSchema);
@@ -68,6 +80,23 @@ public static class Z
 	/// <param name="option2">The second option schema.</param>
 	public static ZodTypedUnion<T1, T2> Union<T1, T2>(IZodSchema<T1, T1> option1, IZodSchema<T2, T2> option2) =>
 		new(option1, option2);
+
+#if NET11_0_OR_GREATER
+	/// <summary>
+	/// Creates a typed union schema of two options that yields a native C# 15
+	/// <see cref="Unions.NativeUnion{T1,T2}"/> on success. Equivalent to <see cref="Union{T1,T2}"/>
+	/// but allocation-free for reference-type cases and pattern-matchable. Only available on
+	/// <c>net11.0</c> and later.
+	/// </summary>
+	/// <typeparam name="T1">The first option's type.</typeparam>
+	/// <typeparam name="T2">The second option's type.</typeparam>
+	/// <param name="option1">The first option schema.</param>
+	/// <param name="option2">The second option schema.</param>
+	public static ZodTypedNativeUnion<T1, T2> NativeUnion<T1, T2>(
+		IZodSchema<T1, T1> option1,
+		IZodSchema<T2, T2> option2
+	) => new(option1, option2);
+#endif
 
 	/// <summary>
 	/// Creates an intersection schema requiring both <paramref name="left"/> and

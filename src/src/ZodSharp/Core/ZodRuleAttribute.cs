@@ -85,9 +85,9 @@ public sealed class ZodRuleAttribute : Attribute
 	/// </summary>
 	/// <remarks>
 	/// Only affects generated attributes; a hand-authored attribute declares its own
-	/// <see cref="System.AttributeUsageAttribute.AllowMultiple"/>. Every application is emitted as its own
+	/// <see cref="AttributeUsageAttribute.AllowMultiple"/>. Every application is emitted as its own
 	/// validation, evaluated in source order. Defaults to <see langword="false"/>, which is the
-	/// <see cref="System.AttributeUsageAttribute"/> default.
+	/// <see cref="AttributeUsageAttribute"/> default.
 	/// </remarks>
 	public bool AllowMultiple { get; init; }
 }

@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Operations;
 using ZodSharp.SourceGenerators.Helpers;
 using ZodSharp.SourceGenerators.Models;
 
@@ -9,7 +10,7 @@ namespace ZodSharp.SourceGenerators;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ZodSchemaAnalyzer : DiagnosticAnalyzer
 {
-	static readonly ImmutableArray<DiagnosticDescriptor> s_supportedDiagnostics =
+	static readonly ImmutableArray<DiagnosticDescriptor> SupportedDiagnosticsList =
 	[
 		DiagnosticLibrary.InvalidLengthAttribute,
 		DiagnosticLibrary.UnsupportedLengthAttributeTarget,
@@ -40,9 +41,10 @@ public sealed class ZodSchemaAnalyzer : DiagnosticAnalyzer
 		DiagnosticLibrary.UnmappableCustomRuleArgument,
 		DiagnosticLibrary.UnusedRuleAttributeArgument,
 		DiagnosticLibrary.RuleAttributeWithoutSchema,
+		DiagnosticLibrary.NativeUnionRecommended,
 	];
 
-	public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => s_supportedDiagnostics;
+	public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => SupportedDiagnosticsList;
 
 	public override void Initialize(AnalysisContext context)
 	{
@@ -60,6 +62,21 @@ public sealed class ZodSchemaAnalyzer : DiagnosticAnalyzer
 			var hasIValidateOptions =
 				compilationContext.Compilation.GetTypeByMetadataName("Microsoft.Extensions.Options.IValidateOptions`1")
 				is not null;
+
+			// Native C# 15 unions are only meaningful when the referenced ZodSharp build exposes the
+			// native-union API, which only the net11.0+ assembly does.
+			var nativeUnionApi = compilationContext.Compilation.GetTypeByMetadataName("ZodSharp.Unions.NativeUnion`2");
+			var zodTypedUnion = compilationContext.Compilation.GetTypeByMetadataName(
+				"ZodSharp.Schemas.ZodTypedUnion`2"
+			);
+			if (nativeUnionApi is not null && zodTypedUnion is not null)
+			{
+				compilationContext.RegisterOperationAction(
+					operationContext => AnalyzeTypedUnionConstruction(operationContext, zodTypedUnion),
+					OperationKind.Invocation,
+					OperationKind.ObjectCreation
+				);
+			}
 
 			ExternalSchemaResolver externalSchemas = new(compilationContext.Compilation);
 
@@ -349,5 +366,38 @@ public sealed class ZodSchemaAnalyzer : DiagnosticAnalyzer
 				)
 			);
 		}
+	}
+
+	/// <summary>
+	/// Reports <c>ZODSGEN041</c> when a typed union is constructed whose option types are all
+	/// reference types, so the allocation-free native union is a viable alternative on net11+.
+	/// </summary>
+	static void AnalyzeTypedUnionConstruction(OperationAnalysisContext context, INamedTypeSymbol zodTypedUnion)
+	{
+		var resultType = context.Operation switch
+		{
+			IInvocationOperation invocation => invocation.Type,
+			IObjectCreationOperation creation => creation.Type,
+			_ => null,
+		};
+
+		if (
+			resultType is not INamedTypeSymbol named
+			|| named.TypeArguments.Length != 2
+			|| !SymbolEqualityComparer.Default.Equals(named.OriginalDefinition, zodTypedUnion)
+			|| !named.TypeArguments.All(static argument => argument.IsReferenceType)
+		)
+		{
+			return;
+		}
+
+		context.ReportDiagnostic(
+			Diagnostic.Create(
+				DiagnosticLibrary.NativeUnionRecommended,
+				context.Operation.Syntax.GetLocation(),
+				named.Name,
+				string.Join(", ", named.TypeArguments.Select(static argument => argument.Name))
+			)
+		);
 	}
 }

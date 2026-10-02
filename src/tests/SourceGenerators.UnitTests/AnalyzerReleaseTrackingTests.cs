@@ -65,7 +65,14 @@ public partial class AnalyzerReleaseTrackingTests
 	/// Rules added since the last stable release. Each identifier must also appear in
 	/// <c>AnalyzerReleases.Unshipped.md</c> so the Roslyn release-tracking analyzers stay satisfied.
 	/// </summary>
-	static readonly string[] ExpectedUnshippedRuleIds = ["ZODSGEN037", "ZODSGEN038", "ZODSGEN039", "ZODSGEN040"];
+	static readonly string[] ExpectedUnshippedRuleIds =
+	[
+		"ZODSGEN037",
+		"ZODSGEN038",
+		"ZODSGEN039",
+		"ZODSGEN040",
+		"ZODSGEN041",
+	];
 
 	[Test]
 	public async Task ShippedReleases_GivenStableRelease_DeclareRelease2_0_0WithEveryDiagnosticId(

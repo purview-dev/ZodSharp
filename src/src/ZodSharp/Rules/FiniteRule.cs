@@ -30,4 +30,7 @@ public readonly record struct FiniteRule : Core.IValidationRule<double>
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
 	public string GetErrorMessage(in double value) => _message ?? $"Number must be finite, but got {value}";
+
+	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
+	public string Code => "not_finite";
 }

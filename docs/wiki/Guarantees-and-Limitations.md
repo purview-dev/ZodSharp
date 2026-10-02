@@ -6,7 +6,7 @@
 - **No reflection on hot paths.** The runtime library uses expression trees only in the opt-in `CompiledValidator` and to compile a one-off discriminator accessor per (type, discriminator) pair for `ZodDiscriminatedUnion`. After that first use, validation runs direct property access; the source generator emits direct typed codegen.
 - **Deterministic, reviewable generated code.** The `[ZodSchema]` generator output is stable and de-duplicated; there are no scope leaks in emitted code.
 - **Cross-platform parity.** The C# implementation is exercised against TypeScript/Zod fixtures (see [Cross-Platform Interop](Cross-Platform-Interop.md)).
-- **Multi-targeting.** Packages target `net8.0`, `net9.0`, and `net10.0`; the source generator targets `netstandard2.0` so it runs in any compiler host.
+- **Multi-targeting.** Packages target `net8.0`, `net9.0`, `net10.0`, and `net11.0`; the source generator targets `netstandard2.0` so it runs in any compiler host.
 - **A fully built schema is safe to cache and share across threads.** Validation only reads the rule set and `Description`, so once construction is finished a schema can be reused concurrently. Building is *not* immutable — see the next section.
 
 ## Limitations
@@ -33,7 +33,7 @@ The generator reports `Origin = "string"` for string size failures, `Origin = "a
 
 ### Rule errors
 
-Rules evaluated by the base `Validate` pipeline produce `validation_failed` errors with an empty path. Structured `too_small`/`too_big` issues (with `Origin`, `Minimum`/`Maximum`, and `Inclusive`) are produced by `ZodArray` and by the source generator's size validators.
+Rules evaluated by the base `Validate` pipeline emit Zod-compatible codes: `too_small`/`too_big` for bounds, `not_multiple_of`/`not_finite` for numbers, and `invalid_string` for string-format validations. Custom rules that do not declare a code default to `validation_failed`. Structured `too_small`/`too_big` issues (with `Origin`, `Minimum`/`Maximum`, and `Inclusive`) are produced by `ZodArray` and by the source generator's size validators.
 
 ### String transforms allocate
 

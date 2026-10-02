@@ -122,7 +122,7 @@ partial class ZodSchemaGenerator
 		out string displayValues
 	)
 	{
-		List<string> comparisons = new(values.Count);
+		List<string> comparisons = [with(values.Count)];
 		var propertyTypeReference = property.PropertyType.AsTypeReference();
 		var propertyTypeForComparer = property.CanBeNull
 			? propertyTypeReference.Nullable(writer)
@@ -153,7 +153,7 @@ partial class ZodSchemaGenerator
 		if (values.IsDefaultOrEmpty)
 			return string.Empty;
 
-		List<string> parts = new(values.Length);
+		List<string> parts = [with(values.Length)];
 		for (var i = 0; i < values.Length; i++)
 		{
 			var value = values[i];

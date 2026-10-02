@@ -16,7 +16,7 @@ namespace ZodSharp.Core;
 )]
 public sealed class ErrorTypeParameters : IReadOnlyDictionary<string, object?>
 {
-	static readonly IReadOnlyDictionary<string, ErrorTypeParameter> s_emptyDeclarations =
+	static readonly IReadOnlyDictionary<string, ErrorTypeParameter> EmptyDeclarations =
 		new Dictionary<string, ErrorTypeParameter>();
 
 	readonly IReadOnlyDictionary<string, object?> _values;
@@ -45,14 +45,14 @@ public sealed class ErrorTypeParameters : IReadOnlyDictionary<string, object?>
 	{
 		ArgumentNullException.ThrowIfNull(values);
 
-		Dictionary<string, ErrorTypeParameter> declarationMap = new(StringComparer.Ordinal);
+		Dictionary<string, ErrorTypeParameter> declarationMap = [with(StringComparer.Ordinal)];
 		if (declarations is not null)
 		{
 			foreach (var declaration in declarations)
 				declarationMap[declaration.Name] = declaration;
 		}
 
-		Dictionary<string, object?> valueMap = new(StringComparer.Ordinal);
+		Dictionary<string, object?> valueMap = [with(StringComparer.Ordinal)];
 		foreach (var pair in values)
 		{
 			if (
@@ -79,11 +79,11 @@ public sealed class ErrorTypeParameters : IReadOnlyDictionary<string, object?>
 	{
 		ArgumentNullException.ThrowIfNull(values);
 
-		Dictionary<string, object?> valueMap = new(StringComparer.Ordinal);
+		Dictionary<string, object?> valueMap = [with(StringComparer.Ordinal)];
 		foreach (var pair in values)
 			valueMap[pair.Key] = pair.Value;
 
-		return new ErrorTypeParameters(valueMap, s_emptyDeclarations);
+		return new ErrorTypeParameters(valueMap, EmptyDeclarations);
 	}
 
 	/// <summary>

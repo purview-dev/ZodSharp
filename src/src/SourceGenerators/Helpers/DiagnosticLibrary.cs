@@ -390,4 +390,18 @@ static class DiagnosticLibrary
 		defaultSeverity: DiagnosticSeverity.Error,
 		isEnabledByDefault: true
 	);
+
+	/// <summary>
+	/// ZODSGEN041: a typed union whose case types are all reference types can use the native C# 15
+	/// union returned by <c>Z.NativeUnion</c> on net11+, which is allocation-free and supports
+	/// exhaustive pattern matching. Value-type cases are excluded because they box.
+	/// </summary>
+	public static readonly DiagnosticDescriptor NativeUnionRecommended = new(
+		id: "ZODSGEN041",
+		title: "Consider a native C# 15 union",
+		messageFormat: "'{0}' has only reference-type cases ({1}); on .NET 11+ 'Z.NativeUnion' returns a native union that is allocation-free and supports exhaustive pattern matching",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Info,
+		isEnabledByDefault: true
+	);
 }

@@ -49,6 +49,35 @@ public sealed class ValidationIssue
 }
 ```
 
+## Minimal API validation
+
+Use `WithZodSharpValidation<T>()` to validate the request DTO at the endpoint and short-circuit to a standard
+validation-problem response, or `ToValidationProblem()` to return a `Results.ValidationProblem` `IResult`
+directly from a handler:
+
+```csharp
+using Microsoft.AspNetCore.Builder;
+using ZodSharp;
+using ZodSharp.AspNetCore;
+
+// Validate the bound request DTO automatically (requires AddZodSharp to register the validator):
+app.MapPost("/users", (UserDto dto) => dto)
+   .WithZodSharpValidation<UserDto>();
+
+// Or validate manually and return a minimal-API IResult:
+app.MapPost("/users", (UserDto dto) =>
+{
+    var result = UserDtoSchema.Validate(dto);
+    return result.IsSuccess ? TypedResults.Ok(result.Value) : result.ToValidationProblem();
+});
+```
+
+`WithZodSharpValidation<T>()` adds an endpoint filter that validates the first bound argument of type `T`
+against the `IZodSchemaFactory` registered by `AddZodSharp` (or `AddZodSharpFactory`). On failure it returns
+the same `HttpValidationProblemDetails` payload produced by `ToHttpValidationProblemDetails()`; on success it
+passes through to the handler. `ToValidationProblem()` is the handler-side equivalent, returning a status-400
+`Results.ValidationProblem` `IResult`.
+
 ## Exception handling
 
 A thrown `ZodException` (for example from `Parse`, `GetValueOrThrow()`, or a value object's generated

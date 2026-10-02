@@ -17,7 +17,7 @@
 			GASF-based analyzer packing (which would also ship the loose framework DLL) is disabled.
 		-->
 		<PackProjectReferencedSourceGenerators>false</PackProjectReferencedSourceGenerators>
-		<TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackZodSchemaGenerator</TargetsForTfmSpecificContentInPackage>
+		<TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackZodSchemaGenerator;PackZodSharpCodeFixes</TargetsForTfmSpecificContentInPackage>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -52,6 +52,27 @@
 		</MSBuild>
 		<ItemGroup>
 			<TfmSpecificPackageFile Include="@(_PurviewZodSharpMergedGenerator)">
+				<PackagePath>analyzers/dotnet/cs/</PackagePath>
+			</TfmSpecificPackageFile>
+		</ItemGroup>
+	</Target>
+
+	<!--
+		Packs the code-fix assembly (which must live outside the generator/analyzer assembly because
+		RS1038 forbids an assembly containing Roslyn analyzers/generators from referencing
+		Microsoft.CodeAnalysis.Workspaces) alongside the merged generator under analyzers/dotnet/cs.
+	-->
+	<Target Name="PackZodSharpCodeFixes" Label="Packs the ZodSharp code-fix assembly.">
+		<MSBuild
+			Projects="../CodeFixes/CodeFixes.csproj"
+			Targets="Build;GetTargetPath"
+			Properties="Configuration=$(Configuration)"
+			RemoveProperties="TargetFramework;TargetFrameworks;RuntimeIdentifier;SelfContained"
+		>
+			<Output TaskParameter="TargetOutputs" ItemName="_PurviewZodSharpCodeFixes" />
+		</MSBuild>
+		<ItemGroup>
+			<TfmSpecificPackageFile Include="@(_PurviewZodSharpCodeFixes)">
 				<PackagePath>analyzers/dotnet/cs/</PackagePath>
 			</TfmSpecificPackageFile>
 		</ItemGroup>

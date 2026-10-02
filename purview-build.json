@@ -3,13 +3,14 @@
 		"Solution": "src/ZodSharp.slnx",
 		"TestRoot": "src/tests",
 		"TestPatterns": "*Tests.csproj",
-		"TestFilter": "/*/*/*/*"
+		"TestFilter": "/*/*/*/*[Category!=Unit]"
 	},
 	"PackValidation": {
 		"RequireSymbolPackage": true,
 		"RequireSymbolFiles": true,
 		"RequiredContent": {
 			"purview.zodsharp": [
+				"analyzers/dotnet/cs/Purview.ZodSharp.CodeFixes.dll",
 				"analyzers/dotnet/cs/Purview.ZodSharp.SourceGenerators.dll",
 				"buildTransitive/Purview.ZodSharp.props",
 				"lib/$(TFM)/Purview.ZodSharp.dll",

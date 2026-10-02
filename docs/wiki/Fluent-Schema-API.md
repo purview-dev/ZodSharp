@@ -10,6 +10,8 @@
 | `Number()` | `Z.Number()` | `ZodNumber` |
 | `Boolean()` | `Z.Boolean()` | `ZodBoolean` |
 | `Null()` | `Z.Null()` | `ZodNull` |
+| `Date()` | `Z.Date()` | `ZodDate` |
+| `BigInt()` | `Z.BigInt()` | `ZodBigInt` |
 | `Array<T>` | `Z.Array<T>(IZodSchema<T, T> elementSchema)` | `ZodArray<T>` |
 | `Optional<T>` | `Z.Optional<T>(IZodSchema<T, T> schema)` — `T : class` | `ZodOptional<T>` |
 | `Nullable<T>` | `Z.Nullable<T>(IZodSchema<T, T> schema)` — `T : struct` | `ZodNullable<T>` |

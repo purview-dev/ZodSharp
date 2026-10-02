@@ -5,7 +5,7 @@
 Every schema derives from `ZodType<TOutput, TInput>` (namespace `ZodSharp.Core`). Validation is a two-phase pipeline:
 
 1. **ParseInternal** — each schema overrides this hook to perform its type check and traversal (rejecting `null` where not allowed, coercing types, walking objects/arrays/tuples/unions, producing structured failures).
-2. **Rules** — on success, the accumulated `IValidationRule<TOutput>` structs are evaluated. A failing rule emits a `ValidationError` with code `"validation_failed"`.
+2. **Rules** — on success, the accumulated `IValidationRule<TOutput>` structs are evaluated. A failing rule emits a `ValidationError` carrying the rule's Zod-compatible code (`too_small`, `too_big`, `not_multiple_of`, `not_finite`, or `invalid_string`; `validation_failed` for custom rules without a code).
 
 ```csharp
 ValidationResult<TOutput> result = schema.Validate(value);

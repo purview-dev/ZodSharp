@@ -120,4 +120,7 @@ public readonly record struct UUIDRule : Core.IValidationRule<string>, Core.IStr
 	}
 
 	static bool IsValidVariant(char c) => c is '8' or '9' or 'a' or 'b' or 'A' or 'B';
+
+	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
+	public string Code => "invalid_string";
 }

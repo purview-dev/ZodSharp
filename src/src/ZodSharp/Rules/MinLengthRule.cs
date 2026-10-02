@@ -46,4 +46,7 @@ public readonly record struct MinLengthRule : Core.IValidationRule<string>, Core
 	/// <returns>The error message</returns>
 	public string GetErrorMessage(ReadOnlySpan<char> value) =>
 		$"String must be at least {_minLength} characters long, but got {value.Length}";
+
+	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
+	public string Code => "too_small";
 }

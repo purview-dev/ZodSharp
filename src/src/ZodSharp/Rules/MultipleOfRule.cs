@@ -54,4 +54,7 @@ public readonly record struct MultipleOfRule : Core.IValidationRule<double>
 	/// <returns>The error message</returns>
 	public string GetErrorMessage(in double value) =>
 		_message ?? $"Number must be a multiple of {_divisor}, but got {value}";
+
+	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
+	public string Code => "not_multiple_of";
 }

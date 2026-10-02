@@ -160,7 +160,7 @@ public static class ServiceCollectionExtensions
 		ZodSchemaFactoryConfiguration? configuration
 	)
 	{
-		HashSet<string> seenAssemblyNames = new(StringComparer.Ordinal);
+		HashSet<string> seenAssemblyNames = [with(StringComparer.Ordinal)];
 
 		foreach (var assembly in configuration?.ScanAssemblies ?? [])
 			if (TryMarkAssemblySeen(assembly, seenAssemblyNames))
@@ -202,7 +202,7 @@ public static class ServiceCollectionExtensions
 	)
 	{
 		Queue<Assembly> pendingAssemblies = new(rootAssemblies);
-		HashSet<string> queuedAssemblies = new(StringComparer.Ordinal);
+		HashSet<string> queuedAssemblies = [with(StringComparer.Ordinal)];
 
 		foreach (var assembly in pendingAssemblies)
 			queuedAssemblies.Add(GetAssemblyIdentity(assembly));

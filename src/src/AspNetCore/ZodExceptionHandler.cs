@@ -19,7 +19,7 @@ namespace ZodSharp.AspNetCore;
 /// </remarks>
 public sealed class ZodExceptionHandler : IExceptionHandler
 {
-	static readonly JsonSerializerOptions s_jsonOptions = new(JsonSerializerDefaults.Web);
+	static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
 	readonly ZodProblemDetailsOptions _options;
 
@@ -53,7 +53,7 @@ public sealed class ZodExceptionHandler : IExceptionHandler
 		httpContext.Response.StatusCode = problem.Status!.Value;
 		await httpContext.Response.WriteAsJsonAsync(
 			problem,
-			s_jsonOptions,
+			JsonOptions,
 			"application/problem+json",
 			cancellationToken
 		);

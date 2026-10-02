@@ -22,7 +22,7 @@ static class ProblemDetailsMapper
 	{
 		var errorCount = errors.IsDefault ? 0 : errors.Length;
 
-		Dictionary<string, List<string>> groupedMessages = new(StringComparer.Ordinal);
+		Dictionary<string, List<string>> groupedMessages = [with(StringComparer.Ordinal)];
 		Dictionary<string, string[]> errorDictionary = new(errorCount, StringComparer.Ordinal);
 		var issues = new ValidationIssue[errorCount];
 

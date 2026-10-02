@@ -49,4 +49,7 @@ public readonly record struct EndsWithRule : Core.IValidationRule<string>, Core.
 	/// <returns>The error message</returns>
 	public string GetErrorMessage(ReadOnlySpan<char> value) =>
 		_message ?? $"String must end with '{_suffix}', but got '{value}'";
+
+	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
+	public string Code => "invalid_string";
 }

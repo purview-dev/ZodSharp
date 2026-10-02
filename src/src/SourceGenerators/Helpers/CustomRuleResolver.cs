@@ -481,7 +481,7 @@ static class CustomRuleResolver
 		if (attribute.NamedArguments.IsDefaultOrEmpty)
 			return [];
 
-		HashSet<string> consumed = new(StringComparer.OrdinalIgnoreCase);
+		HashSet<string> consumed = [with(StringComparer.OrdinalIgnoreCase)];
 
 		foreach (var parameter in MappedParameters(ruleType))
 			consumed.Add(parameter.Name);
@@ -677,7 +677,7 @@ static class CustomRuleResolver
 
 		var validation = ValidationAttributeData.FromAttributeData(attribute);
 		var positional = attribute.ConstructorArguments;
-		Dictionary<string, TypedConstant> named = new(StringComparer.OrdinalIgnoreCase);
+		Dictionary<string, TypedConstant> named = [with(StringComparer.OrdinalIgnoreCase)];
 		foreach (var pair in attribute.NamedArguments)
 			named[pair.Key] = pair.Value;
 

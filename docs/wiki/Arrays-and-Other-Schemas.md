@@ -34,6 +34,23 @@ var schema = Z.Boolean();
 var schema = Z.Null();
 ```
 
+## Date
+
+`ZodDate` validates `DateTime` values, with optional inclusive `.Min`/`.Max` bounds. Equivalent to Zod's `z.date()`.
+
+```csharp
+var schema = Z.Date().Min(new DateTime(2020, 1, 1)).Max(new DateTime(2030, 12, 31));
+```
+
+## BigInt
+
+`ZodBigInt` validates 64-bit integers (`long`), with `.Min`, `.Max`, `.Gt`, `.Gte`, `.Lt`, `.Lte`, `.Positive`,
+`.Negative`, `.NonNegative`, and `.NonPositive`. Equivalent to Zod's `z.bigint()`.
+
+```csharp
+var schema = Z.BigInt().Positive().Max(9_000_000_000);
+```
+
 ## Enum (string values)
 
 `ZodEnum` validates against a set of allowed strings. Failure produces `invalid_enum_value`.

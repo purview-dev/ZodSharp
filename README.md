@@ -14,7 +14,7 @@ The library is developed and maintained at [github.com/purview-dev/zodsharp](htt
 - **Fluent API** - Fluent and extensible API similar to original Zod
 - **Type-safe** - Strong typing with advanced C# generics
 - **High performance** - Sub-microsecond validation times, 10x faster than reflection-based validation
-- **Cross-platform** - Works on .NET 8.0, .NET 9.0 and .NET 10.0
+- **Cross-platform** - Works on .NET 8.0, .NET 9.0, .NET 10.0 and .NET 11.0
 - **Source Generators** - Compile-time validator generation with `[ZodSchema]` attribute
 - **DataAnnotations Support** - Automatic validation from `[Required]`, `[StringLength]`, `[Length]`, `[MinLength]`, `[MaxLength]`, `[Range]`, `[RegularExpression]`, `[AllowedValues]`, `[DeniedValues]`, `[EmailAddress]`, etc.  
 

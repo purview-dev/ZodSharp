@@ -49,4 +49,7 @@ public readonly record struct StartsWithRule : Core.IValidationRule<string>, Cor
 	/// <returns>The error message</returns>
 	public string GetErrorMessage(ReadOnlySpan<char> value) =>
 		_message ?? $"String must start with '{_prefix}', but got '{value}'";
+
+	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
+	public string Code => "invalid_string";
 }

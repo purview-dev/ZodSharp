@@ -1,6 +1,6 @@
 # Source Generator Diagnostics
 
-The `[ZodSchema]` generator ships an analyzer (category `ZodSharp.SourceGenerator`) that reports configuration and usage problems at compile time. Every diagnostic below is enabled by default; `ZODSGEN033` is a warning and the rest are errors.
+The `[ZodSchema]` generator ships an analyzer (category `ZodSharp.SourceGenerator`) that reports configuration and usage problems at compile time. Every diagnostic below is enabled by default; `ZODSGEN033` and `ZODSGEN037`–`ZODSGEN040` are warnings, `ZODSGEN041` is an informational suggestion, and the rest are errors.
 
 | ID | Meaning |
 |---|---|
@@ -38,6 +38,7 @@ The `[ZodSchema]` generator ships an analyzer (category `ZodSharp.SourceGenerato
 | ZODSGEN038 | (warning) A hand-authored rule attribute's `[ZodRule(typeof(...))]` mapping does not address every rule declared under the name the attribute encodes (`XAttribute` → `XRule`), so some usages of the attribute resolve to no rule |
 | ZODSGEN039 | (warning) A rule accepts a `code`/`origin` constructor parameter but does not implement `IZodRule`, so the value never reaches the reported error identity |
 | ZODSGEN040 | (warning) An attribute argument has no effect: the resolved rule has no matching constructor parameter and the value is not part of the reported error identity |
+| ZODSGEN041 | (info) A typed union (`Z.Union`) whose option types are all reference types can use the allocation-free native C# 15 union returned by `Z.NativeUnion` on .NET 11+; a code fix is offered |
 
 IDs `ZODSGEN002` and `ZODSGEN022`–`ZODSGEN026` are intentionally unused; rule identifiers are never renumbered or re-used.
 

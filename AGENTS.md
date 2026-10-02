@@ -10,7 +10,7 @@ Purview.ZodSharp is a high-performance schema validation library for C#, ported 
 
 - The project is maintained at `purview-dev/zodsharp`.
 - Public API namespaces are `ZodSharp.*`; packages and assemblies are published under the `Purview.ZodSharp.*` package IDs.
-- Multi-targets `net8.0`, `net9.0` and `net10.0`; the source generator targets `netstandard2.0` so it runs in any compiler host.
+- Multi-targets `net8.0`, `net9.0`, `net10.0` and `net11.0`; the source generator targets `netstandard2.0` so it runs in any compiler host.
 
 ## Repository layout
 

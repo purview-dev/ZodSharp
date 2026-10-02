@@ -24,12 +24,13 @@
 		<PackageVersion Include="Microsoft.Extensions.Options" Version="$(DotnetRuntimeVersion)" />
 		<PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.401" />
 		<PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="$(RoslynCompilerVersion)" />
+		<PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="$(RoslynCompilerVersion)" />
 		<PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="$(RoslynAnalyzersVersion)" />
 		<PackageVersion Include="TUnit" Version="$(TUnitVersion)" />
 		<PackageVersion Include="TUnit.Mocks" Version="$(TUnitVersion)" />
 		<PackageVersion Include="Newtonsoft.Json" Version="13.0.4" />
 		<PackageVersion Include="System.Text.Json" Version="$(DotnetRuntimeVersion)" />
-		<PackageVersion Include="BenchmarkDotNet" Version="0.15.8" />
+		<PackageVersion Include="BenchmarkDotNet" Version="0.16.0-preview.2" />
 		<PackageVersion Include="Purview.SourceGeneratorFramework" Version="$(PurviewSourceGenFramework)" />
 		<PackageVersion
 			Include="Purview.SourceGeneratorFramework.Testing.TUnit"

@@ -1,6 +1,7 @@
 <Project>
 	<PropertyGroup>
-		<ZodSharpNetTargetFrameworks>net8.0;net9.0;net10.0</ZodSharpNetTargetFrameworks>
+		<ZodSharpNetTargetFrameworks>net8.0;net9.0;net10.0;net11.0</ZodSharpNetTargetFrameworks>
+		<LangVersion>preview</LangVersion>
 		<TargetFrameworks>$(ZodSharpNetTargetFrameworks)</TargetFrameworks>
 		<NamespacePrefix>ZodSharp</NamespacePrefix>
 		<!-- Set project-by-project -->
@@ -10,10 +11,15 @@
 	</PropertyGroup>
 
 	<PropertyGroup>
-		<NoWarn>$(NoWarn);CA1031;CA1510;</NoWarn>
+		<NoWarn>$(NoWarn);CA1031;CA1307;CA1510;</NoWarn>
 	</PropertyGroup>
 
 	<Import Sdk="Purview.BuildSdk" Project="Sdk.props" />
+
+	<ItemGroup>
+		<NamespaceRemoveSuffix Remove="SourceGenerators" />
+		<NamespaceRemoveSuffix Remove="CodeFixes" />
+	</ItemGroup>
 
 	<PropertyGroup Condition="'$(IsTestProject)' == 'true' OR '$(OutputType)' == 'Exe'">
 		<TargetFramework></TargetFramework>

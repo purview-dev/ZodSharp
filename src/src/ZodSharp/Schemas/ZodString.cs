@@ -105,7 +105,7 @@ public class ZodString : ZodType<string>
 				continue;
 
 			builder ??= ImmutableArray.CreateBuilder<ValidationError>();
-			builder.Add(new ValidationError("validation_failed", rule.GetErrorMessage(value), EmptyPath));
+			builder.Add(new ValidationError(rule.Code, rule.GetErrorMessage(value), EmptyPath));
 		}
 
 		if (builder is null)
@@ -279,6 +279,156 @@ public class ZodString : ZodType<string>
 	public ZodString EndsWith(string suffix, string? message = null)
 	{
 		AddRule(new EndsWithRule(suffix, message));
+		return this;
+	}
+
+	/// <summary>
+	/// Adds a validation that the string contains the specified substring.
+	/// Equivalent to Zod's <c>z.string().includes(value)</c>.
+	/// </summary>
+	/// <param name="substring">The required substring</param>
+	/// <param name="message">Optional error message</param>
+	/// <returns>This schema for method chaining</returns>
+	public ZodString Includes(string substring, string? message = null)
+	{
+		AddRule(new IncludesRule(substring, message));
+		return this;
+	}
+
+	/// <summary>
+	/// Adds an IPv4 or IPv6 address format validation.
+	/// Equivalent to Zod's <c>z.string().ip()</c>.
+	/// </summary>
+	/// <param name="message">Optional error message</param>
+	/// <returns>This schema for method chaining</returns>
+	public ZodString IP(string? message = null)
+	{
+		AddRule(new IPAddressRule(message));
+		return this;
+	}
+
+	/// <summary>
+	/// Adds a JSON Web Token (JWT) format validation: three base64url-encoded segments separated by periods.
+	/// Equivalent to Zod's <c>z.string().jwt()</c>.
+	/// </summary>
+	/// <param name="message">Optional error message</param>
+	/// <returns>This schema for method chaining</returns>
+	public ZodString JWT(string? message = null)
+	{
+		AddRule(new JWTRule(message));
+		return this;
+	}
+
+	/// <summary>
+	/// Adds a hexadecimal string format validation.
+	/// Equivalent to Zod's <c>z.string().hex()</c>.
+	/// </summary>
+	/// <param name="message">Optional error message</param>
+	/// <returns>This schema for method chaining</returns>
+	public ZodString Hex(string? message = null)
+	{
+		AddRule(new HexRule(message));
+		return this;
+	}
+
+	/// <summary>
+	/// Adds a base64url (URL-safe base64) string format validation.
+	/// Equivalent to Zod's <c>z.string().base64url()</c>.
+	/// </summary>
+	/// <param name="message">Optional error message</param>
+	/// <returns>This schema for method chaining</returns>
+	[System.Diagnostics.CodeAnalysis.SuppressMessage(
+		"Naming",
+		"PDS0004:Use correct acronym capitalization",
+		Justification = "Name matches Zod's base64url() method."
+	)]
+	public ZodString Base64Url(string? message = null)
+	{
+		AddRule(new Base64UrlRule(message));
+		return this;
+	}
+
+	/// <summary>
+	/// Adds a ULID format validation (26 Crockford base32 characters).
+	/// Equivalent to Zod's <c>z.string().ulid()</c>.
+	/// </summary>
+	/// <param name="message">Optional error message</param>
+	/// <returns>This schema for method chaining</returns>
+	public ZodString ULID(string? message = null)
+	{
+		AddRule(new ULIDRule(message));
+		return this;
+	}
+
+	/// <summary>
+	/// Adds an ISO 8601 date-time format validation.
+	/// Equivalent to Zod's <c>z.string().datetime()</c>.
+	/// </summary>
+	/// <param name="message">Optional error message</param>
+	/// <returns>This schema for method chaining</returns>
+	public ZodString Datetime(string? message = null)
+	{
+		AddRule(new DatetimeStringRule(message));
+		return this;
+	}
+
+	/// <summary>
+	/// Adds an ISO 8601 date (yyyy-MM-dd) format validation.
+	/// Equivalent to Zod's <c>z.string().date()</c>.
+	/// </summary>
+	/// <param name="message">Optional error message</param>
+	/// <returns>This schema for method chaining</returns>
+	public ZodString Date(string? message = null)
+	{
+		AddRule(new DateStringRule(message));
+		return this;
+	}
+
+	/// <summary>
+	/// Adds an ISO 8601 time format validation.
+	/// Equivalent to Zod's <c>z.string().time()</c>.
+	/// </summary>
+	/// <param name="message">Optional error message</param>
+	/// <returns>This schema for method chaining</returns>
+	public ZodString Time(string? message = null)
+	{
+		AddRule(new TimeStringRule(message));
+		return this;
+	}
+
+	/// <summary>
+	/// Adds a nanoid format validation (21 URL-safe characters).
+	/// Equivalent to Zod's <c>z.string().nanoid()</c>.
+	/// </summary>
+	/// <param name="message">Optional error message</param>
+	/// <returns>This schema for method chaining</returns>
+	public ZodString Nanoid(string? message = null)
+	{
+		AddRule(new NanoidRule(message));
+		return this;
+	}
+
+	/// <summary>
+	/// Adds a CUID2 format validation (lowercase alphanumeric characters).
+	/// Equivalent to Zod's <c>z.string().cuid2()</c>.
+	/// </summary>
+	/// <param name="message">Optional error message</param>
+	/// <returns>This schema for method chaining</returns>
+	public ZodString Cuid2(string? message = null)
+	{
+		AddRule(new Cuid2Rule(message));
+		return this;
+	}
+
+	/// <summary>
+	/// Adds an E.164 phone number format validation (+ followed by 7-15 digits).
+	/// Equivalent to Zod's <c>z.string().e164()</c>.
+	/// </summary>
+	/// <param name="message">Optional error message</param>
+	/// <returns>This schema for method chaining</returns>
+	public ZodString E164(string? message = null)
+	{
+		AddRule(new E164Rule(message));
 		return this;
 	}
 

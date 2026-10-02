@@ -83,7 +83,8 @@ clean *args:
 [group('Build and Test')]
 perf-tests *args:
     echo "Running performance tests for {{ BLUE }}{{ perf_tests_project }}{{ NORMAL }}"
-    dotnet run --project {{ perf_tests_project }} -c Release {{ args }}
+    # Benchmarks multi-target net10.0/net11.0; default to net10.0. Pass `-f net11.0` to run on .NET 11.
+    dotnet run --project {{ perf_tests_project }} -c Release -f net10.0 {{ args }}
 
 # Run tests with the specified configuration, defaulting to "Debug"
 [group('Build and Test')]

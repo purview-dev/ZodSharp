@@ -51,7 +51,7 @@ public abstract class ZodType<TOutput, TInput> : IZodSchema<TOutput, TInput>, IO
 			if (!rule.IsValid(validatedValue))
 			{
 				errors ??= [with(rulesCount)];
-				errors.Add(new ValidationError("validation_failed", rule.GetErrorMessage(validatedValue), EmptyPath));
+				errors.Add(new ValidationError(rule.Code, rule.GetErrorMessage(validatedValue), EmptyPath));
 			}
 		}
 

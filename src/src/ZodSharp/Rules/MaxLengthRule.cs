@@ -46,4 +46,7 @@ public readonly record struct MaxLengthRule : Core.IValidationRule<string>, Core
 	/// <returns>The error message</returns>
 	public string GetErrorMessage(ReadOnlySpan<char> value) =>
 		$"String must be at most {_maxLength} characters long, but got {value.Length}";
+
+	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
+	public string Code => "too_big";
 }
