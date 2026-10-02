@@ -42,6 +42,81 @@ public partial class ZodSchemaAnalyzerTests
 	}
 
 	[Test]
+	public async Task CustomRule_GivenRequiredCodeWithoutValue_ProducesZODSGEN031(CancellationToken cancellationToken)
+	{
+		const string source = """
+			using System;
+			using System.ComponentModel.DataAnnotations;
+			using ZodSharp.Core;
+
+			namespace Testing
+			{
+				public readonly record struct RequiredCodeRule(string Code, string? Message = null, string? Origin = null)
+					: IValidationRule<string>, IZodRule
+				{
+					public bool IsValid(in string value) => !string.IsNullOrWhiteSpace(value);
+
+					public string GetErrorMessage(in string value) => Message ?? "Invalid.";
+				}
+
+				[ZodRule(typeof(RequiredCodeRule))]
+				[AttributeUsage(AttributeTargets.Property)]
+				public sealed class RequiredCodeAttribute : ValidationAttribute { }
+
+				[ZodSchema]
+				public sealed class Model
+				{
+					[RequiredCode]
+					public string Name { get; set; } = string.Empty;
+				}
+			}
+			""";
+
+		var result = await AnalyzeAsync(source, cancellationToken);
+		await Assert.That(result).HasDiagnostic(DiagnosticLibrary.UnmappableCustomRuleArgument);
+	}
+
+	[Test]
+	public async Task CustomRule_GivenExplicitNullForNonNullableParameter_ProducesZODSGEN031(
+		CancellationToken cancellationToken
+	)
+	{
+		const string source = """
+			using System;
+			using System.ComponentModel.DataAnnotations;
+			using ZodSharp.Core;
+
+			namespace Testing
+			{
+				public readonly record struct RequiredCodeRule(string Code, string? Message = null, string? Origin = null)
+					: IValidationRule<string>, IZodRule
+				{
+					public bool IsValid(in string value) => !string.IsNullOrWhiteSpace(value);
+
+					public string GetErrorMessage(in string value) => Message ?? "Invalid.";
+				}
+
+				[ZodRule(typeof(RequiredCodeRule))]
+				[AttributeUsage(AttributeTargets.Property)]
+				public sealed class RequiredCodeAttribute : ValidationAttribute
+				{
+					public string? Code { get; set; }
+				}
+
+				[ZodSchema]
+				public sealed class Model
+				{
+					[RequiredCode(Code = null)]
+					public string Name { get; set; } = string.Empty;
+				}
+			}
+			""";
+
+		var result = await AnalyzeAsync(source, cancellationToken);
+		await Assert.That(result).HasDiagnostic(DiagnosticLibrary.UnmappableCustomRuleArgument);
+	}
+
+	[Test]
 	public async Task CustomRule_GivenUnclosableGenericRule_ProducesZODSGEN030(CancellationToken cancellationToken)
 	{
 		// NotEmptyRule<T> requires T : struct, so a string property cannot satisfy the constraint.

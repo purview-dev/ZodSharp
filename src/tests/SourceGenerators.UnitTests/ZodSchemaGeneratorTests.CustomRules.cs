@@ -125,4 +125,44 @@ partial class ZodSchemaGeneratorTests
 		// Assert
 		await Assert.That(driverResult.GetSource("ModelSchema")).DoesNotContain("NumberOnlyRule");
 	}
+
+	[Test]
+	public async Task CustomRule_GivenRequiredCodeWithoutValue_DoesNotEmitNull(CancellationToken cancellationToken)
+	{
+		const string source = """
+			using System;
+			using System.ComponentModel.DataAnnotations;
+			using ZodSharp;
+			using ZodSharp.Core;
+
+			namespace Testing
+			{
+				public readonly record struct RequiredCodeRule(string Code, string? Message = null, string? Origin = null)
+					: IValidationRule<string>, IZodRule
+				{
+					public bool IsValid(in string value) => !string.IsNullOrWhiteSpace(value);
+
+					public string GetErrorMessage(in string value) => Message ?? "Invalid.";
+				}
+
+				[ZodRule(typeof(RequiredCodeRule))]
+				[AttributeUsage(AttributeTargets.Property)]
+				public sealed class RequiredCodeAttribute : ValidationAttribute { }
+
+				[ZodSchema]
+				public class Model
+				{
+					[RequiredCode]
+					public string Name { get; set; } = string.Empty;
+				}
+			}
+			""";
+
+		// Act
+		var driverResult = await GenerateAsync(source, cancellationToken);
+		var generated = driverResult.GetSource("ModelSchema");
+
+		// Assert — a required, non-nullable Code cannot be defaulted to null, so the rule is not emitted.
+		await Assert.That(generated).DoesNotContain("RequiredCodeRule");
+	}
 }

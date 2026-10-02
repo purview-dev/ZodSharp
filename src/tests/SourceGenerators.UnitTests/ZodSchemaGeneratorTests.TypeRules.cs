@@ -70,6 +70,74 @@ partial class ZodSchemaGeneratorTests
 	}
 
 	/// <summary>
+	/// A type-level rule that owns its error identity (<c>IZodRule</c>) and leaves its nullable
+	/// <c>Origin</c> constructor parameter at its default must not emit the redundant <c>?? null</c> or a
+	/// bare <c>null</c> constructor argument (both of which produce CS8625).
+	/// </summary>
+	[Test]
+	public async Task TypeRule_GivenRuleOwningIdentityWithoutConfiguredOrigin_EmitsNoNullLiterals(
+		CancellationToken cancellationToken
+	)
+	{
+		const string source = """
+			using System;
+			using System.ComponentModel.DataAnnotations;
+			using ZodSharp;
+			using ZodSharp.Core;
+
+			namespace Testing
+			{
+				public interface IScalarValueObject<TSelf, TValue>
+					where TSelf : IScalarValueObject<TSelf, TValue>
+				{
+					TValue Value { get; }
+				}
+
+				public readonly record struct NotEmptyGuidRule<TSelf>(string Code, string? Message = null, string? Origin = null)
+					: IValidationRule<TSelf>, IZodRule
+					where TSelf : IScalarValueObject<TSelf, Guid>
+				{
+					public bool IsValid(in TSelf value) => value.Value != Guid.Empty;
+
+					public string GetErrorMessage(in TSelf value) => Message ?? "Value must not be empty.";
+				}
+
+				[ZodRule(typeof(NotEmptyGuidRule<>))]
+				[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Property)]
+				public sealed class NotEmptyGuidAttribute : ValidationAttribute
+				{
+					public string? Code { get; init; }
+
+					public string? Message { get; init; }
+				}
+
+				[NotEmptyGuid(Code = "invalid_asset_id", Message = "AssetId must be a non-empty GUID.")]
+				[ZodSchema]
+				public partial record struct AssetId : IScalarValueObject<AssetId, Guid>
+				{
+					public Guid Value { get; init; }
+				}
+			}
+			""";
+
+		// Act
+		var driverResult = await GenerateAsync(source, cancellationToken);
+		var generated = driverResult.GetSource("AssetIdSchema");
+
+		// Assert
+		await Assert.That(generated).DoesNotContain("?? null");
+		await Assert.That(generated).DoesNotContain(", null)");
+		await Assert
+			.That(generated)
+			.ContainsGeneratedCode(
+				"new global::Testing.NotEmptyGuidRule<global::Testing.AssetId>(\"invalid_asset_id\", \"AssetId must be a non-empty GUID.\", null!)"
+			);
+		await Assert
+			.That(generated)
+			.ContainsGeneratedCode("origin: ((global::ZodSharp.Core.IZodRule)assetIdCustomRule0).Origin");
+	}
+
+	/// <summary>
 	/// A value object whose interface implementation is contributed by another generator still gets its
 	/// type-level rule. The scalar value-object generators add
 	/// <c>IScalarValueObject&lt;TSelf, TValue&gt;</c> in a separate generator run this generator cannot see,

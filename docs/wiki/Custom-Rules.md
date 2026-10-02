@@ -340,7 +340,7 @@ if (!assetIdCustomRule0.IsValid(value))
             ((global::ZodSharp.Core.IZodRule)assetIdCustomRule0).Code ?? "invalid_asset_id",
             assetIdCustomRule0.GetErrorMessage(value),
             EmptyPath,
-            origin: ((global::ZodSharp.Core.IZodRule)assetIdCustomRule0).Origin ?? null));
+            origin: ((global::ZodSharp.Core.IZodRule)assetIdCustomRule0).Origin));
 }
 ```
 

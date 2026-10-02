@@ -351,8 +351,8 @@ partial class ZodSchemaGeneratorTests
 		var validate = assembly.GetType("Testing.SampleSchema")!.GetMethod("Validate")!;
 
 		// Both applications are emitted as their own rule, in source order.
-		await Assert.That(generated).ContainsGeneratedCode("new global::Testing.MultipleOfRule(3, null)");
-		await Assert.That(generated).ContainsGeneratedCode("new global::Testing.MultipleOfRule(5, null)");
+		await Assert.That(generated).ContainsGeneratedCode("new global::Testing.MultipleOfRule(3, null!)");
+		await Assert.That(generated).ContainsGeneratedCode("new global::Testing.MultipleOfRule(5, null!)");
 
 		// Act — 15 satisfies both applications, 3 satisfies only the first.
 		var validInstance = Activator.CreateInstance(modelType)!;

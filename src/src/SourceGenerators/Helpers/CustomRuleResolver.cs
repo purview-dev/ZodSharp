@@ -725,11 +725,11 @@ static class CustomRuleResolver
 					return false;
 				}
 
-				expressions.Add(defaultExpression);
+				expressions.Add(parameter.ExplicitDefaultValue is null ? "null!" : defaultExpression);
 				continue;
 			}
 
-			if (TypeHelpers.CanBeNull(parameter.Type))
+			if (CanPassNull(parameter.Type))
 			{
 				expressions.Add("null");
 				continue;
@@ -743,6 +743,16 @@ static class CustomRuleResolver
 		return true;
 	}
 
+	/// <summary>
+	/// Determines whether a bare <see langword="null"/> literal may be emitted for a value of
+	/// <paramref name="type"/> without producing CS8625. A non-nullable reference type is excluded even though
+	/// it can hold <see langword="null"/> at runtime, so such a value is reported as unmappable instead.
+	/// </summary>
+	static bool CanPassNull(ITypeSymbol type) =>
+		type.NullableAnnotation == NullableAnnotation.Annotated
+		|| type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T }
+		|| (type.IsReferenceType && type.NullableAnnotation == NullableAnnotation.None);
+
 	static bool IsMessageParameter(IParameterSymbol parameter) =>
 		string.Equals(parameter.Name, "message", StringComparison.OrdinalIgnoreCase);
 
@@ -751,7 +761,7 @@ static class CustomRuleResolver
 		if (constant.IsNull)
 		{
 			expression = "null";
-			return targetType.IsReferenceType || TypeHelpers.CanBeNull(targetType);
+			return CanPassNull(targetType);
 		}
 
 		if (constant.Kind == TypedConstantKind.Type)
@@ -774,7 +784,7 @@ static class CustomRuleResolver
 		if (value is null)
 		{
 			expression = "null";
-			return targetType.IsReferenceType || TypeHelpers.CanBeNull(targetType);
+			return CanPassNull(targetType);
 		}
 
 		var unwrapped = TypeHelpers.UnwrapNullableType(targetType);

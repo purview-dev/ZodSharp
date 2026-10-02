@@ -78,10 +78,12 @@ partial class ZodSchemaGenerator
 			var codeExpression = rule.RuleOwnsIdentity
 				? $"(({zodRuleInterface}){ruleVariable}).Code ?? {codeFallback.Surround()}"
 				: codeFallback.Surround();
-			var originFallback = rule.Origin is { Length: > 0 } customOrigin ? customOrigin.Surround() : "null";
+			var originFallback = rule.Origin is { Length: > 0 } customOrigin ? customOrigin.Surround() : null;
 			var originExpression = rule.RuleOwnsIdentity
-				? $"(({zodRuleInterface}){ruleVariable}).Origin ?? {originFallback}"
-				: originFallback;
+				? originFallback is null
+					? $"(({zodRuleInterface}){ruleVariable}).Origin"
+					: $"(({zodRuleInterface}){ruleVariable}).Origin ?? {originFallback}"
+				: originFallback ?? "null";
 
 			var message = !string.IsNullOrEmpty(rule.Message.ErrorMessage)
 				? BuildErrorMessageExpression(rule.Message, "Field '{0}' is invalid.", displayName.StringLiteral())
