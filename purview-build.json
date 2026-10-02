@@ -3,7 +3,7 @@
 		"Solution": "src/ZodSharp.slnx",
 		"TestRoot": "src/tests",
 		"TestPatterns": "*Tests.csproj",
-		"TestFilter": "/*/*/*/*[Category!=Unit]"
+		"TestFilter": "/*/*/*/*[Category=Unit]"
 	},
 	"PackValidation": {
 		"RequireSymbolPackage": true,
@@ -38,7 +38,9 @@
 			]
 		},
 		"ForbiddenContent": {
-			"*": ["analyzers/**/Purview.SourceGeneratorFramework.dll"]
+			"*": [
+				"analyzers/**/Purview.SourceGeneratorFramework.dll"
+			]
 		}
 	},
 	"Release": {
