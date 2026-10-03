@@ -65,6 +65,7 @@ Close it with the property type to use it through an attribute (`[ZodRule(typeof
 ## Defining a custom rule
 
 ```csharp
+using System.Globalization;
 using ZodSharp.Core;
 
 namespace MyRules;
@@ -72,6 +73,9 @@ namespace MyRules;
 /// <summary>Rejects strings that contain whitespace.</summary>
 public readonly record struct NoWhitespaceRule(string? Message = null) : IValidationRule<string>
 {
+    public const string ErrorCode = "invalid_string";
+    public const string MessageFormat = "Whitespace is not allowed in '{0}'.";
+
     public bool IsValid(in string value)
     {
         if (value is null)
@@ -86,10 +90,14 @@ public readonly record struct NoWhitespaceRule(string? Message = null) : IValida
         return true;
     }
 
+    public string Code => ErrorCode;
+
     public string GetErrorMessage(in string value) =>
-        Message ?? $"Whitespace is not allowed in '{value}'.";
+        Message ?? string.Format(CultureInfo.CurrentCulture, MessageFormat, value);
 }
 ```
+
+The public `ErrorCode`/`MessageFormat` constants are optional but recommended (see [Error code and message constants](#error-code-and-message-constants)); omitting them is reported as `ZODSGEN042`, and a rule without them reports the fallback code `validation_failed` when it does not also implement `IZodRule`.
 
 The rule can be used standalone:
 
@@ -111,7 +119,7 @@ var schema = Z.String().Rule(new NoWhitespaceRule("No spaces allowed."));
 
 var result = schema.Validate("John Doe");
 // result.IsSuccess         == false
-// result.Errors[0].Code    == "validation_failed"
+// result.Errors[0].Code    == NoWhitespaceRule.ErrorCode ("invalid_string")
 // result.Errors[0].Message == "No spaces allowed."
 // result.Errors[0].Path    is empty
 ```
@@ -501,6 +509,7 @@ Because the rule is closed with `TSelf` (`NotEmptyRule<AssetId>`), it *sees the 
 | ZODSGEN038 | Warning | A hand-authored rule attribute's `[ZodRule(typeof(...))]` mapping does not address every rule declared under the name the attribute encodes (`XAttribute` → `XRule`), leaving some usages of the attribute unresolved. |
 | ZODSGEN039 | Warning | A rule accepts a `code`/`origin` constructor parameter without implementing `IZodRule`, so the value never reaches the reported error identity. |
 | ZODSGEN040 | Warning | An attribute argument has no effect: the resolved rule has no matching constructor parameter and the value is not part of the reported error identity. |
+| ZODSGEN042 | Warning | A validation rule does not expose public `const string ErrorCode` / `MessageFormat` constants, so its error identity cannot be asserted in tests without duplicating literals. |
 
 See [Source Generator Diagnostics](Source-Generator-Diagnostics.md) for the full list.
 
