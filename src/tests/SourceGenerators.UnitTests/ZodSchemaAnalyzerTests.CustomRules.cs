@@ -562,4 +562,65 @@ public partial class ZodSchemaAnalyzerTests
 		var result = await AnalyzeAsync(source, cancellationToken);
 		await Assert.That(result).HasDiagnostic(DiagnosticLibrary.UnsupportedCustomRuleTarget);
 	}
+
+	/// <summary>
+	/// A rule written against a scalar value object's underlying value resolves without a diagnostic: it is
+	/// adapted to the value object, so the rule is not dropped as an unsupported target.
+	/// </summary>
+	[Test]
+	public async Task TypeRule_GivenRuleWrittenAgainstScalarUnderlyingValue_ProducesNoDiagnostic(
+		CancellationToken cancellationToken
+	)
+	{
+		const string source = """
+			using System;
+			using System.ComponentModel.DataAnnotations;
+			using ZodSharp.Core;
+
+			namespace Purview.ValueObjects.Serialization
+			{
+				[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct)]
+				public sealed class ScalarAttribute : Attribute { }
+			}
+
+			namespace Purview.ValueObjects
+			{
+				public interface IScalarValueObject<TSelf, TValue>
+					where TSelf : IScalarValueObject<TSelf, TValue>
+				{
+					TValue Value { get; }
+				}
+			}
+
+			namespace Testing
+			{
+				public readonly record struct NonSentinelRule<T>(string? Message = null)
+					: IValidationRule<T>, IZodRule
+					where T : IEquatable<T>
+				{
+					public bool IsValid(in T value) => !value.Equals(default(T)!);
+
+					public string GetErrorMessage(in T value) => Message ?? "Value must not be the default.";
+				}
+
+				[ZodRule(typeof(NonSentinelRule<>))]
+				[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Property)]
+				public sealed class NonSentinelAttribute : ValidationAttribute
+				{
+					public string? Message { get; set; }
+				}
+
+				[Purview.ValueObjects.Serialization.Scalar]
+				[NonSentinel]
+				[ZodSchema]
+				public partial record struct TenantId : Purview.ValueObjects.IScalarValueObject<TenantId, Guid>
+				{
+					public Guid Value { get; init; }
+				}
+			}
+			""";
+
+		var result = await AnalyzeAsync(source, cancellationToken);
+		await Assert.That(result).DoesNotHaveDiagnostic(DiagnosticLibrary.UnsupportedCustomRuleTarget);
+	}
 }

@@ -14,6 +14,15 @@ static partial class TypeLibraryGenerator
 
 	public const string ZodSharpSchemasNamespace = ZodSharpNamespace + ".Schemas";
 
+	// The Purview.ValueObjects scalar contracts. A scalar value object is validated through its underlying
+	// value, so a rule written against that value is adapted by the ScalarRuleAdapter the value-object
+	// generator emits into the consuming compilation; the adapter is referenced by name, not by a package.
+	public const string ValueObjectsNamespace = "Purview.ValueObjects";
+
+	public const string ScalarAttributeFullName = ValueObjectsNamespace + ".Serialization.ScalarAttribute";
+
+	public const string ScalarRuleAdapterName = "ScalarRuleAdapter";
+
 	// Simple name of the refinement context type declared in ZodSharpSchemasNamespace.
 	public const string ZodRefineContextName = "RefineCtx";
 

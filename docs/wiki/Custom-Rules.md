@@ -391,7 +391,7 @@ if (!assetIdCustomRule0.IsValid(value))
 }
 ```
 
-- **Generic closure:** a type-level attribute closes an unbound generic rule with the **target type** (`NotEmptyRule<AssetId>`), so the rule sees the value object and can read its state through its own constraints.
+- **Generic closure:** a type-level attribute closes an unbound generic rule with the **target type** (`NotEmptyRule<AssetId>`), so the rule sees the value object and can read its state through its own constraints. On a `[Scalar]` type, a rule written against the underlying value is instead closed with that value and wrapped — see [Validating scalar value objects](#validating-scalar-value-objects).
 - **Ordering** in the generated `Validate`: property rules → **type-level rules** → the synchronous `Validate()` refinement.
 - Type-level attributes need `AttributeTargets.Class`/`Struct` on the attribute declaration; the property-level attributes above only need `Property`/`Field`.
 
@@ -491,11 +491,69 @@ Path    = []
 
 Because the rule is closed with `TSelf` (`NotEmptyRule<AssetId>`), it *sees the value object* and reads `Value` through the `IScalarValueObject<TSelf, Guid>` constraint. A generic rule must have exactly one type parameter, so the underlying value type is pinned by the constraint — define one rule per primitive (`NotEmptyRule<TSelf> where TSelf : IScalarValueObject<TSelf, Guid>`, a `long` variant, and so on).
 
+### Reusing a rule written against the underlying value
+
+A rule written against the underlying value (`IValidationRule<Guid>`) is **adapted automatically** when it is applied to a `[Scalar]` type: the generator reads the scalar's `Value` property, closes the rule with the underlying value, and wraps it so the rule still runs against the value object as a unit. One rule then serves every scalar backed by the same primitive, with no per-primitive rule family.
+
+```csharp
+// MyRules/NonSentinelRule.cs — a rule written against the value, not the value object
+public readonly record struct NonSentinelRule<T>(string? Message = null)
+    : IValidationRule<T>, IZodRule
+    where T : IEquatable<T>
+{
+    public bool IsValid(in T value) => !value.Equals(default(T)!);
+
+    public string GetErrorMessage(in T value) => Message ?? "Value must not be the default.";
+
+    string? IZodRule.Code => "invalid_value";
+
+    string? IZodRule.Origin => "value_object";
+}
+
+[ZodRule(typeof(NonSentinelRule<>))]
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Property)]
+public sealed class NonSentinelAttribute : ValidationAttribute
+{
+    public string? Message { get; set; }
+}
+```
+
+```csharp
+[Scalar]
+[ZodSchema]
+[NonSentinel(Message = "AssetId must not be empty.")]
+public readonly partial record struct AssetId
+{
+    public Guid Value { get; init; }
+}
+```
+
+The generator emits the rule against `Guid` and wraps it in the adapter the value-objects generator emits:
+
+```csharp
+var assetIdCustomRuleInner0 = new global::MyRules.NonSentinelRule<global::System.Guid>("AssetId must not be empty.");
+var assetIdCustomRule0 = new global::Purview.ValueObjects.ScalarRuleAdapter<global::ChangeOps.AssetId, global::System.Guid, global::MyRules.NonSentinelRule<global::System.Guid>>(assetIdCustomRuleInner0);
+if (!assetIdCustomRule0.IsValid(value))
+{
+    (errors ??= new List<ValidationError>()).Add(
+        ValidationError.Create(
+            ((global::ZodSharp.Core.IZodRule)assetIdCustomRuleInner0).Code ?? "validation_failed",
+            assetIdCustomRule0.GetErrorMessage(value),
+            EmptyPath,
+            origin: ((global::ZodSharp.Core.IZodRule)assetIdCustomRuleInner0).Origin));
+}
+```
+
+The reported error keeps the **empty path**, and the error identity (`Code`/`Origin`) is read from the wrapped rule. A rule whose constraint asks for the scalar itself (the `IScalarValueObject<TSelf, TValue>` form above) is **not** adapted — it keeps closing over the value object.
+
+> [!IMPORTANT]
+> `Purview.ValueObjects.ScalarRuleAdapter<TSelf, TValue, TRule>` is emitted into your compilation by the **Purview.ValueObjects** source generator whenever the project references both `Purview.ValueObjects` and `Purview.ZodSharp`. Do not declare it yourself. If the value-objects generator is disabled (`DisableValueObjectsSourceGenerator`), the adapter is not emitted and the generated validator will not compile.
+
 > [!NOTE]
-> If the type has no value-object contract (a plain class with a `Guid` property), the property-level form still works: map the attribute to a `IValidationRule<Guid>` and put it on `Value`. See [Exposing a rule as a DataAnnotations attribute](#exposing-a-rule-as-a-dataannotations-attribute) and [Generic rules](#generic-rules).
+> If the type has no value-object contract (a plain class with a `Guid` property), the property-level form still works: map the attribute to an `IValidationRule<Guid>` and put it on `Value`. See [Exposing a rule as a DataAnnotations attribute](#exposing-a-rule-as-a-dataannotations-attribute) and [Generic rules](#generic-rules).
 
 > [!TIP]
-> If the non-empty policy should be implicit rather than an attribute, the value-objects layer is the natural place to emit `[NotEmpty]` on the scalar type (it already knows about ZodSharp through `ZodSchemaMode`).
+> If the non-empty policy should be implicit rather than an attribute, the value-objects layer is the natural place to emit the attribute on the scalar type (it already knows about ZodSharp through `ZodSchemaMode`).
 
 ## Diagnostics
 

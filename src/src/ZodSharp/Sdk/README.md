@@ -248,7 +248,7 @@ public readonly partial record struct AssetId
 }
 ```
 
-The generated validator runs the rule against the value object (`NotEmptyRule<AssetId>`) and reports `Code`, `Message`, and `Origin` with an empty path. A rule attribute on a type that gets no schema is ignored, and the analyzer warns (`ZODSGEN033`) rather than failing silently.
+The generated validator runs the rule against the value object (`NotEmptyRule<AssetId>`) and reports `Code`, `Message`, and `Origin` with an empty path. A rule written against the underlying value (for example `NonSentinelRule<Guid>`) is instead adapted automatically when applied to a `[Scalar]` type, so one rule serves every scalar backed by the same primitive. A rule attribute on a type that gets no schema is ignored, and the analyzer warns (`ZODSGEN033`) rather than failing silently.
 
 ## Error factory
 

@@ -57,7 +57,7 @@ Rules evaluated by the base `Validate` pipeline emit Zod-compatible codes: `too_
 
 ## Custom rules
 
-Custom rules and their DataAnnotations-style attributes are a first-class extension point. Rules can be attached to a property or to the schema type itself (validating the value object as a unit), and a generic rule can be closed with the target type so one rule serves every scalar of a given shape. See [Custom Rules](Custom-Rules.md) for the rule contract, the public `AddRule`/`Rule` API, and how to map a rule to a `ValidationAttribute` that the source generator honours.
+Custom rules and their DataAnnotations-style attributes are a first-class extension point. Rules can be attached to a property or to the schema type itself (validating the value object as a unit), and a generic rule can be closed with the target type so one rule serves every scalar of a given shape. A rule written against a `Purview.ValueObjects` scalar's underlying value is adapted automatically when it is applied to a `[Scalar]` type, so one rule also serves every scalar backed by the same primitive. See [Custom Rules](Custom-Rules.md) for the rule contract, the public `AddRule`/`Rule` API, and how to map a rule to a `ValidationAttribute` that the source generator honours.
 
 ## Contract vs. underlying libraries
 

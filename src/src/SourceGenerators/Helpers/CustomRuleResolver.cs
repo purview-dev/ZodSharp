@@ -61,7 +61,15 @@ static class CustomRuleResolver
 			if (!TryGetRuleMapping(attributeClass, out var mapping))
 				continue;
 
-			if (!TryResolveRuleType(mapping.RuleType, ruleTargetType, out var ruleType))
+			if (
+				!TryResolveRule(
+					mapping.RuleType,
+					ruleTargetType,
+					out var ruleType,
+					out var scalarTarget,
+					out var scalarValue
+				)
+			)
 			{
 				diagnostics.Add(
 					ReportableDiagnostic.Create(
@@ -76,7 +84,10 @@ static class CustomRuleResolver
 				continue;
 			}
 
-			if (!ImplementsRuleFor(ruleType, ruleTargetType))
+			// An adapted rule is a ScalarRuleAdapter the value-object generator emits into this compilation,
+			// which this generator cannot see. Its contract is the underlying rule validating the scalar's
+			// value, already verified during resolution, so only the direct path is checked here.
+			if (scalarTarget is null && !ImplementsRuleFor(ruleType, ruleTargetType))
 			{
 				diagnostics.Add(
 					ReportableDiagnostic.Create(
@@ -109,7 +120,10 @@ static class CustomRuleResolver
 			builder ??= ImmutableArray.CreateBuilder<CustomRuleDescriptor>();
 			builder.Add(
 				new CustomRuleDescriptor(
-					new TypeIdentity(ruleType),
+					scalarTarget is null
+						? new TypeIdentity(ruleType)
+						: BuildScalarAdapterIdentity(scalarTarget, scalarValue!, ruleType),
+					scalarTarget is null ? null : new TypeIdentity(ruleType),
 					GetAttributeString(attribute, "Code") ?? mapping.Code,
 					GetAttributeString(attribute, "Origin") ?? mapping.Origin,
 					ValidationAttributeData.FromAttributeData(attribute),
@@ -175,6 +189,146 @@ static class CustomRuleResolver
 		&& attribute.AttributeClass.ToDisplayString()
 			== $"{TypeLibraryGenerator.ZodSharpCoreNamespace}.ZodRuleAttribute"
 		&& attribute.ConstructorArguments.Length == 0;
+
+	/// <summary>
+	/// Resolves the rule to instantiate for <paramref name="targetType"/>. A scalar value object is
+	/// validated through its underlying value, so a rule that validates that value is adapted to the value
+	/// object; a rule written against the value object itself keeps the direct path.
+	/// </summary>
+	/// <param name="ruleType">The rule type declared by the mapping.</param>
+	/// <param name="targetType">The type the rule is applied to.</param>
+	/// <param name="instantiated">The rule type to instantiate (the wrapped rule when adapted).</param>
+	/// <param name="scalarTarget">The scalar value object to adapt for, or <see langword="null"/>.</param>
+	/// <param name="scalarValue">The scalar's underlying value type, or <see langword="null"/>.</param>
+	/// <returns><see langword="true"/> when a usable rule was resolved.</returns>
+	static bool TryResolveRule(
+		INamedTypeSymbol ruleType,
+		ITypeSymbol targetType,
+		out INamedTypeSymbol instantiated,
+		out INamedTypeSymbol? scalarTarget,
+		out ITypeSymbol? scalarValue
+	)
+	{
+		scalarTarget = null;
+		scalarValue = null;
+
+		if (
+			TryGetScalarUnderlyingValue(targetType, out var valueType)
+			&& TryResolveUnderlyingRule(ruleType, valueType, out var underlyingRule)
+		)
+		{
+			instantiated = underlyingRule;
+			scalarTarget = (INamedTypeSymbol)targetType;
+			scalarValue = valueType;
+			return true;
+		}
+
+		return TryResolveRuleType(ruleType, targetType, out instantiated);
+	}
+
+	/// <summary>
+	/// Resolves <paramref name="ruleType"/> against a scalar's underlying value: an unbound generic is closed
+	/// with the value type and a plain rule is used as-is, in both cases only when the result validates that
+	/// value.
+	/// </summary>
+	/// <param name="ruleType">The rule type declared by the mapping.</param>
+	/// <param name="valueType">The scalar's underlying value type.</param>
+	/// <param name="resolved">The rule type that validates the value.</param>
+	/// <returns><see langword="true"/> when a usable rule was resolved.</returns>
+	static bool TryResolveUnderlyingRule(
+		INamedTypeSymbol ruleType,
+		ITypeSymbol valueType,
+		out INamedTypeSymbol resolved
+	)
+	{
+		resolved = ruleType;
+
+		if (IsOpenGeneric(ruleType))
+		{
+			var definition = ruleType.OriginalDefinition;
+			if (definition is null || definition.Arity != 1 || !SatisfiesConstraints(definition, valueType))
+				return false;
+
+			var closed = definition.Construct(valueType);
+			if (!ImplementsRuleFor(closed, valueType))
+				return false;
+
+			resolved = closed;
+			return true;
+		}
+
+		return ImplementsRuleFor(ruleType, valueType);
+	}
+
+	/// <summary>
+	/// Gets the underlying value type of a scalar value object: a type marked with the Purview.ValueObjects
+	/// <c>[Scalar]</c> attribute that exposes a public property for the underlying value. The interface
+	/// implementation is contributed by another generator, so the property is the source-visible contract.
+	/// </summary>
+	/// <param name="type">The type to inspect.</param>
+	/// <param name="valueType">The scalar's underlying value type, when it is a scalar.</param>
+	/// <returns><see langword="true"/> when <paramref name="type"/> is a scalar value object.</returns>
+	static bool TryGetScalarUnderlyingValue(ITypeSymbol type, out ITypeSymbol valueType)
+	{
+		valueType = null!;
+
+		if (type is not INamedTypeSymbol named)
+			return false;
+
+		var propertyName = GetScalarPropertyName(named);
+		if (propertyName is null)
+			return false;
+
+		foreach (var member in named.GetMembers(propertyName))
+		{
+			if (member is IPropertySymbol { IsStatic: false, DeclaredAccessibility: Accessibility.Public } property)
+			{
+				valueType = property.Type;
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/// <summary>
+	/// Gets the name of the member holding a scalar's underlying value: the <c>[Scalar]</c> attribute's
+	/// <c>propertyName</c> argument (<c>[Scalar("Id")]</c>), defaulting to <c>Value</c>.
+	/// </summary>
+	/// <param name="type">The type to inspect.</param>
+	/// <returns>The property name, or <see langword="null"/> when the type is not a scalar.</returns>
+	static string? GetScalarPropertyName(INamedTypeSymbol type)
+	{
+		foreach (var attribute in type.GetAttributes())
+		{
+			if (attribute.AttributeClass?.ToDisplayString() != TypeLibraryGenerator.ScalarAttributeFullName)
+				continue;
+
+			if (
+				attribute.ConstructorArguments.Length == 1
+				&& attribute.ConstructorArguments[0].Value is string name
+				&& !string.IsNullOrWhiteSpace(name)
+			)
+			{
+				return name;
+			}
+
+			return "Value";
+		}
+
+		return null;
+	}
+
+	static TypeIdentity BuildScalarAdapterIdentity(
+		INamedTypeSymbol scalar,
+		ITypeSymbol valueType,
+		INamedTypeSymbol underlyingRule
+	) =>
+		new TypeIdentity(
+			TypeLibraryGenerator.ScalarRuleAdapterName,
+			TypeLibraryGenerator.ValueObjectsNamespace,
+			3
+		).MakeGeneric(new TypeIdentity(scalar), new TypeIdentity(valueType), new TypeIdentity(underlyingRule));
 
 	/// <summary>
 	/// Resolves the rule type to instantiate: a plain type is used as-is, an unbound generic
