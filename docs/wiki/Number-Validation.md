@@ -19,14 +19,14 @@ var result = schema.Validate(30.0);
 | `Gte` | `Gte(double value)` | `MinValueRule<double>` — greater than or equal to `value` |
 | `Lt` | `Lt(double value)` | `LessThanRule<double>` — strictly less than `value` |
 | `Lte` | `Lte(double value)` | `MaxValueRule<double>` — less than or equal to `value` |
-| `Int` | `Int()` | `IntRule` — `value == Math.Truncate(value)` |
+| `Int` | `Int()` | `IntRule` — `value == Math.Truncate(value)`; failure code `invalid_type` |
 | `Positive` | `Positive()` | `GreaterThanRule<double>(0.0)` — strictly greater than zero |
 | `Negative` | `Negative()` | `LessThanRule<double>(0.0)` — strictly less than zero |
 | `NonNegative` | `NonNegative()` | `MinValueRule<double>(0.0)` — greater than or equal to zero |
 | `NonPositive` | `NonPositive()` | `MaxValueRule<double>(0.0)` — less than or equal to zero |
 | `MultipleOf` | `MultipleOf(double divisor, string? message)` | `MultipleOfRule` — throws `ArgumentException` for a zero divisor; relative-tolerance comparison (`1e-12`) |
 | `Finite` | `Finite(string? message)` | `FiniteRule` — `double.IsFinite` |
-| `Safe` | `Safe(string? message)` | `SafeIntegerRule` — integer within `int.MinValue`..`int.MaxValue` |
+| `Safe` | `Safe(string? message)` | `SafeIntegerRule` — integer within `int.MinValue`..`int.MaxValue`; failure code `too_big` |
 
 ## Examples
 

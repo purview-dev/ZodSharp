@@ -73,6 +73,14 @@ var spanResult = Z.String().Min(3).Max(50).Email().ValidateSpan(span);
 
 Rules produce `ValidationError` entries with an empty path. Size validations emit `too_small` or `too_big`; string-format validations emit `invalid_string`. Many methods accept a custom `message` parameter. Rule structs live in `ZodSharp.Rules` and can be reused standalone with `IValidationRule<T>`.
 
+Every rule exposes its error identity as public constants — `public const string ErrorCode` and a `public const string MessageFormat` (a `{0}`-style template) — so tests and consumers can assert against the rule instead of duplicating literals:
+
+```csharp
+var result = Z.String().Email().Validate("not-an-email");
+// result.Errors[0].Code    == EmailRule.ErrorCode        ("invalid_string")
+// result.Errors[0].Message == string.Format(CultureInfo.CurrentCulture, EmailRule.MessageFormat, "not-an-email")
+```
+
 ## Span validation
 
 `ValidateSpan(ReadOnlySpan<char> value)` validates the span directly using the rules' `IStringValidationRule` implementations; it materialises a `string` only for the returned value (and only falls back to the string pipeline for schemas with transforms or rules without a span implementation). `IsValidSpan(ReadOnlySpan<char> value, out ImmutableArray<ValidationError> errors)` is the allocation-free entry point when the value is not needed. An empty span is validated by the rules like an empty string.

@@ -23,6 +23,45 @@ Implementations should be structs so validation does not allocate. `IsValid` is 
 
 For a **string** rule, also implement `ZodSharp.Core.IStringValidationRule` (`bool IsValid(ReadOnlySpan<char> value)` / `string GetErrorMessage(ReadOnlySpan<char> value)`) so the rule participates in `ZodString.ValidateSpan`/`IsValidSpan` without materialising the input. Rules that only implement `IValidationRule<T>` are still fully supported; they simply fall back to the string pipeline for span validation.
 
+## Error code and message constants
+
+Every rule **should** expose its error identity as public constants so code (and tests) can assert against the rule rather than re-typing literals:
+
+```csharp
+public readonly record struct EmailRule : IValidationRule<string>
+{
+    public const string ErrorCode = "invalid_string";
+    public const string MessageFormat = "Invalid email format: {0}";
+
+    public string Code => ErrorCode;
+    public string GetErrorMessage(in string value) =>
+        string.Format(System.Globalization.CultureInfo.CurrentCulture, MessageFormat, value);
+}
+```
+
+`ErrorCode` is the value reported in `ValidationError.Code`; `MessageFormat` is a `string.Format` template whose `{0}`-style placeholders are the offending value (and any rule-specific arguments). A custom `message` supplied to the rule still wins over `MessageFormat`. A `[Test]` can therefore assert without duplicating strings:
+
+```csharp
+await Assert.That(error.Code).IsEqualTo(EmailRule.ErrorCode);
+await Assert.That(error.Message).IsEqualTo(
+    string.Format(CultureInfo.CurrentCulture, EmailRule.MessageFormat, value));
+```
+
+The convention is enforced by an analyzer: a source-declared rule that does not expose a public `const string ErrorCode` **and** a public `const string MessageFormat` is reported as **ZODSGEN042**. The constants may be inherited from a base rule class, and abstract bases are exempt so a shared base can host them for its concrete derivations. See [Source Generator Diagnostics](Source-Generator-Diagnostics.md) for the full list.
+
+## Non-sentinel values (EF-friendly)
+
+`ZodSharp.Rules.NonSentinelRule<T>` rejects the framework default/boundary values an ORM commonly stores to represent "no value" — `Guid.Empty`, `DateTime.MinValue`/`MaxValue`, `DateTimeOffset.MinValue`/`MaxValue`, `DateOnly.MinValue`/`MaxValue`, `TimeOnly.MinValue`/`MaxValue`, and `null`/empty/whitespace strings:
+
+```csharp
+var schema = Z.Date().AddRule(new NonSentinelRule<DateTime>());
+
+var result = schema.Validate(DateTime.MinValue);
+// result.Errors[0].Code == NonSentinelRule<DateTime>.ErrorCode   ("invalid_value")
+```
+
+Close it with the property type to use it through an attribute (`[ZodRule(typeof(NonSentinelRule<>))]` on a matching `NonSentinelAttribute`). Types without a known sentinel always pass, so the rule never rejects a type it does not understand.
+
 ## Defining a custom rule
 
 ```csharp

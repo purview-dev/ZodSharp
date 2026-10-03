@@ -6,6 +6,12 @@ namespace ZodSharp.Rules;
 /// </summary>
 public readonly record struct E164Rule : Core.IValidationRule<string>, Core.IStringValidationRule
 {
+	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
+	public const string ErrorCode = "invalid_string";
+
+	/// <summary>Gets the message format; <c>{0}</c> is the offending value.</summary>
+	public const string MessageFormat = "Invalid E.164 phone number: {0}";
+
 	readonly string? _message;
 
 	/// <summary>
@@ -49,15 +55,16 @@ public readonly record struct E164Rule : Core.IValidationRule<string>, Core.IStr
 	/// </summary>
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
-	public string GetErrorMessage(in string value) => _message ?? $"Invalid E.164 phone number: {value}";
+	public string GetErrorMessage(in string value) => _message ?? RuleMessage.Format(MessageFormat, value);
 
 	/// <summary>
 	/// Gets the error message for a failed span validation.
 	/// </summary>
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
-	public string GetErrorMessage(ReadOnlySpan<char> value) => _message ?? $"Invalid E.164 phone number: {value}";
+	public string GetErrorMessage(ReadOnlySpan<char> value) =>
+		_message ?? RuleMessage.Format(MessageFormat, value.ToString());
 
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
-	public string Code => "invalid_string";
+	public string Code => ErrorCode;
 }

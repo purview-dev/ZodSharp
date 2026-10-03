@@ -404,4 +404,19 @@ static class DiagnosticLibrary
 		defaultSeverity: DiagnosticSeverity.Info,
 		isEnabledByDefault: true
 	);
+
+	/// <summary>
+	/// ZODSGEN042: a validation rule (a type implementing <c>ZodSharp.Core.IValidationRule&lt;T&gt;</c>) does not
+	/// expose its error identity as public constants. Every rule should declare <c>public const string ErrorCode</c>
+	/// and <c>public const string MessageFormat</c> so its code and message can be asserted in tests without
+	/// duplicating literals.
+	/// </summary>
+	public static readonly DiagnosticDescriptor RuleMissingErrorIdentityConstants = new(
+		id: "ZODSGEN042",
+		title: "Validation rule should expose public error identity constants",
+		messageFormat: "Rule '{0}' should declare {1}: expose 'public const string ErrorCode' and 'public const string MessageFormat' so tests can assert against the rule instead of duplicating literals",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Warning,
+		isEnabledByDefault: true
+	);
 }

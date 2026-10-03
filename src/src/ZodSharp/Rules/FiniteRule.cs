@@ -6,6 +6,12 @@ namespace ZodSharp.Rules;
 /// </summary>
 public readonly record struct FiniteRule : Core.IValidationRule<double>
 {
+	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
+	public const string ErrorCode = "not_finite";
+
+	/// <summary>Gets the message format; <c>{0}</c> is the offending value.</summary>
+	public const string MessageFormat = "Number must be finite, but got {0}";
+
 	readonly string? _message;
 
 	/// <summary>
@@ -29,8 +35,8 @@ public readonly record struct FiniteRule : Core.IValidationRule<double>
 	/// </summary>
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
-	public string GetErrorMessage(in double value) => _message ?? $"Number must be finite, but got {value}";
+	public string GetErrorMessage(in double value) => _message ?? RuleMessage.Format(MessageFormat, value);
 
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
-	public string Code => "not_finite";
+	public string Code => ErrorCode;
 }

@@ -6,6 +6,12 @@ namespace ZodSharp.Rules;
 /// </summary>
 public readonly record struct MultipleOfRule : Core.IValidationRule<double>
 {
+	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
+	public const string ErrorCode = "not_multiple_of";
+
+	/// <summary>Gets the message format; <c>{0}</c> is the divisor and <c>{1}</c> the offending value.</summary>
+	public const string MessageFormat = "Number must be a multiple of {0}, but got {1}";
+
 	/// <summary>
 	/// The relative tolerance applied when comparing the quotient to its nearest integer.
 	/// </summary>
@@ -52,9 +58,8 @@ public readonly record struct MultipleOfRule : Core.IValidationRule<double>
 	/// </summary>
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
-	public string GetErrorMessage(in double value) =>
-		_message ?? $"Number must be a multiple of {_divisor}, but got {value}";
+	public string GetErrorMessage(in double value) => _message ?? RuleMessage.Format(MessageFormat, _divisor, value);
 
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
-	public string Code => "not_multiple_of";
+	public string Code => ErrorCode;
 }

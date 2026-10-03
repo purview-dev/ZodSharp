@@ -8,6 +8,12 @@ namespace ZodSharp.Rules;
 /// </summary>
 public readonly record struct RegexRule : Core.IValidationRule<string>, Core.IStringValidationRule
 {
+	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
+	public const string ErrorCode = "invalid_string";
+
+	/// <summary>Gets the message format; <c>{0}</c> is the required pattern.</summary>
+	public const string MessageFormat = "String does not match the required pattern: {0}";
+
 	readonly Regex _pattern;
 	readonly string? _message;
 
@@ -49,8 +55,7 @@ public readonly record struct RegexRule : Core.IValidationRule<string>, Core.ISt
 	/// </summary>
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
-	public string GetErrorMessage(in string value) =>
-		_message ?? $"String does not match the required pattern: {_pattern}";
+	public string GetErrorMessage(in string value) => _message ?? RuleMessage.Format(MessageFormat, _pattern);
 
 	/// <summary>
 	/// Gets the error message for a failed span validation.
@@ -60,5 +65,5 @@ public readonly record struct RegexRule : Core.IValidationRule<string>, Core.ISt
 	public string GetErrorMessage(ReadOnlySpan<char> value) => GetErrorMessage(value.ToString());
 
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
-	public string Code => "invalid_string";
+	public string Code => ErrorCode;
 }

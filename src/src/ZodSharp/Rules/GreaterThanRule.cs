@@ -8,6 +8,12 @@ namespace ZodSharp.Rules;
 public readonly record struct GreaterThanRule<T> : Core.IValidationRule<T>
 	where T : IComparable<T>
 {
+	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
+	public const string ErrorCode = "too_small";
+
+	/// <summary>Gets the message format; <c>{0}</c> is the bound and <c>{1}</c> the offending value.</summary>
+	public const string MessageFormat = "Value must be greater than {0}, but got {1}";
+
 	readonly T _exclusiveMinimum;
 
 	/// <summary>
@@ -31,8 +37,8 @@ public readonly record struct GreaterThanRule<T> : Core.IValidationRule<T>
 	/// </summary>
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
-	public string GetErrorMessage(in T value) => $"Value must be greater than {_exclusiveMinimum}, but got {value}";
+	public string GetErrorMessage(in T value) => RuleMessage.Format(MessageFormat, _exclusiveMinimum, value);
 
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
-	public string Code => "too_small";
+	public string Code => ErrorCode;
 }

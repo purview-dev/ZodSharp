@@ -6,6 +6,15 @@ namespace ZodSharp.Rules;
 /// </summary>
 public readonly record struct UUIDRule : Core.IValidationRule<string>, Core.IStringValidationRule
 {
+	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
+	public const string ErrorCode = "invalid_string";
+
+	/// <summary>Gets the message format; <c>{0}</c> is the offending value.</summary>
+	public const string MessageFormat = "Invalid UUID format: {0}";
+
+	/// <summary>Gets the version-specific message format; <c>{0}</c> is the version and <c>{1}</c> the value.</summary>
+	public const string VersionedMessageFormat = "Invalid UUID v{0} format: {1}";
+
 	readonly string? _message;
 	readonly UuidVersion? _version;
 
@@ -82,8 +91,8 @@ public readonly record struct UUIDRule : Core.IValidationRule<string>, Core.IStr
 		_message
 		?? (
 			_version is UuidVersion version
-				? $"Invalid UUID v{(int)version} format: {value}"
-				: $"Invalid UUID format: {value}"
+				? RuleMessage.Format(VersionedMessageFormat, (int)version, value)
+				: RuleMessage.Format(MessageFormat, value)
 		);
 
 	static bool IsValidVersionless(ReadOnlySpan<char> value)
@@ -122,5 +131,5 @@ public readonly record struct UUIDRule : Core.IValidationRule<string>, Core.IStr
 	static bool IsValidVariant(char c) => c is '8' or '9' or 'a' or 'b' or 'A' or 'B';
 
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
-	public string Code => "invalid_string";
+	public string Code => ErrorCode;
 }

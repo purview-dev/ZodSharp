@@ -13,6 +13,12 @@ namespace ZodSharp.Rules;
 )]
 public readonly record struct UrlRule : Core.IValidationRule<string>
 {
+	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
+	public const string ErrorCode = "invalid_string";
+
+	/// <summary>Gets the message format; <c>{0}</c> is the offending value.</summary>
+	public const string MessageFormat = "Invalid URL format: {0}";
+
 	static readonly Regex UrlRegex = new(
 		@"^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$",
 		RegexOptions.Compiled | RegexOptions.IgnoreCase,
@@ -50,8 +56,8 @@ public readonly record struct UrlRule : Core.IValidationRule<string>
 	/// </summary>
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
-	public string GetErrorMessage(in string value) => _message ?? $"Invalid URL format: {value}";
+	public string GetErrorMessage(in string value) => _message ?? RuleMessage.Format(MessageFormat, value);
 
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
-	public string Code => "invalid_string";
+	public string Code => ErrorCode;
 }

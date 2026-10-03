@@ -6,6 +6,12 @@ namespace ZodSharp.Rules;
 /// </summary>
 public readonly record struct MaxLengthRule : Core.IValidationRule<string>, Core.IStringValidationRule
 {
+	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
+	public const string ErrorCode = "too_big";
+
+	/// <summary>Gets the message format; <c>{0}</c> is the maximum length and <c>{1}</c> the actual length.</summary>
+	public const string MessageFormat = "String must be at most {0} characters long, but got {1}";
+
 	readonly int _maxLength;
 
 	/// <summary>
@@ -37,7 +43,7 @@ public readonly record struct MaxLengthRule : Core.IValidationRule<string>, Core
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
 	public string GetErrorMessage(in string value) =>
-		$"String must be at most {_maxLength} characters long, but got {value.LengthOrDefault()}";
+		RuleMessage.Format(MessageFormat, _maxLength, value.LengthOrDefault());
 
 	/// <summary>
 	/// Gets the error message for a failed span validation.
@@ -45,8 +51,8 @@ public readonly record struct MaxLengthRule : Core.IValidationRule<string>, Core
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
 	public string GetErrorMessage(ReadOnlySpan<char> value) =>
-		$"String must be at most {_maxLength} characters long, but got {value.Length}";
+		RuleMessage.Format(MessageFormat, _maxLength, value.Length);
 
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
-	public string Code => "too_big";
+	public string Code => ErrorCode;
 }

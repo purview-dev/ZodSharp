@@ -93,7 +93,9 @@ DataAnnotations attributes such as `[Required]`, `[Length]`, `[StringLength]`, `
 
 ## Custom rules
 
-A rule is any struct implementing `ZodSharp.Core.IValidationRule<T>`; attach it to a schema with the public `Rule`/`AddRule` API, or expose it as a DataAnnotations-style attribute that the source generator honours exactly like the built-ins:
+A rule is any struct implementing `ZodSharp.Core.IValidationRule<T>`; attach it to a schema with the public `Rule`/`AddRule` API, or expose it as a DataAnnotations-style attribute that the source generator honours exactly like the built-ins.
+
+Every rule should also expose its error identity as public `const string ErrorCode` and `const string MessageFormat` constants — the analyzer reports `ZODSGEN042` when a rule omits them, so tests can assert against the rule rather than duplicating literals:
 
 ```csharp
 using System;
@@ -103,8 +105,12 @@ using ZodSharp.Core;
 
 public readonly record struct NoWhitespaceRule(string? Message = null) : IValidationRule<string>
 {
+    public const string ErrorCode = "invalid_string";
+    public const string MessageFormat = "Whitespace is not allowed in '{0}'.";
+
     public bool IsValid(in string value) => value.IndexOf(' ') < 0;
-    public string GetErrorMessage(in string value) => Message ?? "Whitespace is not allowed.";
+    public string GetErrorMessage(in string value) =>
+        Message ?? string.Format(MessageFormat, value);
 }
 
 [ZodRule(typeof(NoWhitespaceRule), Code = "invalid_string", Origin = "string")]
