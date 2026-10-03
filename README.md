@@ -250,9 +250,14 @@ All validation rules are structs:
 ```csharp
 public readonly struct MinLengthRule : IValidationRule<string>
 {
+    public const string ErrorCode = "too_small";
+    public const string MessageFormat = "String must be at least {0} characters long, but got {1}";
+
     // Zero allocation validation
 }
 ```
+
+Every rule exposes its reported code and message template as public `ErrorCode`/`MessageFormat` constants so tests can assert against the rule instead of duplicating literals (`ZODSGEN042` enforces this convention — see [Custom Rules](docs/wiki/Custom-Rules.md)).
 
 #### 3. Compiled Validators
 

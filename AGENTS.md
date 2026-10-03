@@ -94,6 +94,8 @@ The generator and analyzer are built with `Purview.SourceGeneratorFramework`:
 - Use `ForAttributeWithMetadataName` for attribute-driven discovery.
 - Test incrementally, not just generated text (see the skills above).
 
+Validation rules follow a conventions analyzer (`ValidationRuleConventionsAnalyzer`, diagnostic `ZODSGEN042`): a source-declared rule (a type implementing `ZodSharp.Core.IValidationRule<T>`) must expose its error identity as public `const string ErrorCode` and `const string MessageFormat` constants, so tests can assert against the rule rather than duplicating literals. New built-in rules must follow the same convention; keep `AnalyzerReleases.Shipped.md`/`AnalyzerReleases.Unshipped.md` in sync when a diagnostic is added or changed.
+
 ## Packing and package READMEs
 
 Each package ships its own `README.md`, placed in the project's `Sdk/` folder (for example `src/src/ZodSharp/Sdk/README.md`). The SDK's `PurviewAutoSdkPack` automatically maps `Sdk/*.md` to the package root and `Sdk/buildTransitive/**` to `buildTransitive/`, and the repo-root `README.md` is skipped when a package already packs its own README. Packages also ship `purview-logo-light.png` (linked via `src/Directory.Build.props`) and the core package ships `buildTransitive/Purview.ZodSharp.props`.

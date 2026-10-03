@@ -33,7 +33,7 @@ The generator reports `Origin = "string"` for string size failures, `Origin = "a
 
 ### Rule errors
 
-Rules evaluated by the base `Validate` pipeline emit Zod-compatible codes: `too_small`/`too_big` for bounds, `not_multiple_of`/`not_finite` for numbers, and `invalid_string` for string-format validations. Custom rules that do not declare a code default to `validation_failed`. Structured `too_small`/`too_big` issues (with `Origin`, `Minimum`/`Maximum`, and `Inclusive`) are produced by `ZodArray` and by the source generator's size validators.
+Rules evaluated by the base `Validate` pipeline emit Zod-compatible codes: `too_small`/`too_big` for bounds, `not_multiple_of`/`not_finite` for numbers, `invalid_string` for string-format validations, `invalid_type` for `IntRule`, and `invalid_value` for `NonSentinelRule<T>`. Custom rules that do not declare a code default to `validation_failed`. Every rule exposes its correlated code and message template as public `const string ErrorCode` / `MessageFormat` constants so tests can assert against the rule rather than duplicating literals; a source-declared rule that omits them is reported as `ZODSGEN042`. Structured `too_small`/`too_big` issues (with `Origin`, `Minimum`/`Maximum`, and `Inclusive`) are produced by `ZodArray` and by the source generator's size validators.
 
 ### String transforms allocate
 
