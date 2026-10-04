@@ -19,6 +19,7 @@ var result = schema.Validate("user@example.com");
 | `Email` | `Email()` | `EmailRule` — static compiled regex |
 | `Regex` | `Regex(Regex pattern, string? message)` / `Regex(string pattern, string? message)` | `RegexRule`; the string overload compiles with a 100 ms timeout |
 | `Url` | `Url(string? message)` | `UrlRule` — regex or absolute `http`/`https` URI |
+| `Uri` | `Uri(string? message)` / `Uri(UriKind uriKind, string? message)` | `UriRule` — `Uri.TryCreate` against the supplied `UriKind` (defaults to `RelativeOrAbsolute`) |
 | `Phone` | `Phone(string? message)` | `PhoneRule` — digits plus `() .+-`, at least one digit |
 | `CreditCard` | `CreditCard(string? message)` | `CreditCardRule` — Luhn algorithm |
 | `Base64String` | `Base64String(string? message)` | `Base64StringRule` — `Convert.FromBase64String` |
@@ -38,6 +39,7 @@ var result = schema.Validate("user@example.com");
 | `Nanoid` | `Nanoid(string? message)` | `NanoidRule` — 21 URL-safe characters |
 | `Cuid2` | `Cuid2(string? message)` | `Cuid2Rule` — lowercase alphanumeric characters |
 | `E164` | `E164(string? message)` | `E164Rule` — `+` followed by 7-15 digits |
+| `NonSentinel` | `NonSentinel(string? message)` | `NonSentinelRule<string>` — rejects `null`/empty/whitespace; inherited from `ZodType<T>` and overridden to keep `ZodString` in the chain |
 | `ToLower` | `ToLower()` | wraps a transform (`ToLowerInvariant`), returns a `ZodString` |
 | `ToUpper` | `ToUpper()` | wraps a transform (`ToUpperInvariant`) |
 | `Trim` | `Trim()` | wraps a transform (`Trim`) |
@@ -71,7 +73,7 @@ var spanResult = Z.String().Min(3).Max(50).Email().ValidateSpan(span);
 
 ## Error messages
 
-Rules produce `ValidationError` entries with an empty path. Size validations emit `too_small` or `too_big`; string-format validations emit `invalid_string`. Many methods accept a custom `message` parameter. Rule structs live in `ZodSharp.Rules` and can be reused standalone with `IValidationRule<T>`.
+Rules produce `ValidationError` entries with an empty path. Size validations emit `too_small` or `too_big`; string-format validations emit `invalid_string`. Many methods accept a custom `message` parameter. Rule structs live in `ZodSharp.Rules` and can be reused standalone with `IValidationRule<T>`. For the full catalogue — including rules without a fluent method — see [Validation Rules Reference](Validation-Rules-Reference.md).
 
 Every rule exposes its error identity as public constants — `public const string ErrorCode` and a `public const string MessageFormat` (a `{0}`-style template) — so tests and consumers can assert against the rule instead of duplicating literals:
 

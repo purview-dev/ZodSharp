@@ -48,3 +48,7 @@ var age = Z.Number().Min(0).Max(120).Int().Validate(25.0);
 ## Numeric coercion
 
 When a `Z.Number()` is used as an object field or union option, boxed values are coerced via `IConvertible` (invariant culture) — for example a `long` from a `Dictionary<string, object?>` validates against a `Z.Number()` field. Non-numeric values fail with `invalid_type`.
+
+## See also
+
+- [Validation Rules Reference](Validation-Rules-Reference.md) — every built-in rule with its error code and message format.

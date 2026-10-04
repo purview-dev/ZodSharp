@@ -259,4 +259,56 @@ public class NonSentinelRuleTests
 		await Assert.That(result.Errors).HasSingleItem();
 		await Assert.That(result.Errors[0].Code).IsEqualTo(NonSentinelRule<string>.ErrorCode);
 	}
+
+	[Test]
+	public async Task NonSentinel_GivenFluentStringSchema_RejectsWhitespace()
+	{
+		// Arrange
+		var schema = Z.String().NonSentinel();
+
+		// Act
+		var result = schema.Validate("   ");
+
+		// Assert
+		await Assert.That(result.IsSuccess).IsFalse();
+		await Assert.That(result.Errors).HasSingleItem();
+		await Assert.That(result.Errors[0].Code).IsEqualTo(NonSentinelRule<string>.ErrorCode);
+	}
+
+	[Test]
+	public async Task NonSentinel_GivenFluentDateSchema_RejectsMinValue()
+	{
+		// Arrange
+		var schema = Z.Date().NonSentinel();
+
+		// Act
+		var result = schema.Validate(DateTime.MinValue);
+
+		// Assert
+		await Assert.That(result.IsSuccess).IsFalse();
+		await Assert.That(result.Errors[0].Code).IsEqualTo(NonSentinelRule<DateTime>.ErrorCode);
+	}
+
+	[Test]
+	public async Task NonSentinel_GivenFluentChain_KeepsConcreteSchema()
+	{
+		// Arrange / Act — the covariant override keeps ZodString so later fluent calls still compile.
+		var result = Z.String().NonSentinel().Min(3).Validate("ab");
+
+		// Assert
+		await Assert.That(result.IsSuccess).IsFalse();
+	}
+
+	[Test]
+	public async Task NonSentinel_GivenTypeWithoutKnownSentinel_AlwaysPasses()
+	{
+		// Arrange
+		var schema = Z.Number().NonSentinel();
+
+		// Act
+		var result = schema.Validate(42.0);
+
+		// Assert
+		await Assert.That(result.IsSuccess).IsTrue();
+	}
 }

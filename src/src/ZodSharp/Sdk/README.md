@@ -141,8 +141,12 @@ public readonly record struct NotEmptyRule<T>(string? Code = null, string? Messa
     : IValidationRule<T>, IZodRule
     where T : struct, IEquatable<T>
 {
+    public const string ErrorCode = "invalid_value";
+    public const string MessageFormat = "Value must not be empty.";
+
     public bool IsValid(in T value) => !value.Equals(default(T));
-    public string GetErrorMessage(in T value) => Message ?? "Value must not be empty.";
+    public string GetErrorMessage(in T value) =>
+        Message ?? string.Format(System.Globalization.CultureInfo.CurrentCulture, MessageFormat);
     string? IZodRule.Code => Code;
     string? IZodRule.Origin => "value_object";
 }
@@ -162,7 +166,7 @@ public partial record struct AssetId
 }
 ```
 
-`[NotEmpty]` on a `Guid` property emits `NotEmptyRule<Guid>`; on an `int` property it emits `NotEmptyRule<int>`. See the [Custom Rules](https://purview.dev/docs/zodsharp/custom-rules/) page for the full precedence rules and the scalar value-object walkthrough.
+`[NotEmpty]` on a `Guid` property emits `NotEmptyRule<Guid>`; on an `int` property it emits `NotEmptyRule<int>`. See the [Custom Rules](https://purview.dev/docs/zodsharp/custom-rules/) page for the full precedence rules, and [Value Objects Integration](https://purview.dev/docs/zodsharp/value-objects-integration/) for the scalar value-object walkthrough and the error code / message definitions.
 
 ### One attribute for a primitive and a scalar value object
 
@@ -172,16 +176,26 @@ A constraint can be *self-referential* (`where TSelf : IScalarValueObject<TSelf,
 public readonly record struct NonWhiteSpaceStringRule(string? Message = null)
     : IValidationRule<string?>
 {
+    public const string ErrorCode = "invalid_string";
+    public const string MessageFormat = "Value must not be empty.";
+
     public bool IsValid(in string? value) => value != null && !string.IsNullOrWhiteSpace(value);
-    public string GetErrorMessage(in string? value) => Message ?? "Value must not be empty.";
+    public string GetErrorMessage(in string? value) =>
+        Message ?? string.Format(System.Globalization.CultureInfo.CurrentCulture, MessageFormat);
 }
 
 public readonly record struct NonWhiteSpaceStringRule<TSelf>(string? Code = null, string? Message = null)
-    : IValidationRule<TSelf>
+    : IValidationRule<TSelf>, IZodRule
     where TSelf : IScalarValueObject<TSelf, string>
 {
+    public const string ErrorCode = "invalid_string";
+    public const string MessageFormat = "Value must not be empty.";
+
     public bool IsValid(in TSelf value) => value.Value != null && !string.IsNullOrWhiteSpace(value.Value);
-    public string GetErrorMessage(in TSelf value) => Message ?? "Value must not be empty.";
+    public string GetErrorMessage(in TSelf value) =>
+        Message ?? string.Format(System.Globalization.CultureInfo.CurrentCulture, MessageFormat);
+    string? IZodRule.Code => Code;
+    string? IZodRule.Origin => "value_object";
 }
 
 [ZodRule(typeof(NonWhiteSpaceStringRule<>))]
@@ -203,8 +217,12 @@ Add `[ZodRule(AllowMultiple = true)]` to emit `AttributeUsage(..., AllowMultiple
 [ZodRule(AllowMultiple = true)]
 public readonly record struct MultipleOfRule(int Factor = 1, string? Message = null) : IValidationRule<int>
 {
+    public const string ErrorCode = "not_multiple_of";
+    public const string MessageFormat = "Number must be a multiple of {0}, but got {1}";
+
     public bool IsValid(in int value) => Factor != 0 && value % Factor == 0;
-    public string GetErrorMessage(in int value) => Message ?? "Not a multiple.";
+    public string GetErrorMessage(in int value) =>
+        Message ?? string.Format(System.Globalization.CultureInfo.CurrentCulture, MessageFormat, Factor, value);
 }
 
 [ZodSchema]
@@ -225,8 +243,12 @@ public readonly record struct NotEmptyRule<TSelf>(string? Code = null, string? M
     : IValidationRule<TSelf>, IZodRule
     where TSelf : IScalarValueObject<TSelf, Guid>
 {
+    public const string ErrorCode = "invalid_value";
+    public const string MessageFormat = "Value must not be empty.";
+
     public bool IsValid(in TSelf value) => value.Value != Guid.Empty;
-    public string GetErrorMessage(in TSelf value) => Message ?? "Value must not be empty.";
+    public string GetErrorMessage(in TSelf value) =>
+        Message ?? string.Format(System.Globalization.CultureInfo.CurrentCulture, MessageFormat);
     string? IZodRule.Code => Code;
     string? IZodRule.Origin => "value_object";
 }
@@ -248,7 +270,7 @@ public readonly partial record struct AssetId
 }
 ```
 
-The generated validator runs the rule against the value object (`NotEmptyRule<AssetId>`) and reports `Code`, `Message`, and `Origin` with an empty path. A rule written against the underlying value (for example `NonSentinelRule<Guid>`) is instead adapted automatically when applied to a `[Scalar]` type, so one rule serves every scalar backed by the same primitive. A rule attribute on a type that gets no schema is ignored, and the analyzer warns (`ZODSGEN033`) rather than failing silently.
+The generated validator runs the rule against the value object (`NotEmptyRule<AssetId>`) and reports `Code`, `Message`, and `Origin` with an empty path. A rule written against the underlying value (for example `NonSentinelRule<Guid>`) is instead adapted automatically when applied to a `[Scalar]` type, so one rule serves every scalar backed by the same primitive. A rule attribute on a type that gets no schema is ignored, and the analyzer warns (`ZODSGEN033`) rather than failing silently. See [Value Objects Integration](https://purview.dev/docs/zodsharp/value-objects-integration/) for the full `[Scalar]` walkthrough and the error code / message definitions.
 
 ## Error factory
 

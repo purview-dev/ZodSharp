@@ -9,7 +9,7 @@ namespace ZodSharp.Rules;
 public class RuleConstantsTests
 {
 	/// <summary>
-	/// Every public struct in <see cref="ZodSharp.Rules"/> that implements
+	/// Every public struct in <see cref="Rules"/> that implements
 	/// <see cref="Core.IValidationRule{T}"/>.
 	/// </summary>
 	public static IEnumerable<Type> RuleTypes() =>

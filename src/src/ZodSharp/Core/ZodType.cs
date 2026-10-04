@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using ZodSharp.Rules;
 
 namespace ZodSharp.Core;
 
@@ -117,6 +118,24 @@ public abstract class ZodType<TOutput, TInput> : IZodSchema<TOutput, TInput>, IO
 
 		// We can safely cast to IValidationRule<TOutput> because TRule is constrained to that interface.
 		return AddRule(rule);
+	}
+
+	/// <summary>
+	/// Adds a <see cref="NonSentinelRule{TOutput}"/> that rejects the framework default/boundary values
+	/// an ORM commonly stores to represent "no value" (for example <see cref="Guid.Empty"/> or
+	/// <see cref="DateTime.MinValue"/>). Types without a known sentinel always pass.
+	/// </summary>
+	/// <param name="message">Optional error message.</param>
+	/// <returns>This schema for method chaining.</returns>
+	/// <remarks>
+	/// Concrete schemas whose output type has a known sentinel (for example
+	/// <see cref="Schemas.ZodString"/> and <see cref="Schemas.ZodDate"/>) override this method with a
+	/// covariant return type so the fluent chain keeps the concrete schema.
+	/// </remarks>
+	public virtual ZodType<TOutput, TInput> NonSentinel(string? message = null)
+	{
+		AddRule(new NonSentinelRule<TOutput>(message));
+		return this;
 	}
 
 	/// <summary>

@@ -313,6 +313,7 @@ static class CustomRuleResolver
 				return name;
 			}
 
+			// The attribute is present but no property name was supplied, so the default is used.
 			return "Value";
 		}
 

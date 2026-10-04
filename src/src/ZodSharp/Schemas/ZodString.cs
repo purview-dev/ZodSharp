@@ -202,6 +202,25 @@ public class ZodString : ZodType<string>
 	}
 
 	/// <summary>
+	/// Adds a URI format validation that accepts a relative or absolute URI.
+	/// </summary>
+	/// <param name="message">Optional error message</param>
+	/// <returns>This schema for method chaining</returns>
+	public ZodString Uri(string? message = null) => Uri(UriKind.RelativeOrAbsolute, message);
+
+	/// <summary>
+	/// Adds a URI format validation requiring the specified <see cref="UriKind"/>.
+	/// </summary>
+	/// <param name="uriKind">The kind of URI the value must be</param>
+	/// <param name="message">Optional error message</param>
+	/// <returns>This schema for method chaining</returns>
+	public ZodString Uri(UriKind uriKind, string? message = null)
+	{
+		AddRule(new UriRule(uriKind, message));
+		return this;
+	}
+
+	/// <summary>
 	/// Adds a phone number format validation.
 	/// </summary>
 	/// <param name="message">Optional error message</param>
@@ -429,6 +448,17 @@ public class ZodString : ZodType<string>
 	public ZodString E164(string? message = null)
 	{
 		AddRule(new E164Rule(message));
+		return this;
+	}
+
+	/// <summary>
+	/// Adds a non-sentinel validation that rejects <c>null</c>, empty, and whitespace strings.
+	/// </summary>
+	/// <param name="message">Optional error message</param>
+	/// <returns>This schema for method chaining</returns>
+	public override ZodString NonSentinel(string? message = null)
+	{
+		AddRule(new NonSentinelRule<string>(message));
 		return this;
 	}
 

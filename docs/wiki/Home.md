@@ -23,6 +23,8 @@ This wiki is the project documentation hub for the core API, source generator, J
 - [Unions and Discriminated Unions](Unions-and-Discriminated-Unions.md)
 - [Composition and Transforms](Composition-and-Transforms.md)
 - [Custom Rules](Custom-Rules.md)
+- [Validation Rules Reference](Validation-Rules-Reference.md)
+- [Value Objects Integration](Value-Objects-Integration.md)
 - [Compiled Validators and Caching](Compiled-Validators-and-Caching.md)
 - [Dependency Injection](Dependency-Injection.md)
 
@@ -56,6 +58,7 @@ This wiki is the project documentation hub for the core API, source generator, J
 - **Test-friendly rule identity** — every rule exposes its code and message template as public `ErrorCode`/`MessageFormat` constants (the analyzer reports `ZODSGEN042` when one is missing), so tests assert against the rule instead of duplicating literals. `NonSentinelRule<T>` rejects the ORM sentinel values (`Guid.Empty`, `DateTime.MinValue`/`MaxValue`, and more).
 - **JSON Schema interoperability** — export via `Z.ToJsonSchema` (core package) and import via `Z.FromJsonSchema` (in either JSON integration package), enabling cross-language reuse with TypeScript/Zod.
 - **Compile-time source generation** — the `[ZodSchema]` attribute turns a class, struct, or record into a zero-allocation static validator, honouring DataAnnotations attributes such as `[Required]`, `[Length]`, `[Range]`, and `[EmailAddress]`.
+- **Value object scalars** — a `Purview.ValueObjects` `[Scalar]` can be validated as a unit with `[ZodSchema]`; a rule written against the scalar's underlying value is adapted automatically. See [Value Objects Integration](Value-Objects-Integration.md).
 - **Integration packages** — `Purview.ZodSharp.SystemTextJson`, `Purview.ZodSharp.NewtonsoftJson`, and `Purview.ZodSharp.AspNetCore` (ProblemDetails).
 - **Cross-platform tests** — a shared TypeScript/Zod fixture set is generated into the repo and asserted against from both the C# test suite and a vitest suite.
 - **Multi-target** — packages target `net8.0`, `net9.0`, `net10.0`, and `net11.0`; the source generator targets `netstandard2.0` so it runs in any compiler host.

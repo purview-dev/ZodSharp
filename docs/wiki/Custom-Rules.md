@@ -23,7 +23,7 @@ Implementations should be structs so validation does not allocate. `IsValid` is 
 
 For a **string** rule, also implement `ZodSharp.Core.IStringValidationRule` (`bool IsValid(ReadOnlySpan<char> value)` / `string GetErrorMessage(ReadOnlySpan<char> value)`) so the rule participates in `ZodString.ValidateSpan`/`IsValidSpan` without materialising the input. Rules that only implement `IValidationRule<T>` are still fully supported; they simply fall back to the string pipeline for span validation.
 
-## Error code and message constants
+## Error code and message definitions
 
 Every rule **should** expose its error identity as public constants so code (and tests) can assert against the rule rather than re-typing literals:
 
@@ -39,7 +39,13 @@ public readonly record struct EmailRule : IValidationRule<string>
 }
 ```
 
-`ErrorCode` is the value reported in `ValidationError.Code`; `MessageFormat` is a `string.Format` template whose `{0}`-style placeholders are the offending value (and any rule-specific arguments). A custom `message` supplied to the rule still wins over `MessageFormat`. A `[Test]` can therefore assert without duplicating strings:
+- **`ErrorCode`** is the rule's canonical code — the value a test compares against (`error.Code`). The interface member `IValidationRule<T>.Code` defaults to `"validation_failed"`; built-in rules override it as `public string Code => ErrorCode;`.
+- **`MessageFormat`** is a `string.Format` template. `{0}` (and `{1}`, …) are the offending value and any rule-specific arguments; format it with `string.Format(System.Globalization.CultureInfo.CurrentCulture, MessageFormat, …)`.
+- The constants may be inherited from a base rule class, and **abstract bases are exempt**, so a shared base can host them for its concrete derivations.
+
+The convention is enforced by an analyzer: a source-declared rule that does not expose a public `const string ErrorCode` **and** a public `const string MessageFormat` is reported as **ZODSGEN042**. See [Source Generator Diagnostics](Source-Generator-Diagnostics.md) for the full list.
+
+A `[Test]` can therefore assert without duplicating strings:
 
 ```csharp
 await Assert.That(error.Code).IsEqualTo(EmailRule.ErrorCode);
@@ -47,7 +53,31 @@ await Assert.That(error.Message).IsEqualTo(
     string.Format(CultureInfo.CurrentCulture, EmailRule.MessageFormat, value));
 ```
 
-The convention is enforced by an analyzer: a source-declared rule that does not expose a public `const string ErrorCode` **and** a public `const string MessageFormat` is reported as **ZODSGEN042**. The constants may be inherited from a base rule class, and abstract bases are exempt so a shared base can host them for its concrete derivations. See [Source Generator Diagnostics](Source-Generator-Diagnostics.md) for the full list.
+### Runtime identity: `IZodRule`
+
+The constants are the rule's *static* default. When one attribute must produce a different code per annotated member, the rule implements `ZodSharp.Core.IZodRule` and supplies its own code/origin at runtime:
+
+```csharp
+public interface IZodRule
+{
+    string? Code { get; }     // null falls back to the attribute-mapped code
+    string? Origin { get; }   // null falls back to the attribute-mapped origin
+}
+```
+
+The generated code casts to `IZodRule` when reading the values, so the identity can depend on the rule's constructor arguments. A rule that accepts a `code`/`origin` constructor parameter **without** implementing `IZodRule` never reaches the reported error identity and is reported as **ZODSGEN039**.
+
+The reported code and origin are resolved from the rule (when it implements `IZodRule`), then the applied attribute, then the `[ZodRule(typeof(...))]` mapping, and finally default to `validation_failed` — see [Error identity: code and origin precedence](#error-identity-code-and-origin-precedence) for the full order.
+
+### Message overrides
+
+The reported message is resolved in this order:
+
+1. A `message` argument on the rule (typically a `Message` constructor parameter), when set.
+2. The attribute's `ErrorMessage` / `ErrorMessageResourceName` / `ErrorMessageResourceType`, mapped to a constructor parameter named `message`.
+3. `GetErrorMessage(value)`, which formats `MessageFormat` with the offending value.
+
+`MessageFormat` is therefore the fallback, not the only message.
 
 ## Non-sentinel values (EF-friendly)
 
@@ -97,7 +127,7 @@ public readonly record struct NoWhitespaceRule(string? Message = null) : IValida
 }
 ```
 
-The public `ErrorCode`/`MessageFormat` constants are optional but recommended (see [Error code and message constants](#error-code-and-message-constants)); omitting them is reported as `ZODSGEN042`, and a rule without them reports the fallback code `validation_failed` when it does not also implement `IZodRule`.
+Every rule **should** declare the public `ErrorCode`/`MessageFormat` constants (see [Error code and message definitions](#error-code-and-message-definitions)); omitting them is reported as `ZODSGEN042`, and a rule without them reports the fallback code `validation_failed` when it does not also implement `IZodRule`.
 
 The rule can be used standalone:
 
@@ -125,6 +155,54 @@ var result = schema.Validate("John Doe");
 ```
 
 Both methods mutate the receiver and return it for chaining; see [Guarantees and Limitations](Guarantees-and-Limitations.md#fluent-rule-methods-mutate-the-receiver).
+
+## Extending the fluent interface
+
+Every built-in rule has a dedicated method on its schema — `Z.String().Email()`, `Z.Number().Min(...)`, `Z.Date().NonSentinel()`, and so on. A custom rule gets the same ergonomics with an **extension method** that adds the rule to the receiver and returns it:
+
+```csharp
+using ZodSharp.Schemas;
+
+namespace MyRules;
+
+public static class ZodStringRuleExtensions
+{
+    /// <summary>Rejects strings that contain whitespace.</summary>
+    public static ZodString NoWhitespace(this ZodString schema, string? message = null)
+    {
+        schema.AddRule(new NoWhitespaceRule(message));
+        return schema;
+    }
+}
+```
+
+The call site then mirrors the built-in surface and stays chainable:
+
+```csharp
+var schema = Z.String().Min(3).NoWhitespace().ToUpper();
+```
+
+Two details keep the chain intact:
+
+- **Return the concrete schema type** (`ZodString`, `ZodDate`, …), not the base `ZodType<TOutput, TInput>`. The generic `Rule<TRule>` helper and `AddRule` return the base type, so write `schema.Rule(new MyRule()); return schema;` (or call `AddRule` and return `schema`) rather than returning the result of `Rule(...)` directly.
+- **Target the schema whose output type the rule validates.** A rule implementing `IValidationRule<string>` extends `ZodString`; a rule implementing `IValidationRule<Guid>` extends whichever schema produces a `Guid`. For a rule that applies to *any* schema, extend the single-type-argument base `ZodType<T>`:
+
+```csharp
+using ZodSharp.Core;
+
+public static class ZodTypeRuleExtensions
+{
+    /// <summary>Rejects the default value of the schema's output type.</summary>
+    public static ZodType<T> NotEmpty<T>(this ZodType<T> schema, string? message = null)
+        where T : struct, IEquatable<T>
+    {
+        schema.AddRule(new NotEmptyRule<T>(Message: message));
+        return schema;
+    }
+}
+```
+
+A fluent extension only covers the runtime API. To make the same rule usable from `[ZodSchema]` models, map it to an attribute with `[ZodRule]` (see below). The built-in catalogue — including each rule's `ErrorCode` and `MessageFormat` — is in [Validation Rules Reference](Validation-Rules-Reference.md).
 
 ## Exposing a rule as a DataAnnotations attribute
 
@@ -193,9 +271,13 @@ public readonly record struct NotEmptyRule<T>(string? Code = null, string? Messa
     : IValidationRule<T>, IZodRule
     where T : struct, IEquatable<T>
 {
+    public const string ErrorCode = "invalid_value";
+    public const string MessageFormat = "Value must not be empty.";
+
     public bool IsValid(in T value) => !value.Equals(default(T));
 
-    public string GetErrorMessage(in T value) => Message ?? "Value must not be empty.";
+    public string GetErrorMessage(in T value) =>
+        Message ?? string.Format(System.Globalization.CultureInfo.CurrentCulture, MessageFormat);
 
     // The rule owns its identity, so callers can pass a per-member error code.
     string? IZodRule.Code => Code;
@@ -255,19 +337,30 @@ namespace MyRules;
 public readonly record struct NonWhiteSpaceStringRule(string? Message = null)
     : IValidationRule<string?>
 {
+    public const string ErrorCode = "invalid_string";
+    public const string MessageFormat = "Value must not be empty.";
+
     public bool IsValid(in string? value) => value != null && !string.IsNullOrWhiteSpace(value);
 
-    public string GetErrorMessage(in string? value) => Message ?? "Value must not be empty.";
+    public string GetErrorMessage(in string? value) =>
+        Message ?? string.Format(System.Globalization.CultureInfo.CurrentCulture, MessageFormat);
 }
 
 // Value-object half: validates the scalar as a unit.
 public readonly record struct NonWhiteSpaceStringRule<TSelf>(string? Code = null, string? Message = null)
-    : IValidationRule<TSelf>
+    : IValidationRule<TSelf>, IZodRule
     where TSelf : IScalarValueObject<TSelf, string>
 {
+    public const string ErrorCode = "invalid_string";
+    public const string MessageFormat = "Value must not be empty.";
+
     public bool IsValid(in TSelf value) => value.Value != null && !string.IsNullOrWhiteSpace(value.Value);
 
-    public string GetErrorMessage(in TSelf value) => Message ?? "Value must not be empty.";
+    public string GetErrorMessage(in TSelf value) =>
+        Message ?? string.Format(System.Globalization.CultureInfo.CurrentCulture, MessageFormat);
+
+    string? IZodRule.Code => Code;
+    string? IZodRule.Origin => "value_object";
 }
 
 [ZodRule(typeof(NonWhiteSpaceStringRule<>))]
@@ -298,9 +391,13 @@ namespace MyRules;
 public readonly record struct NoWhitespaceRule(bool AllowEmpty = true, string? Message = null)
     : IValidationRule<string>
 {
+    public const string ErrorCode = "invalid_string";
+    public const string MessageFormat = "Whitespace is not allowed.";
+
     public bool IsValid(in string value) => AllowEmpty || value.IndexOf(' ') < 0;
 
-    public string GetErrorMessage(in string value) => Message ?? "Whitespace is not allowed.";
+    public string GetErrorMessage(in string value) =>
+        Message ?? string.Format(System.Globalization.CultureInfo.CurrentCulture, MessageFormat);
 }
 ```
 
@@ -336,9 +433,13 @@ Mapping rules:
 [ZodRule(AllowMultiple = true)]
 public readonly record struct MultipleOfRule(int Factor = 1, string? Message = null) : IValidationRule<int>
 {
+    public const string ErrorCode = "not_multiple_of";
+    public const string MessageFormat = "Number must be a multiple of {0}, but got {1}";
+
     public bool IsValid(in int value) => Factor != 0 && value % Factor == 0;
 
-    public string GetErrorMessage(in int value) => Message ?? "Not a multiple.";
+    public string GetErrorMessage(in int value) =>
+        Message ?? string.Format(System.Globalization.CultureInfo.CurrentCulture, MessageFormat, Factor, value);
 }
 
 [ZodSchema]
@@ -391,7 +492,7 @@ if (!assetIdCustomRule0.IsValid(value))
 }
 ```
 
-- **Generic closure:** a type-level attribute closes an unbound generic rule with the **target type** (`NotEmptyRule<AssetId>`), so the rule sees the value object and can read its state through its own constraints. On a `[Scalar]` type, a rule written against the underlying value is instead closed with that value and wrapped — see [Validating scalar value objects](#validating-scalar-value-objects).
+- **Generic closure:** a type-level attribute closes an unbound generic rule with the **target type** (`NotEmptyRule<AssetId>`), so the rule sees the value object and can read its state through its own constraints. On a `[Scalar]` type, a rule written against the underlying value is instead closed with that value and wrapped — see [Value Objects Integration](Value-Objects-Integration.md).
 - **Ordering** in the generated `Validate`: property rules → **type-level rules** → the synchronous `Validate()` refinement.
 - Type-level attributes need `AttributeTargets.Class`/`Struct` on the attribute declaration; the property-level attributes above only need `Property`/`Field`.
 
@@ -403,66 +504,9 @@ if (!assetIdCustomRule0.IsValid(value))
 
 ## Validating scalar value objects
 
-A `Purview.ValueObjects` scalar **is** a single value, so validate it as a unit rather than through its `Value` property. Scalars implement the two-type-parameter contract:
+A `Purview.ValueObjects` scalar **is** a single value, so validate it as a unit rather than through its `Value` property. Attach a rule at the **type level** (on the scalar type, not on its `Value` property) and the reported error has an **empty path**:
 
 ```csharp
-public interface IScalarValueObject<TSelf, TValue> : IValueObject, IComparable<TSelf>, IComparable
-    where TSelf : IScalarValueObject<TSelf, TValue>
-{
-    TValue Value { get; }
-    static abstract TSelf Create(TValue value);
-    static abstract TSelf Hydrate(TValue value);
-    int CompareTo(TValue other);
-}
-```
-
-so `AssetId` is `IScalarValueObject<AssetId, Guid>`. Today the check is normally repeated on every scalar:
-
-```csharp
-// repeated on every Guid scalar
-partial void OnZodValidate(RefineCtx<AssetId> context)
-{
-    if (context.Value.Value == Guid.Empty)
-        context.AddIssue("invalid_asset_id", "AssetId must not be empty.", [nameof(Value)]);
-}
-```
-
-> [!NOTE]
-> Refinements are written as the generator-declared `OnZodValidate` hook, not an
-> `IEnumerable<ValidationError> Validate()` method — see
-> [Source Generator](Source-Generator.md#refinement-hook-onzodvalidate).
-
-Type **one** rule on the value object and put the attribute on the **scalar type**:
-
-```csharp
-// MyRules/NotEmptyRule.cs — a rules library that references Purview.ValueObjects
-public readonly record struct NotEmptyRule<TSelf>(string? Code = null, string? Message = null)
-    : IValidationRule<TSelf>, IZodRule
-    where TSelf : IScalarValueObject<TSelf, Guid>
-{
-    public bool IsValid(in TSelf value) => value.Value != Guid.Empty;
-
-    public string GetErrorMessage(in TSelf value) => Message ?? "Value must not be empty.";
-
-    string? IZodRule.Code => Code;
-
-    string? IZodRule.Origin => "value_object";
-}
-
-[ZodRule(typeof(NotEmptyRule<>))]
-[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Property)]
-public sealed class NotEmptyAttribute : ValidationAttribute
-{
-    public string? Code { get; set; }
-    public string? Message { get; set; }
-}
-```
-
-```csharp
-// Purview.ChangeOps
-using Purview.ValueObjects.Serialization;
-using ZodSharp;
-
 [Scalar]
 [ZodSchema]
 [NotEmpty(Code = "invalid_asset_id", Message = "AssetId must not be empty.")]
@@ -470,17 +514,7 @@ public readonly partial record struct AssetId
 {
     public Guid Value { get; init; }
 }
-
-[Scalar]
-[ZodSchema]
-[NotEmpty(Code = "invalid_external_identity_id", Message = "ExternalIdentityId must not be empty.")]
-public readonly partial record struct ExternalIdentityId
-{
-    public Guid Value { get; init; }
-}
 ```
-
-The per-scalar `Validate()` refinements disappear, each scalar keeps its own `Code`/`Message`, and the reported error has an **empty path** because the rule applies to the value object itself:
 
 ```text
 Code    = "invalid_asset_id"
@@ -489,62 +523,7 @@ Origin  = "value_object"
 Path    = []
 ```
 
-Because the rule is closed with `TSelf` (`NotEmptyRule<AssetId>`), it *sees the value object* and reads `Value` through the `IScalarValueObject<TSelf, Guid>` constraint. A generic rule must have exactly one type parameter, so the underlying value type is pinned by the constraint — define one rule per primitive (`NotEmptyRule<TSelf> where TSelf : IScalarValueObject<TSelf, Guid>`, a `long` variant, and so on).
-
-### Reusing a rule written against the underlying value
-
-A rule written against the underlying value (`IValidationRule<Guid>`) is **adapted automatically** when it is applied to a `[Scalar]` type: the generator reads the scalar's `Value` property, closes the rule with the underlying value, and wraps it so the rule still runs against the value object as a unit. One rule then serves every scalar backed by the same primitive, with no per-primitive rule family.
-
-```csharp
-// MyRules/NonSentinelRule.cs — a rule written against the value, not the value object
-public readonly record struct NonSentinelRule<T>(string? Message = null)
-    : IValidationRule<T>, IZodRule
-    where T : IEquatable<T>
-{
-    public bool IsValid(in T value) => !value.Equals(default(T)!);
-
-    public string GetErrorMessage(in T value) => Message ?? "Value must not be the default.";
-
-    string? IZodRule.Code => "invalid_value";
-
-    string? IZodRule.Origin => "value_object";
-}
-
-[ZodRule(typeof(NonSentinelRule<>))]
-[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Property)]
-public sealed class NonSentinelAttribute : ValidationAttribute
-{
-    public string? Message { get; set; }
-}
-```
-
-```csharp
-[Scalar]
-[ZodSchema]
-[NonSentinel(Message = "AssetId must not be empty.")]
-public readonly partial record struct AssetId
-{
-    public Guid Value { get; init; }
-}
-```
-
-The generator emits the rule against `Guid` and wraps it in the adapter the value-objects generator emits:
-
-```csharp
-var assetIdCustomRuleInner0 = new global::MyRules.NonSentinelRule<global::System.Guid>("AssetId must not be empty.");
-var assetIdCustomRule0 = new global::Purview.ValueObjects.ScalarRuleAdapter<global::ChangeOps.AssetId, global::System.Guid, global::MyRules.NonSentinelRule<global::System.Guid>>(assetIdCustomRuleInner0);
-if (!assetIdCustomRule0.IsValid(value))
-{
-    (errors ??= new List<ValidationError>()).Add(
-        ValidationError.Create(
-            ((global::ZodSharp.Core.IZodRule)assetIdCustomRuleInner0).Code ?? "validation_failed",
-            assetIdCustomRule0.GetErrorMessage(value),
-            EmptyPath,
-            origin: ((global::ZodSharp.Core.IZodRule)assetIdCustomRuleInner0).Origin));
-}
-```
-
-The reported error keeps the **empty path**, and the error identity (`Code`/`Origin`) is read from the wrapped rule. A rule whose constraint asks for the scalar itself (the `IScalarValueObject<TSelf, TValue>` form above) is **not** adapted — it keeps closing over the value object.
+A rule can be written against the value object itself (`where TSelf : IScalarValueObject<TSelf, TValue>`), or against the underlying value (`IValidationRule<Guid>`) and adapted automatically by the value-objects generator's `ScalarRuleAdapter`.
 
 > [!IMPORTANT]
 > `Purview.ValueObjects.ScalarRuleAdapter<TSelf, TValue, TRule>` is emitted into your compilation by the **Purview.ValueObjects** source generator whenever the project references both `Purview.ValueObjects` and `Purview.ZodSharp`. Do not declare it yourself. If the value-objects generator is disabled (`DisableValueObjectsSourceGenerator`), the adapter is not emitted and the generated validator will not compile.
@@ -554,6 +533,8 @@ The reported error keeps the **empty path**, and the error identity (`Code`/`Ori
 
 > [!TIP]
 > If the non-empty policy should be implicit rather than an attribute, the value-objects layer is the natural place to emit the attribute on the scalar type (it already knows about ZodSharp through `ZodSchemaMode`).
+
+See [Value Objects Integration](Value-Objects-Integration.md) for the full walkthrough: wiring `[Scalar]` + `[ZodSchema]`, both rule shapes, the generated code, the error code / message definitions, and testing.
 
 ## Diagnostics
 
@@ -573,7 +554,9 @@ See [Source Generator Diagnostics](Source-Generator-Diagnostics.md) for the full
 
 ## Related
 
+- [Validation Rules Reference](Validation-Rules-Reference.md) — the catalogue of built-in rules.
 - [Fluent Schema API](Fluent-Schema-API.md) — `AddRule`/`Rule` live on `ZodType`.
+- [Value Objects Integration](Value-Objects-Integration.md) — `[Scalar]` value objects and the `ScalarRuleAdapter`.
 - [Source Generator DataAnnotations](Source-Generator-DataAnnotations.md) — built-in attribute coverage.
 - [Guarantees and Limitations](Guarantees-and-Limitations.md) — allocation and mutation semantics.
 

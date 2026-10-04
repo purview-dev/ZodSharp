@@ -40,4 +40,16 @@ public class ZodDate : ZodType<DateTime>
 		AddRule(new MaxValueRule<DateTime>(maxValue));
 		return this;
 	}
+
+	/// <summary>
+	/// Adds a non-sentinel validation that rejects <see cref="DateTime.MinValue"/> and
+	/// <see cref="DateTime.MaxValue"/>.
+	/// </summary>
+	/// <param name="message">Optional error message</param>
+	/// <returns>This schema for method chaining</returns>
+	public override ZodDate NonSentinel(string? message = null)
+	{
+		AddRule(new NonSentinelRule<DateTime>(message));
+		return this;
+	}
 }

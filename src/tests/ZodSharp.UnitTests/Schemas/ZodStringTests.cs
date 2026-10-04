@@ -1,4 +1,5 @@
 using ZodSharp.Core;
+using ZodSharp.Rules;
 
 namespace ZodSharp.Schemas;
 
@@ -366,5 +367,40 @@ public class ZodStringTests
 		var result = Z.String().E164().Validate(value);
 
 		await Assert.That(result.IsSuccess).IsEqualTo(expected);
+	}
+
+	[Test]
+	[Arguments("https://example.com/path?x=1", true)]
+	[Arguments("/relative/path", true)]
+	[Arguments("relative/path", true)]
+	[Arguments("", false)]
+	[Arguments("   ", false)]
+	[Arguments("http://[invalid", false)]
+	public async Task StringUri_GivenValue_ReturnsExpectedResult(string value, bool expected)
+	{
+		var result = Z.String().Uri().Validate(value);
+
+		await Assert.That(result.IsSuccess).IsEqualTo(expected);
+	}
+
+	[Test]
+	[Arguments(UriKind.Absolute, "https://example.com", true)]
+	[Arguments(UriKind.Absolute, "relative/path", false)]
+	[Arguments(UriKind.Relative, "relative/path", true)]
+	public async Task StringUri_GivenUriKind_ReturnsExpectedResult(UriKind uriKind, string value, bool expected)
+	{
+		var result = Z.String().Uri(uriKind).Validate(value);
+
+		await Assert.That(result.IsSuccess).IsEqualTo(expected);
+	}
+
+	[Test]
+	public async Task StringUri_GivenCustomMessage_ReportsMessage()
+	{
+		var result = Z.String().Uri(UriKind.Absolute, "Must be an absolute URI.").Validate("relative/path");
+
+		await Assert.That(result.IsSuccess).IsFalse();
+		await Assert.That(result.Errors[0].Code).IsEqualTo(UriRule.ErrorCode);
+		await Assert.That(result.Errors[0].Message).IsEqualTo("Must be an absolute URI.");
 	}
 }

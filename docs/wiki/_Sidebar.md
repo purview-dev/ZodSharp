@@ -9,6 +9,8 @@
 - [Unions and Discriminated Unions](Unions-and-Discriminated-Unions.md)
 - [Composition and Transforms](Composition-and-Transforms.md)
 - [Custom Rules](Custom-Rules.md)
+- [Validation Rules Reference](Validation-Rules-Reference.md)
+- [Value Objects Integration](Value-Objects-Integration.md)
 - [Compiled Validators and Caching](Compiled-Validators-and-Caching.md)
 - [JSON Schema Export](JsonSchema-Export.md)
 - [JSON Schema Import](JsonSchema-Import.md)

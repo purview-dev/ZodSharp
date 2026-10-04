@@ -257,7 +257,7 @@ public readonly struct MinLengthRule : IValidationRule<string>
 }
 ```
 
-Every rule exposes its reported code and message template as public `ErrorCode`/`MessageFormat` constants so tests can assert against the rule instead of duplicating literals (`ZODSGEN042` enforces this convention — see [Custom Rules](docs/wiki/Custom-Rules.md)).
+Every rule exposes its reported code and message template as public `ErrorCode`/`MessageFormat` constants so tests can assert against the rule instead of duplicating literals (`ZODSGEN042` enforces this convention — see the [Validation Rules Reference](docs/wiki/Validation-Rules-Reference.md) for the catalogue of built-in rules, [Custom Rules](docs/wiki/Custom-Rules.md) for the rule contract and [Value Objects Integration](docs/wiki/Value-Objects-Integration.md) for scalar value objects).
 
 #### 3. Compiled Validators
 
@@ -554,6 +554,7 @@ var either = UserSchema.ApplyOr(user, u => u.Age < 18, "Must be an adult or a mi
 - Zero-reflection, zero-allocation validators
 - Value-first composition methods (`.ApplyAnd()`, `.ApplyOr()`, `.ApplyRefine()`) plus instance schema-composing composition (`.Refine()`, `.SuperRefine()`, `.Pipe()`, `.Catch()`, `.Prefault()`, `.Default()`)
 - Supports classes, structs, and records
+- Validates `Purview.ValueObjects` `[Scalar]` types as a unit, adapting a rule written against the underlying value automatically ([Value Objects Integration](docs/wiki/Value-Objects-Integration.md))
 
 #### Supported DataAnnotations size validators
 
