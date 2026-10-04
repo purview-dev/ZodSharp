@@ -86,7 +86,10 @@ Origin  = "value_object"
 Path    = []
 ```
 
-Type-level attributes need `AttributeTargets.Class | AttributeTargets.Struct` (and usually `Property`/`Field` too, so the same attribute can validate a primitive member):
+> [!TIP]
+> `ZodSharp.Rules.NonSentinelRule<T>` and its generated `ZodSharp.Rules.NonSentinelAttribute` ship with `Purview.ZodSharp`, so the canonical non-sentinel case is available as `[NonSentinel(Message = "…")]` on a `[Scalar]` type without defining anything yourself. The walkthroughs below use local rules (`NotEmptyRule<T>`, `MyRules.NonSentinelRule<T>`) to show the full shape.
+
+Type-level attributes need `AttributeTargets.Class | AttributeTargets.Struct` (and usually `Property`/`Field` too, so the same attribute can validate a primitive member). A generated attribute already carries all five targets:
 
 ```csharp
 [ZodRule(typeof(NotEmptyRule<>))]

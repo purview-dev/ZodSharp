@@ -5,7 +5,8 @@ namespace ZodSharp.Rules;
 /// Mirrors the behavior of System.ComponentModel.DataAnnotations.Base64StringAttribute.
 /// Uses struct to avoid allocations.
 /// </summary>
-public readonly record struct Base64StringRule : Core.IValidationRule<string>
+[Core.ZodRule]
+public readonly record struct Base64StringRule : Core.IValidationRule<string>, Core.IZodRule
 {
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
 	public const string ErrorCode = "invalid_string";
@@ -14,14 +15,17 @@ public readonly record struct Base64StringRule : Core.IValidationRule<string>
 	public const string MessageFormat = "Invalid Base64 string format: {0}";
 
 	readonly string? _message;
+	readonly string? _code;
 
 	/// <summary>
 	/// Initializes a new instance of the Base64StringRule struct.
 	/// </summary>
 	/// <param name="message">Optional error message</param>
-	public Base64StringRule(string? message = null)
+	/// <param name="code">Optional error code override</param>
+	public Base64StringRule(string? message = null, string? code = null)
 	{
 		_message = message.OrNull();
+		_code = code.OrNull();
 	}
 
 	/// <summary>
@@ -54,4 +58,8 @@ public readonly record struct Base64StringRule : Core.IValidationRule<string>
 
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
 	public string Code => ErrorCode;
+
+	string? Core.IZodRule.Code => _code ?? ErrorCode;
+
+	string? Core.IZodRule.Origin => null;
 }

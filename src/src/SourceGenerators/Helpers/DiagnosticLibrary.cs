@@ -419,4 +419,20 @@ static class DiagnosticLibrary
 		defaultSeverity: DiagnosticSeverity.Warning,
 		isEnabledByDefault: true
 	);
+
+	/// <summary>
+	/// ZODSGEN043: a built-in rule (one declared in the runtime assembly, under <c>ZodSharp.Rules</c>) is marked
+	/// with <c>[ZodRule]</c> but cannot produce a validation attribute because a constructor parameter cannot be
+	/// represented as an attribute property, so the rule is only reachable through the runtime/fluent API.
+	/// Reported as informational so the gap stays visible rather than silent; a derived name that collides with
+	/// a <c>System.ComponentModel.DataAnnotations</c> attribute is emitted under a "Zod" suffix instead.
+	/// </summary>
+	public static readonly DiagnosticDescriptor BuiltInRuleAttributeNotGenerated = new(
+		id: "ZODSGEN043",
+		title: "Built-in rule does not generate a validation attribute",
+		messageFormat: "The built-in rule '{0}' does not generate a validation attribute: {1}",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Info,
+		isEnabledByDefault: true
+	);
 }

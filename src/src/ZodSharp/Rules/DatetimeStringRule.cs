@@ -7,7 +7,11 @@ namespace ZodSharp.Rules;
 /// calendar date, a <c>T</c> separator, seconds, optional fractional seconds, and a <c>Z</c> suffix).
 /// Uses struct to avoid allocations.
 /// </summary>
-public readonly record struct DatetimeStringRule : Core.IValidationRule<string>, Core.IStringValidationRule
+[Core.ZodRule]
+public readonly record struct DatetimeStringRule
+	: Core.IValidationRule<string>,
+		Core.IStringValidationRule,
+		Core.IZodRule
 {
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
 	public const string ErrorCode = "invalid_string";
@@ -114,4 +118,8 @@ public readonly record struct DatetimeStringRule : Core.IValidationRule<string>,
 
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
 	public string Code => ErrorCode;
+
+	string? Core.IZodRule.Code => ErrorCode;
+
+	string? Core.IZodRule.Origin => null;
 }

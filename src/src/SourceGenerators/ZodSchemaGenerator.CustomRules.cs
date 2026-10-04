@@ -63,7 +63,7 @@ partial class ZodSchemaGenerator
 			var valueVariable = declareValueLocal
 				? CodeGenHelpers.GetLocalIdentifier(localPrefix, $"CustomRuleValue{i}")
 				: valueExpression;
-			var arguments = rule.Arguments.Count == 0 ? string.Empty : $"({string.Join(", ", rule.Arguments)})";
+			var arguments = $"({string.Join(", ", rule.Arguments)})";
 
 			if (declareValueLocal)
 				writer.Assignment("var", valueVariable, valueExpression);

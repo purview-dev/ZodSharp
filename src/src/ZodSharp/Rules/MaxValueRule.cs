@@ -5,7 +5,8 @@ namespace ZodSharp.Rules;
 /// Uses struct to avoid allocations.
 /// </summary>
 /// <typeparam name="T">The numeric type</typeparam>
-public readonly record struct MaxValueRule<T> : Core.IValidationRule<T>
+[Core.ZodRule]
+public readonly record struct MaxValueRule<T> : Core.IValidationRule<T>, Core.IZodRule
 	where T : IComparable<T>
 {
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
@@ -41,4 +42,8 @@ public readonly record struct MaxValueRule<T> : Core.IValidationRule<T>
 
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
 	public string Code => ErrorCode;
+
+	string? Core.IZodRule.Code => ErrorCode;
+
+	string? Core.IZodRule.Origin => null;
 }

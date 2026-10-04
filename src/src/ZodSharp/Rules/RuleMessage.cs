@@ -21,7 +21,7 @@ static class RuleMessage
 	/// <param name="format">The message format (a rule's <c>MessageFormat</c> constant).</param>
 	/// <param name="arg0">The format argument.</param>
 	/// <returns>The formatted message using <see cref="CultureInfo.CurrentCulture"/>.</returns>
-	internal static string Format<TArg0>(string format, TArg0 arg0) =>
+	public static string Format<TArg0>(string format, TArg0 arg0) =>
 		string.Format(CultureInfo.CurrentCulture, GetFormat(format), arg0);
 
 	/// <summary>Formats a rule message with two arguments.</summary>
@@ -31,7 +31,7 @@ static class RuleMessage
 	/// <param name="arg0">The first format argument.</param>
 	/// <param name="arg1">The second format argument.</param>
 	/// <returns>The formatted message using <see cref="CultureInfo.CurrentCulture"/>.</returns>
-	internal static string Format<TArg0, TArg1>(string format, TArg0 arg0, TArg1 arg1) =>
+	public static string Format<TArg0, TArg1>(string format, TArg0 arg0, TArg1 arg1) =>
 		string.Format(CultureInfo.CurrentCulture, GetFormat(format), arg0, arg1);
 
 	static CompositeFormat GetFormat(string format) => Formats.GetOrAdd(format, CompositeFormat.Parse);

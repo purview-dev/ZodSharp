@@ -6,7 +6,8 @@ namespace ZodSharp.Rules;
 /// allows digits and the characters () . + -, and requires at least one digit.
 /// Uses struct to avoid allocations.
 /// </summary>
-public readonly record struct PhoneRule : Core.IValidationRule<string>, Core.IStringValidationRule
+[Core.ZodRule]
+public readonly record struct PhoneRule : Core.IValidationRule<string>, Core.IStringValidationRule, Core.IZodRule
 {
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
 	public const string ErrorCode = "invalid_string";
@@ -15,14 +16,17 @@ public readonly record struct PhoneRule : Core.IValidationRule<string>, Core.ISt
 	public const string MessageFormat = "Invalid phone number format: {0}";
 
 	readonly string? _message;
+	readonly string? _code;
 
 	/// <summary>
 	/// Initializes a new instance of the PhoneRule struct.
 	/// </summary>
 	/// <param name="message">Optional error message</param>
-	public PhoneRule(string? message = null)
+	/// <param name="code">Optional error code override</param>
+	public PhoneRule(string? message = null, string? code = null)
 	{
 		_message = message.OrNull();
+		_code = code.OrNull();
 	}
 
 	/// <summary>
@@ -79,4 +83,8 @@ public readonly record struct PhoneRule : Core.IValidationRule<string>, Core.ISt
 
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
 	public string Code => ErrorCode;
+
+	string? Core.IZodRule.Code => _code ?? ErrorCode;
+
+	string? Core.IZodRule.Origin => null;
 }

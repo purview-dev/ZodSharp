@@ -1,6 +1,6 @@
 # Source Generator Diagnostics
 
-The `[ZodSchema]` generator ships an analyzer (category `ZodSharp.SourceGenerator`) that reports configuration and usage problems at compile time. Every diagnostic below is enabled by default; `ZODSGEN033`, `ZODSGEN037`–`ZODSGEN040`, and `ZODSGEN042` are warnings, `ZODSGEN041` is an informational suggestion, and the rest are errors.
+The `[ZodSchema]` generator ships an analyzer (category `ZodSharp.SourceGenerator`) that reports configuration and usage problems at compile time. Every diagnostic below is enabled by default; `ZODSGEN033`, `ZODSGEN037`–`ZODSGEN040`, and `ZODSGEN042` are warnings, `ZODSGEN041` and `ZODSGEN043` are informational, and the rest are errors.
 
 | ID | Meaning |
 |---|---|
@@ -40,6 +40,7 @@ The `[ZodSchema]` generator ships an analyzer (category `ZodSharp.SourceGenerato
 | ZODSGEN040 | (warning) An attribute argument has no effect: the resolved rule has no matching constructor parameter and the value is not part of the reported error identity |
 | ZODSGEN041 | (info) A typed union (`Z.Union`) whose option types are all reference types can use the allocation-free native C# 15 union returned by `Z.NativeUnion` on .NET 11+; a code fix is offered |
 | ZODSGEN042 | (warning) A validation rule (a type implementing `IValidationRule<T>`) does not expose a public `const string ErrorCode` and a public `const string MessageFormat`, so its error identity cannot be asserted in tests without duplicating literals |
+| ZODSGEN043 | (info) A built-in rule marked `[ZodRule]` does not generate a validation attribute, because a constructor parameter cannot be represented as an attribute property; the rule is still reachable through the runtime/fluent API. A derived name that collides with `System.ComponentModel.DataAnnotations` is *not* skipped — the attribute is emitted under a `Zod` suffix instead |
 
 IDs `ZODSGEN002` and `ZODSGEN022`–`ZODSGEN026` are intentionally unused; rule identifiers are never renumbered or re-used.
 

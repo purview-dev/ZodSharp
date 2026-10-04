@@ -5,28 +5,6 @@ using ZodSharp.Schemas;
 namespace ZodSharp.JsonSchema;
 
 /// <summary>
-/// Options for converting ZodSharp schemas to JSON Schema.
-/// </summary>
-public class ToJsonSchemaOptions
-{
-	/// <summary>
-	/// Whether to include the $schema property in the output.
-	/// Default: true
-	/// </summary>
-	public bool IncludeSchema { get; set; } = true;
-
-	/// <summary>
-	/// Custom $id for the schema.
-	/// </summary>
-	public string? Id { get; set; }
-
-	/// <summary>
-	/// Custom title for the schema.
-	/// </summary>
-	public string? Title { get; set; }
-}
-
-/// <summary>
 /// Converts ZodSharp schemas to JSON Schema (Draft 2020-12).
 /// </summary>
 public static class ToJsonSchemaConverter
@@ -208,6 +186,24 @@ public static class ToJsonSchemaConverter
 						result.Minimum = minValue;
 				}
 				else if (ruleName.StartsWith("MaxValueRule", StringComparison.Ordinal))
+				{
+					var maxValueField = ruleType.GetField(
+						"_maxValue",
+						System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
+					);
+					if (maxValueField?.GetValue(rule) is double maxValue)
+						result.Maximum = maxValue;
+				}
+				else if (ruleName == "GreaterThanOrEqualRule")
+				{
+					var minValueField = ruleType.GetField(
+						"_minValue",
+						System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
+					);
+					if (minValueField?.GetValue(rule) is double minValue)
+						result.Minimum = minValue;
+				}
+				else if (ruleName == "LessThanOrEqualRule")
 				{
 					var maxValueField = ruleType.GetField(
 						"_maxValue",

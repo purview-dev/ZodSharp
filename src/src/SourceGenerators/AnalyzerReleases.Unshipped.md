@@ -11,3 +11,4 @@
 | ZODSGEN040 | ZodSharp.SourceGenerator | Warning | An attribute argument is not consumed by the resolved rule: no matching constructor parameter and not part of the error identity |
 | ZODSGEN041 | ZodSharp.SourceGenerator | Info | A typed union whose option types are all reference types can use the native C# 15 union returned by Z.NativeUnion on net11+ (allocation-free, exhaustive pattern matching) |
 | ZODSGEN042 | ZodSharp.SourceGenerator | Warning | A validation rule does not expose its error identity as public const ErrorCode/MessageFormat constants, so tests cannot assert against the rule without duplicating literals |
+| ZODSGEN043 | ZodSharp.SourceGenerator | Info | A built-in rule marked [ZodRule] does not generate a validation attribute because a constructor parameter cannot be represented as an attribute property (a derived name that collides with System.ComponentModel.DataAnnotations is emitted under a "Zod" suffix instead) |

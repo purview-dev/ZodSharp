@@ -16,9 +16,9 @@ var result = schema.Validate(30.0);
 | `Min` | `Min(double minValue)` | `MinValueRule<double>` — `Value must be at least ...` |
 | `Max` | `Max(double maxValue)` | `MaxValueRule<double>` |
 | `Gt` | `Gt(double value)` | `GreaterThanRule<double>` — strictly greater than `value` |
-| `Gte` | `Gte(double value)` | `MinValueRule<double>` — greater than or equal to `value` |
+| `Gte` | `Gte(double value)` | `GreaterThanOrEqualRule` — greater than or equal to `value` |
 | `Lt` | `Lt(double value)` | `LessThanRule<double>` — strictly less than `value` |
-| `Lte` | `Lte(double value)` | `MaxValueRule<double>` — less than or equal to `value` |
+| `Lte` | `Lte(double value)` | `LessThanOrEqualRule` — less than or equal to `value` |
 | `Int` | `Int()` | `IntRule` — `value == Math.Truncate(value)`; failure code `invalid_type` |
 | `Positive` | `Positive()` | `GreaterThanRule<double>(0.0)` — strictly greater than zero |
 | `Negative` | `Negative()` | `LessThanRule<double>(0.0)` — strictly less than zero |
@@ -27,6 +27,10 @@ var result = schema.Validate(30.0);
 | `MultipleOf` | `MultipleOf(double divisor, string? message)` | `MultipleOfRule` — throws `ArgumentException` for a zero divisor; relative-tolerance comparison (`1e-12`) |
 | `Finite` | `Finite(string? message)` | `FiniteRule` — `double.IsFinite` |
 | `Safe` | `Safe(string? message)` | `SafeIntegerRule` — integer within `int.MinValue`..`int.MaxValue`; failure code `too_big` |
+| `Even` | `Even(string? message)` | `EvenRule<double>` — `value % 2 == 0`; failure code `invalid_value` |
+| `Odd` | `Odd(string? message)` | `OddRule<double>` — `value % 2 != 0`; failure code `invalid_value` |
+
+`GreaterThanOrEqualRule`/`LessThanOrEqualRule` (the rules behind `Gte`/`Lte`) and `EvenRule<T>`/`OddRule<T>` are available directly too. `EvenRule<T>`/`OddRule<T>` are generic over `T : INumber<T>`, so they close with any numeric type (`int`, `long`, `decimal`, …) — not just `double`.
 
 ## Examples
 
@@ -41,8 +45,12 @@ var fractional = Z.Number().MultipleOf(0.1); // 0.3 is accepted (floating-point 
 var finite = Z.Number().Finite();           // rejects Infinity / NaN
 var safe = Z.Number().Safe();               // safe integer range
 var whole = Z.Number().Int();               // no fractional part
+var even = Z.Number().Even();               // 0, 2, 4, ...
+var odd = Z.Number().Odd();                 // 1, 3, 5, ...
 
 var age = Z.Number().Min(0).Max(120).Int().Validate(25.0);
+var atLeastTen = Z.Number().Gte(10);        // >= 10
+var atMostTen = Z.Number().Lte(10);         // <= 10
 ```
 
 ## Numeric coercion

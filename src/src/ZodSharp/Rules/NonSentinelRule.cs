@@ -26,7 +26,8 @@ namespace ZodSharp.Rules;
 /// reinterprets the value in place, so no boxing occurs on the validation path.
 /// </para>
 /// </remarks>
-public readonly record struct NonSentinelRule<T> : Core.IValidationRule<T>
+[Core.ZodRule]
+public readonly record struct NonSentinelRule<T> : Core.IValidationRule<T>, Core.IZodRule
 {
 	/// <summary>Gets the error code reported when the rule fails.</summary>
 	public const string ErrorCode = "invalid_value";
@@ -58,6 +59,10 @@ public readonly record struct NonSentinelRule<T> : Core.IValidationRule<T>
 
 	/// <summary>Gets the error code reported when the rule fails.</summary>
 	public string Code => ErrorCode;
+
+	string? Core.IZodRule.Code => ErrorCode;
+
+	string? Core.IZodRule.Origin => null;
 }
 
 /// <summary>

@@ -4,7 +4,8 @@ namespace ZodSharp.Rules;
 /// Validation rule for integer values.
 /// Uses struct to avoid allocations.
 /// </summary>
-public readonly record struct IntRule : Core.IValidationRule<double>
+[Core.ZodRule]
+public readonly record struct IntRule : Core.IValidationRule<double>, Core.IZodRule
 {
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
 	public const string ErrorCode = "invalid_type";
@@ -28,4 +29,8 @@ public readonly record struct IntRule : Core.IValidationRule<double>
 
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
 	public string Code => ErrorCode;
+
+	string? Core.IZodRule.Code => ErrorCode;
+
+	string? Core.IZodRule.Origin => null;
 }

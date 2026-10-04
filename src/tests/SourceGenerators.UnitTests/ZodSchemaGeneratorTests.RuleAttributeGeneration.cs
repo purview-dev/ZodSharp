@@ -38,8 +38,12 @@ partial class ZodSchemaGeneratorTests
 		await Assert.That(generated).ContainsGeneratedCode("typeof(global::Testing.Rules.NoWhitespaceRule)");
 		await Assert.That(generated).ContainsGeneratedCode("\"invalid_string\"");
 		await Assert.That(generated).ContainsGeneratedCode("\"string\"");
-		// The rule's 'message' parameter is represented by the inherited ValidationAttribute.ErrorMessage.
-		await Assert.That(generated).DoesNotContain("public string Message");
+		// The rule's 'message' parameter is surfaced as a Message alias; the inherited
+		// ValidationAttribute.ErrorMessage remains the fallback the resolver maps onto it.
+		await Assert.That(generated).ContainsGeneratedCode("public string? Message { get; set; } = null;");
+		// A generated attribute can annotate a scalar value object as well as a member.
+		await Assert.That(generated).Contains("global::System.AttributeTargets.Class");
+		await Assert.That(generated).Contains("global::System.AttributeTargets.Struct");
 	}
 
 	[Test]

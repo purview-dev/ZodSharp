@@ -156,5 +156,6 @@ MSBuild switches:
 - Nullable properties are null-guarded before value-set/type validation; a nullable target rejects `null` with `invalid_type`.
 
 - A `Purview.ValueObjects` scalar marked with `[Scalar]` can carry `[ZodSchema]` on the same type; the generated validator validates the scalar as a unit and reports an empty path. A rule written against the scalar's underlying value is adapted automatically — see [Value Objects Integration](Value-Objects-Integration.md).
+- A rule marked with the parameterless `[ZodRule]` generates a matching validation attribute. Every built-in rule ships its attribute inside `Purview.ZodSharp` (in the `ZodSharp.Rules` namespace — `[Email]`, `[E164]`, `[Regex]`, `[NonSentinel]`, `[MinValue]`, `[Even]`, …; names that collide with `System.ComponentModel.DataAnnotations` use a `Zod` suffix such as `[MinLengthZod]`), so they can annotate a member or a scalar value object directly — see [Built-in attributes](Custom-Rules.md#built-in-attributes-shipped-with-purviewzodsharp).
 
 See [Source Generator DataAnnotations](Source-Generator-DataAnnotations.md) for the attribute coverage and structured issue shape, [Custom Rules](Custom-Rules.md) for extending validation with your own rules and attributes, and [Source Generator Diagnostics](Source-Generator-Diagnostics.md) for the `ZODSGEN*` diagnostics.

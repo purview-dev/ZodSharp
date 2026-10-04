@@ -65,7 +65,7 @@ public class ZodNumber : ZodType<double>
 	/// <returns>This schema for method chaining</returns>
 	public ZodNumber Gte(double value)
 	{
-		AddRule(new MinValueRule<double>(value));
+		AddRule(new GreaterThanOrEqualRule(value));
 		return this;
 	}
 
@@ -89,7 +89,7 @@ public class ZodNumber : ZodType<double>
 	/// <returns>This schema for method chaining</returns>
 	public ZodNumber Lte(double value)
 	{
-		AddRule(new MaxValueRule<double>(value));
+		AddRule(new LessThanOrEqualRule(value));
 		return this;
 	}
 
@@ -177,6 +177,28 @@ public class ZodNumber : ZodType<double>
 	public ZodNumber Safe(string? message = null)
 	{
 		AddRule(new SafeIntegerRule(message));
+		return this;
+	}
+
+	/// <summary>
+	/// Adds an even-number validation (the value must be a multiple of two).
+	/// </summary>
+	/// <param name="message">Optional error message</param>
+	/// <returns>This schema for method chaining</returns>
+	public ZodNumber Even(string? message = null)
+	{
+		AddRule(new EvenRule<double>(message));
+		return this;
+	}
+
+	/// <summary>
+	/// Adds an odd-number validation (the value must not be a multiple of two).
+	/// </summary>
+	/// <param name="message">Optional error message</param>
+	/// <returns>This schema for method chaining</returns>
+	public ZodNumber Odd(string? message = null)
+	{
+		AddRule(new OddRule<double>(message));
 		return this;
 	}
 }

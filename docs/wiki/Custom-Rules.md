@@ -406,7 +406,9 @@ This produces a `NoWhitespaceAttribute` in the rule's namespace, shaped like:
 ```csharp
 /// <summary>Validation attribute that applies NoWhitespaceRule.</summary>
 [global::System.AttributeUsage(
-    global::System.AttributeTargets.Property
+    global::System.AttributeTargets.Class
+        | global::System.AttributeTargets.Struct
+        | global::System.AttributeTargets.Property
         | global::System.AttributeTargets.Field
         | global::System.AttributeTargets.Parameter,
     Inherited = true,
@@ -416,13 +418,17 @@ public sealed class NoWhitespaceAttribute
     : global::System.ComponentModel.DataAnnotations.ValidationAttribute
 {
     public bool AllowEmpty { get; set; } = true;
+
+    public string? Message { get; set; } = null;
 }
 ```
 
 Mapping rules:
 
 - The attribute name is the rule name with a trailing `Rule` replaced by `Attribute` (`NoWhitespaceRule` → `NoWhitespaceAttribute`). Override it with `[ZodRule(AttributeName = "…")]`.
-- Each public constructor parameter becomes a settable property, Pascal-cased, with the parameter's default value preserved. A parameter named `message` is omitted — use the inherited `ValidationAttribute.ErrorMessage` instead.
+- Each public constructor parameter becomes a settable property, Pascal-cased, with the parameter's default value preserved. A parameter named `message` becomes a `Message` property (the resolver maps it onto the rule's `message` argument); a parameter named `code` becomes a `Code` property; the inherited `ValidationAttribute.ErrorMessage` remains the fallback. A type-parameter parameter (for example the bound of `MinValueRule<T>`) is surfaced as a `double`.
+- If the derived name collides with a `System.ComponentModel.DataAnnotations` attribute, the generated attribute is emitted under a `Zod` suffix (`MinLengthAttribute` → `MinLengthZodAttribute`, used as `[MinLengthZod]`).
+- The attribute is always decorated with `AttributeTargets.Class | Struct | Property | Field | Parameter`, so it can annotate a member or a scalar value object. (`Class`/`Struct` are what make the [type-level form](#type-level-rules) possible.)
 - The rule must be non-nested and non-abstract, and every parameter type must be a legal attribute-argument type (primitive, `string`, `enum`, `System.Type`).
 - An **arity-1 generic rule** can be marked as well: the generated attribute maps to the open generic (`[ZodRule(typeof(NonWhiteSpaceStringRule<>))]`), which is the form that serves both a primitive member and a scalar value object. Rules with two or more type parameters are rejected (`ZODSGEN032`).
 - When both halves of a [rule family](#rule-families-one-attribute-for-a-primitive-and-a-scalar-value-object) are marked, only the generic half emits the attribute; the two mappings would otherwise claim the same name.
@@ -454,7 +460,41 @@ public partial class Sample
 - A **hand-authored** attribute whose name encodes a rule name (`XAttribute` → `XRule`) must map to a rule that addresses every rule declared under that name. A mapping that declares only a non-generic rule while an arity-1 generic sibling exists (or that declares an unrelated rule) is reported as `ZODSGEN038`, because some usages of the attribute would resolve to no rule. An attribute name that does not encode a declared rule family is left alone, so free-form names remain valid.
 
 > [!IMPORTANT]
-> The generated attribute lives in the same assembly as the rule, but Roslyn generators cannot read another generator's output as a symbol. To *consume* the generated attribute with `[ZodSchema]`, reference the rule from a separate assembly (a rules library) — or hand-author the attribute and mark it with `[ZodRule(typeof(...))]`.
+> The generated attribute lives in the same assembly as the rule, but Roslyn generators cannot read another generator's output as a symbol. To *consume* a generated attribute with `[ZodSchema]`, reference the rule from a separate assembly (a rules library) — or hand-author the attribute and mark it with `[ZodRule(typeof(...))]`. The built-in rules below already satisfy this: their attributes ship inside `Purview.ZodSharp`.
+
+## Built-in attributes (shipped with Purview.ZodSharp)
+
+Every built-in rule that can be expressed as an attribute is generated once into the `Purview.ZodSharp` assembly, in the `ZodSharp.Rules` namespace, so a consumer can annotate a member or a scalar without hand-authoring anything:
+
+```csharp
+using ZodSharp;
+using ZodSharp.Rules;
+
+[ZodSchema]
+public partial class Contact
+{
+    [Email]
+    public string Email { get; set; } = string.Empty;
+
+    [E164]
+    public string Phone { get; set; } = string.Empty;
+
+    [Regex(Pattern = "^[a-z]+$")]
+    public string Code { get; set; } = string.Empty;
+
+    [NonSentinel(Message = "Id must not be the default.")]
+    public Guid Id { get; set; }
+}
+```
+
+Each attribute mirrors its rule's constructor parameters and reports the rule's own `ErrorCode`/`Origin` (every built-in rule implements `IZodRule`). `[Regex]` uses the `(string pattern, string? message)` overload, so `Pattern` is a string; a rule's `message` parameter is surfaced as a `Message` property and its `code` parameter (where present) as a `Code` property.
+
+Two adjustments keep every rule addressable:
+
+- **Name collisions.** `MinLengthRule`, `MaxLengthRule`, `UrlRule`, `PhoneRule`, `CreditCardRule`, and `Base64StringRule` derive an attribute name that `System.ComponentModel.DataAnnotations` already uses. Their attributes are emitted under a `Zod` suffix instead — `[MinLengthZod]`, `[MaxLengthZod]`, `[UrlZod]`, `[PhoneZod]`, `[CreditCardZod]`, `[Base64StringZod]` — so the rule's own `Code`/`Message` stay usable alongside the DataAnnotations attribute.
+- **Generic bounds.** The generic bound rules (`MinValueRule<T>`, `MaxValueRule<T>`, `GreaterThanRule<T>`, `LessThanRule<T>`) surface their type-parameter bound as a `double`, so `[MinValue(MinValue = 3)]` works on an `int` or a `double` member (the value is converted to the member type).
+
+The numeric parity and inclusive-comparison rules follow the same pattern: `[GreaterThanOrEqual(MinValue = …)]`, `[LessThanOrEqual(MaxValue = …)]`, `[Even]`, and `[Odd]`.
 
 ## Type-level rules
 
@@ -549,6 +589,7 @@ See [Value Objects Integration](Value-Objects-Integration.md) for the full walkt
 | ZODSGEN039 | Warning | A rule accepts a `code`/`origin` constructor parameter without implementing `IZodRule`, so the value never reaches the reported error identity. |
 | ZODSGEN040 | Warning | An attribute argument has no effect: the resolved rule has no matching constructor parameter and the value is not part of the reported error identity. |
 | ZODSGEN042 | Warning | A validation rule does not expose public `const string ErrorCode` / `MessageFormat` constants, so its error identity cannot be asserted in tests without duplicating literals. |
+| ZODSGEN043 | Info | A built-in rule marked `[ZodRule]` does not generate a validation attribute (its name is taken by a `System.ComponentModel.DataAnnotations` attribute, or a constructor parameter cannot be represented as an attribute property). |
 
 See [Source Generator Diagnostics](Source-Generator-Diagnostics.md) for the full list.
 

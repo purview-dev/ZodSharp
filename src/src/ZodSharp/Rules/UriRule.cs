@@ -4,7 +4,8 @@ namespace ZodSharp.Rules;
 /// Validation rule for a Uri.
 /// <strong>This will allocate by utilising <see cref="Uri.TryCreate(string?, UriKind, out Uri?)"/></strong>
 /// </summary>
-public readonly record struct UriRule : Core.IValidationRule<string>
+[Core.ZodRule]
+public readonly record struct UriRule : Core.IValidationRule<string>, Core.IZodRule
 {
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
 	public const string ErrorCode = "invalid_string";
@@ -43,4 +44,8 @@ public readonly record struct UriRule : Core.IValidationRule<string>
 
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
 	public string Code => ErrorCode;
+
+	string? Core.IZodRule.Code => ErrorCode;
+
+	string? Core.IZodRule.Origin => null;
 }

@@ -4,7 +4,8 @@ namespace ZodSharp.Rules;
 /// Validation rule for maximum string length.
 /// Uses struct to avoid allocations.
 /// </summary>
-public readonly record struct MaxLengthRule : Core.IValidationRule<string>, Core.IStringValidationRule
+[Core.ZodRule]
+public readonly record struct MaxLengthRule : Core.IValidationRule<string>, Core.IStringValidationRule, Core.IZodRule
 {
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
 	public const string ErrorCode = "too_big";
@@ -13,14 +14,20 @@ public readonly record struct MaxLengthRule : Core.IValidationRule<string>, Core
 	public const string MessageFormat = "String must be at most {0} characters long, but got {1}";
 
 	readonly int _maxLength;
+	readonly string? _message;
+	readonly string? _code;
 
 	/// <summary>
 	/// Initializes a new instance of the MaxLengthRule struct.
 	/// </summary>
 	/// <param name="maxLength">The maximum length</param>
-	public MaxLengthRule(int maxLength)
+	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
+	public MaxLengthRule(int maxLength, string? message = null, string? code = null)
 	{
 		_maxLength = maxLength;
+		_message = message.OrNull();
+		_code = code.OrNull();
 	}
 
 	/// <summary>
@@ -43,7 +50,7 @@ public readonly record struct MaxLengthRule : Core.IValidationRule<string>, Core
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
 	public string GetErrorMessage(in string value) =>
-		RuleMessage.Format(MessageFormat, _maxLength, value.LengthOrDefault());
+		_message ?? RuleMessage.Format(MessageFormat, _maxLength, value.LengthOrDefault());
 
 	/// <summary>
 	/// Gets the error message for a failed span validation.
@@ -51,8 +58,12 @@ public readonly record struct MaxLengthRule : Core.IValidationRule<string>, Core
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
 	public string GetErrorMessage(ReadOnlySpan<char> value) =>
-		RuleMessage.Format(MessageFormat, _maxLength, value.Length);
+		_message ?? RuleMessage.Format(MessageFormat, _maxLength, value.Length);
 
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
 	public string Code => ErrorCode;
+
+	string? Core.IZodRule.Code => _code ?? ErrorCode;
+
+	string? Core.IZodRule.Origin => null;
 }

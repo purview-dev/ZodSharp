@@ -4,7 +4,8 @@ namespace ZodSharp.Rules;
 /// Validation rule for minimum string length.
 /// Uses struct to avoid allocations.
 /// </summary>
-public readonly record struct MinLengthRule : Core.IValidationRule<string>, Core.IStringValidationRule
+[Core.ZodRule]
+public readonly record struct MinLengthRule : Core.IValidationRule<string>, Core.IStringValidationRule, Core.IZodRule
 {
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
 	public const string ErrorCode = "too_small";
@@ -13,14 +14,20 @@ public readonly record struct MinLengthRule : Core.IValidationRule<string>, Core
 	public const string MessageFormat = "String must be at least {0} characters long, but got {1}";
 
 	readonly int _minLength;
+	readonly string? _message;
+	readonly string? _code;
 
 	/// <summary>
 	/// Initializes a new instance of the MinLengthRule struct.
 	/// </summary>
 	/// <param name="minLength">The minimum length</param>
-	public MinLengthRule(int minLength)
+	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
+	public MinLengthRule(int minLength, string? message = null, string? code = null)
 	{
 		_minLength = minLength;
+		_message = message.OrNull();
+		_code = code.OrNull();
 	}
 
 	/// <summary>
@@ -43,7 +50,7 @@ public readonly record struct MinLengthRule : Core.IValidationRule<string>, Core
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
 	public string GetErrorMessage(in string value) =>
-		RuleMessage.Format(MessageFormat, _minLength, value.LengthOrDefault());
+		_message ?? RuleMessage.Format(MessageFormat, _minLength, value.LengthOrDefault());
 
 	/// <summary>
 	/// Gets the error message for a failed span validation.
@@ -51,8 +58,12 @@ public readonly record struct MinLengthRule : Core.IValidationRule<string>, Core
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
 	public string GetErrorMessage(ReadOnlySpan<char> value) =>
-		RuleMessage.Format(MessageFormat, _minLength, value.Length);
+		_message ?? RuleMessage.Format(MessageFormat, _minLength, value.Length);
 
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
 	public string Code => ErrorCode;
+
+	string? Core.IZodRule.Code => _code ?? ErrorCode;
+
+	string? Core.IZodRule.Origin => null;
 }

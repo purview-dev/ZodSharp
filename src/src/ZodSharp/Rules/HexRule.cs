@@ -4,7 +4,8 @@ namespace ZodSharp.Rules;
 /// Validation rule for hexadecimal string format.
 /// Uses struct to avoid allocations.
 /// </summary>
-public readonly record struct HexRule : Core.IValidationRule<string>, Core.IStringValidationRule
+[Core.ZodRule]
+public readonly record struct HexRule : Core.IValidationRule<string>, Core.IStringValidationRule, Core.IZodRule
 {
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
 	public const string ErrorCode = "invalid_string";
@@ -60,4 +61,8 @@ public readonly record struct HexRule : Core.IValidationRule<string>, Core.IStri
 
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
 	public string Code => ErrorCode;
+
+	string? Core.IZodRule.Code => ErrorCode;
+
+	string? Core.IZodRule.Origin => null;
 }

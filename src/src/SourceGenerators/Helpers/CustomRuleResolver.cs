@@ -704,18 +704,80 @@ static class CustomRuleResolver
 	}
 
 	/// <summary>
-	/// Gets the public constructor parameters used to build the rule's arguments: the constructor with the most
-	/// parameters, matching the rule instantiation contract.
+	/// Gets the public constructor parameters used to build the rule's arguments: the constructor the generated
+	/// attribute mirrors, matching the rule instantiation contract.
 	/// </summary>
 	/// <param name="ruleType">The resolved rule type.</param>
 	/// <returns>The mapped constructor parameters.</returns>
 	static ImmutableArray<IParameterSymbol> MappedParameters(INamedTypeSymbol ruleType) =>
-		ruleType
+		SelectAttributeConstructor(ruleType)?.Parameters ?? [];
+
+	/// <summary>
+	/// Selects the public constructor a rule attribute mirrors and the generated validation instantiates: the
+	/// one whose parameters are all representable as attribute properties (a <c>message</c> or
+	/// <c>CancellationToken</c> parameter is consumed rather than mirrored), preferring the one with the most
+	/// parameters. Rules that declare a second overload only to accept a non-attribute-argument type (for
+	/// example <see cref="System.Text.RegularExpressions.Regex"/>) are still attribute-addressable through the
+	/// compatible overload.
+	/// </summary>
+	/// <param name="ruleType">The rule type to inspect.</param>
+	/// <returns>The selected constructor, or <see langword="null"/> when the rule declares none.</returns>
+	internal static IMethodSymbol? SelectAttributeConstructor(INamedTypeSymbol ruleType)
+	{
+		var candidates = ruleType
 			.InstanceConstructors.Where(static c => !c.IsStatic && c.DeclaredAccessibility == Accessibility.Public)
-			.OrderByDescending(static c => c.Parameters.Length)
-			.FirstOrDefault()
-			?.Parameters
-		?? [];
+			.ToArray();
+
+		// A struct's implicit parameterless constructor would otherwise satisfy "every parameter is
+		// attribute-mappable" vacuously and silently drop the rule's real constructor arguments. It is only a
+		// candidate when the rule declares no constructor of its own (for example a parameterless rule).
+		var considered = candidates.Any(static c => !c.IsImplicitlyDeclared)
+			? candidates.Where(static c => !c.IsImplicitlyDeclared).ToArray()
+			: candidates;
+
+		return considered
+				.Where(static c => c.Parameters.All(IsAttributeMappableParameter))
+				.OrderByDescending(static c => c.Parameters.Length)
+				.FirstOrDefault()
+			?? considered.OrderByDescending(static c => c.Parameters.Length).FirstOrDefault();
+	}
+
+	static bool IsAttributeMappableParameter(IParameterSymbol parameter) =>
+		IsMessageParameter(parameter)
+		|| IsCancellationToken(parameter.Type)
+		|| IsSupportedAttributePropertyType(parameter.Type);
+
+	internal static bool IsMessageParameter(IParameterSymbol parameter) =>
+		string.Equals(parameter.Name, "message", StringComparison.OrdinalIgnoreCase);
+
+	internal static bool IsCancellationToken(ITypeSymbol type) =>
+		type.ToDisplayString() == "System.Threading.CancellationToken";
+
+	internal static bool IsSupportedAttributePropertyType(ITypeSymbol type)
+	{
+		var unwrapped = TypeHelpers.UnwrapNullableType(type);
+		if (unwrapped is INamedTypeSymbol { TypeKind: TypeKind.Enum })
+			return true;
+
+		if (unwrapped.ToDisplayString() == "System.Type")
+			return true;
+
+		// Only primitive types and string are supported as attribute properties.
+		return unwrapped.SpecialType
+			is SpecialType.System_Boolean
+				or SpecialType.System_Byte
+				or SpecialType.System_SByte
+				or SpecialType.System_Char
+				or SpecialType.System_Int16
+				or SpecialType.System_UInt16
+				or SpecialType.System_Int32
+				or SpecialType.System_UInt32
+				or SpecialType.System_Int64
+				or SpecialType.System_UInt64
+				or SpecialType.System_Single
+				or SpecialType.System_Double
+				or SpecialType.System_String;
+	}
 
 	/// <summary>
 	/// The attribute contract that declares the error-identity properties, matched by name so the generator
@@ -822,10 +884,7 @@ static class CustomRuleResolver
 		arguments = new([]);
 		unmappedParameterName = null;
 
-		var constructor = ruleType
-			.InstanceConstructors.Where(static c => !c.IsStatic && c.DeclaredAccessibility == Accessibility.Public)
-			.OrderByDescending(static c => c.Parameters.Length)
-			.FirstOrDefault();
+		var constructor = SelectAttributeConstructor(ruleType);
 
 		if (constructor is null)
 			return false;
@@ -908,9 +967,6 @@ static class CustomRuleResolver
 		|| type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T }
 		|| (type.IsReferenceType && type.NullableAnnotation == NullableAnnotation.None);
 
-	static bool IsMessageParameter(IParameterSymbol parameter) =>
-		string.Equals(parameter.Name, "message", StringComparison.OrdinalIgnoreCase);
-
 	static bool TryConvertConstant(TypedConstant constant, ITypeSymbol targetType, out string expression)
 	{
 		if (constant.IsNull)
@@ -951,12 +1007,39 @@ static class CustomRuleResolver
 			return true;
 		}
 
+		var specialType = unwrapped.SpecialType;
+
 #pragma warning disable IDE0072 // Add missing cases
-		expression = unwrapped.SpecialType switch
+		expression = specialType switch
 		{
 			SpecialType.System_String when value is string text => text.StringLiteral(),
 			SpecialType.System_Char when value is char character => CodeGenHelpers.QuoteChar(character),
 			SpecialType.System_Boolean when value is bool boolean => boolean ? "true" : "false",
+			SpecialType.System_Object when value is string text => text.StringLiteral(),
+			_ => string.Empty,
+		};
+#pragma warning restore IDE0072 // Add missing cases
+
+		if (expression.Length > 0)
+			return true;
+
+		if (TryFormatNumericLiteral(value, specialType, out expression))
+			return true;
+
+		// A value whose runtime type differs from the target is converted numerically. This is what lets the
+		// double bound of a generated bound-rule attribute (for example `[MinValue(MinValue = 3)]`) be closed
+		// with an `int`, `long`, or `decimal` member.
+		return TryConvertNumeric(value, specialType, out expression);
+	}
+
+	/// <summary>
+	/// Formats a numeric value that already matches <paramref name="specialType"/> as a target-typed literal.
+	/// </summary>
+	static bool TryFormatNumericLiteral(object value, SpecialType specialType, out string expression)
+	{
+#pragma warning disable IDE0072 // Add missing cases
+		expression = specialType switch
+		{
 			SpecialType.System_Byte when value is byte number => number.ToString(CultureInfo.InvariantCulture),
 			SpecialType.System_SByte when value is sbyte number =>
 				$"(sbyte){number.ToString(CultureInfo.InvariantCulture)}",
@@ -975,13 +1058,72 @@ static class CustomRuleResolver
 				$"{number.ToString("R", CultureInfo.InvariantCulture)}D",
 			SpecialType.System_Decimal when value is decimal number =>
 				$"{number.ToString(CultureInfo.InvariantCulture)}M",
-			SpecialType.System_Object when value is string text => text.StringLiteral(),
 			_ => string.Empty,
 		};
 #pragma warning restore IDE0072 // Add missing cases
 
 		return expression.Length > 0;
 	}
+
+	/// <summary>
+	/// Converts a numeric value to a different numeric target type and formats the result as a literal.
+	/// </summary>
+	static bool TryConvertNumeric(object value, SpecialType targetSpecialType, out string expression)
+	{
+		expression = string.Empty;
+
+		var targetClrType = GetNumericClrType(targetSpecialType);
+		if (targetClrType is null || value is string || value is bool || value is char)
+			return false;
+
+		var valueClrType = value.GetType();
+		if (GetNumericClrType(valueClrType) is null || valueClrType == targetClrType)
+			return false;
+
+		try
+		{
+			var converted = Convert.ChangeType(value, targetClrType, CultureInfo.InvariantCulture);
+			return converted is not null && TryFormatNumericLiteral(converted, targetSpecialType, out expression);
+		}
+		catch (Exception exception) when (exception is InvalidCastException or FormatException or OverflowException)
+		{
+			return false;
+		}
+	}
+
+	static Type? GetNumericClrType(SpecialType specialType) =>
+		specialType switch
+		{
+			SpecialType.System_Byte => typeof(byte),
+			SpecialType.System_SByte => typeof(sbyte),
+			SpecialType.System_Int16 => typeof(short),
+			SpecialType.System_UInt16 => typeof(ushort),
+			SpecialType.System_Int32 => typeof(int),
+			SpecialType.System_UInt32 => typeof(uint),
+			SpecialType.System_Int64 => typeof(long),
+			SpecialType.System_UInt64 => typeof(ulong),
+			SpecialType.System_Single => typeof(float),
+			SpecialType.System_Double => typeof(double),
+			SpecialType.System_Decimal => typeof(decimal),
+			_ => null,
+		};
+
+	static Type? GetNumericClrType(Type type) =>
+		Type.GetTypeCode(type) switch
+		{
+			TypeCode.Byte => typeof(byte),
+			TypeCode.SByte => typeof(sbyte),
+			TypeCode.Int16 => typeof(short),
+			TypeCode.UInt16 => typeof(ushort),
+			TypeCode.Int32 => typeof(int),
+			TypeCode.UInt32 => typeof(uint),
+			TypeCode.Int64 => typeof(long),
+			TypeCode.UInt64 => typeof(ulong),
+			TypeCode.Single => typeof(float),
+			TypeCode.Double => typeof(double),
+			TypeCode.Decimal => typeof(decimal),
+			_ => null,
+		};
 
 	static Location GetAttributeLocation(AttributeData attributeData) =>
 		attributeData.ApplicationSyntaxReference?.GetSyntax().GetLocation() ?? Location.None;

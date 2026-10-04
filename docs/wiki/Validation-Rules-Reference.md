@@ -131,10 +131,14 @@ Fluent methods live on `ZodNumber` (`ZodSharp.Schemas`), which validates `double
 
 | Rule | Constructor | Fluent method | Code | Message format |
 |---|---|---|---|---|
-| `MinValueRule<T>` | `(T minValue)` | `Min(v)`, `Gte(v)`, `NonNegative()` | `too_small` | `Value must be at least {0}, but got {1}` |
-| `MaxValueRule<T>` | `(T maxValue)` | `Max(v)`, `Lte(v)`, `NonPositive()` | `too_big` | `Value must be at most {0}, but got {1}` |
+| `MinValueRule<T>` | `(T minValue)` | `Min(v)`, `NonNegative()` | `too_small` | `Value must be at least {0}, but got {1}` |
+| `MaxValueRule<T>` | `(T maxValue)` | `Max(v)`, `NonPositive()` | `too_big` | `Value must be at most {0}, but got {1}` |
 | `GreaterThanRule<T>` | `(T exclusiveMinimum)` | `Gt(v)`, `Positive()` | `too_small` | `Value must be greater than {0}, but got {1}` |
 | `LessThanRule<T>` | `(T exclusiveMaximum)` | `Lt(v)`, `Negative()` | `too_big` | `Value must be less than {0}, but got {1}` |
+| `GreaterThanOrEqualRule` | `(double minValue, string? message)` | `Gte(v)` | `too_small` | `Value must be greater than or equal to {0}, but got {1}` |
+| `LessThanOrEqualRule` | `(double maxValue, string? message)` | `Lte(v)` | `too_big` | `Value must be less than or equal to {0}, but got {1}` |
+| `EvenRule<T>` | `(string? message)` | `Even()` | `invalid_value` | `Number must be even, but got {0}` |
+| `OddRule<T>` | `(string? message)` | `Odd()` | `invalid_value` | `Number must be odd, but got {0}` |
 | `MultipleOfRule` | `(double divisor, string? message)` | `MultipleOf(divisor)` | `not_multiple_of` | `Number must be a multiple of {0}, but got {1}` |
 | `FiniteRule` | `(string? message)` | `Finite()` | `not_finite` | `Number must be finite, but got {0}` |
 | `SafeIntegerRule` | `(string? message)` | `Safe()` | `too_big` | `Number must be a safe integer, but got {0}` |
@@ -142,8 +146,9 @@ Fluent methods live on `ZodNumber` (`ZodSharp.Schemas`), which validates `double
 
 Behaviour notes:
 
-- The bound rules are generic over `T : IComparable<T>`, so they can be reused with any comparable type (the fluent methods close them with `double`).
+- The bound rules (`MinValueRule<T>`, `MaxValueRule<T>`, `GreaterThanRule<T>`, `LessThanRule<T>`) are generic over `T : IComparable<T>`, so they can be reused with any comparable type (the fluent methods close them with `double`). `ZodNumber`'s `Gte`/`Lte` use the non-generic `GreaterThanOrEqualRule`/`LessThanOrEqualRule`; `ZodBigInt` and `ZodDate` close the generic rules with `long` and `DateTime`.
 - `Positive()` is `GreaterThanRule<double>(0.0)`, `Negative()` is `LessThanRule<double>(0.0)`, `NonNegative()` is `MinValueRule<double>(0.0)`, and `NonPositive()` is `MaxValueRule<double>(0.0)`.
+- **`EvenRule<T>`** and **`OddRule<T>`** are generic over `T : INumber<T>`, so they close with `int`, `long`, `double`, `decimal`, and every other numeric type; `Even()`/`Odd()` close them with `double`. A value is even when `value % 2 == 0`.
 - **`MultipleOfRule`** throws `ArgumentException` when the divisor is `0`, and compares the quotient to its nearest integer with a relative tolerance of `1e-12` (so `0.3` is accepted for a divisor of `0.1`).
 - **`FiniteRule`** rejects `NaN` and infinities via `double.IsFinite`.
 - **`SafeIntegerRule`** requires a whole number within `int.MinValue`..`int.MaxValue`.
@@ -168,7 +173,55 @@ var result = schema.Validate(DateTime.MinValue);
 var chained = Z.String().NonSentinel().Min(3);
 ```
 
-The same rule can be attached directly with `AddRule`/`Rule`, or closed with a property type through an attribute (`[ZodRule(typeof(NonSentinelRule<>))]` on a matching attribute) — see [Custom Rules](Custom-Rules.md#non-sentinel-values-ef-friendly).
+The same rule can be attached directly with `AddRule`/`Rule`, or through the shipped `[NonSentinel]` attribute, which closes the open generic with the annotated member/scalar type — see [Custom Rules](Custom-Rules.md#non-sentinel-values-ef-friendly).
+
+## Generated attributes
+
+Each built-in rule that can be expressed as an attribute ships a generated `ValidationAttribute` in the `ZodSharp.Rules` namespace (inside the `Purview.ZodSharp` assembly), so a member or a scalar can be annotated directly:
+
+| Attribute | Rule | Notes |
+|---|---|---|
+| `[Email]` | `EmailRule` | |
+| `[E164]` | `E164Rule` | |
+| `[Regex(Pattern = "…")]` | `RegexRule` | mirrors the `(string pattern, string? message)` overload |
+| `[UUID]` / `[UUID(Version = …)]` | `UUIDRule` | |
+| `[ULID]` | `ULIDRule` | |
+| `[JWT]` | `JWTRule` | |
+| `[IPAddress]` | `IPAddressRule` | |
+| `[Hex]` | `HexRule` | |
+| `[Base64Url]` | `Base64UrlRule` | |
+| `[Nanoid]` | `NanoidRule` | |
+| `[Cuid2]` | `Cuid2Rule` | |
+| `[DateString]` | `DateStringRule` | |
+| `[TimeString]` | `TimeStringRule` | |
+| `[DatetimeString]` | `DatetimeStringRule` | |
+| `[StartsWith(Prefix = "…")]` | `StartsWithRule` | |
+| `[EndsWith(Suffix = "…")]` | `EndsWithRule` | |
+| `[Includes(Substring = "…")]` | `IncludesRule` | |
+| `[MultipleOf(Divisor = …)]` | `MultipleOfRule` | |
+| `[Finite]` | `FiniteRule` | |
+| `[SafeInteger]` | `SafeIntegerRule` | |
+| `[Int]` | `IntRule` | |
+| `[Uri(UriKind = …)]` | `UriRule` | |
+| `[NonSentinel]` | `NonSentinelRule<T>` | closes the open generic with the member/scalar type |
+| `[MinValue(MinValue = …)]` | `MinValueRule<T>` | the type-parameter bound is a `double`; the rule closes with the member type |
+| `[MaxValue(MaxValue = …)]` | `MaxValueRule<T>` | as above |
+| `[GreaterThan(ExclusiveMinimum = …)]` | `GreaterThanRule<T>` | as above |
+| `[LessThan(ExclusiveMaximum = …)]` | `LessThanRule<T>` | as above |
+| `[GreaterThanOrEqual(MinValue = …)]` | `GreaterThanOrEqualRule` | |
+| `[LessThanOrEqual(MaxValue = …)]` | `LessThanOrEqualRule` | |
+| `[Even]` | `EvenRule<T>` | closes the open generic with the member type |
+| `[Odd]` | `OddRule<T>` | closes the open generic with the member type |
+| `[MinLengthZod(MinLength = …)]` | `MinLengthRule` | suffixed to avoid the DataAnnotations name; exposes `Code`/`Message` |
+| `[MaxLengthZod(MaxLength = …)]` | `MaxLengthRule` | as above |
+| `[UrlZod]` | `UrlRule` | as above |
+| `[PhoneZod]` | `PhoneRule` | as above |
+| `[CreditCardZod]` | `CreditCardRule` | as above |
+| `[Base64StringZod]` | `Base64StringRule` | as above |
+
+Each generated attribute exposes a `Message` property when its rule has a `message` constructor parameter, and reports the rule's own `ErrorCode`/`Origin` because every built-in rule implements `IZodRule`.
+
+Rules whose derived attribute name is already taken by `System.ComponentModel.DataAnnotations` — `MinLengthRule`, `MaxLengthRule`, `UrlRule`, `PhoneRule`, `CreditCardRule`, `Base64StringRule` — are emitted under a `Zod` suffix instead (for example `[MinLengthZod]`), so the rule's own identity and message stay usable. The generic bound rules surface their type-parameter bound as a `double`, so `[MinValue(MinValue = 3)]` works on an `int` or a `double` member.
 
 ## Exposed as DataAnnotations attributes
 
@@ -183,7 +236,7 @@ The `[ZodSchema]` generator maps several built-in rules to their `System.Compone
 | `[Base64String]` | `Base64StringRule` | `invalid_string` |
 | `[RegularExpression]` | compiled `Regex`, not `RegexRule` | `invalid_string` |
 
-Size and range attributes (`[Length]`, `[StringLength]`, `[MinLength]`, `[MaxLength]`, `[Range]`) are emitted as direct, typed codegen rather than as rule structs. See [Source Generator DataAnnotations](Source-Generator-DataAnnotations.md) for the full attribute table and the generated metadata, and [Custom Rules](Custom-Rules.md) for mapping your own rules to attributes.
+Size and range attributes (`[Length]`, `[StringLength]`, `[MinLength]`, `[MaxLength]`, `[Range]`) are emitted as direct, typed codegen rather than as rule structs. The rule-identity variants of the colliding names are the suffixed [generated attributes](#generated-attributes) (`[MinLengthZod]`, `[MaxLengthZod]`, `[UrlZod]`, `[PhoneZod]`, `[CreditCardZod]`, `[Base64StringZod]`), which report the rule's own `Code` and accept a `Message`. The remaining built-in rules are covered by their own generated attributes — for example `[Regex(Pattern = "…")]` validates through `RegexRule`, whereas `[RegularExpression]` compiles the pattern inline. See [Source Generator DataAnnotations](Source-Generator-DataAnnotations.md) for the full attribute table and the generated metadata, and [Custom Rules](Custom-Rules.md) for mapping your own rules to attributes.
 
 ## Related
 

@@ -5,7 +5,8 @@ namespace ZodSharp.Rules;
 /// Mirrors the behavior of System.ComponentModel.DataAnnotations.CreditCardAttribute.
 /// Uses struct to avoid allocations.
 /// </summary>
-public readonly record struct CreditCardRule : Core.IValidationRule<string>, Core.IStringValidationRule
+[Core.ZodRule]
+public readonly record struct CreditCardRule : Core.IValidationRule<string>, Core.IStringValidationRule, Core.IZodRule
 {
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
 	public const string ErrorCode = "invalid_string";
@@ -14,14 +15,17 @@ public readonly record struct CreditCardRule : Core.IValidationRule<string>, Cor
 	public const string MessageFormat = "Invalid credit card number format: {0}";
 
 	readonly string? _message;
+	readonly string? _code;
 
 	/// <summary>
 	/// Initializes a new instance of the CreditCardRule struct.
 	/// </summary>
 	/// <param name="message">Optional error message</param>
-	public CreditCardRule(string? message = null)
+	/// <param name="code">Optional error code override</param>
+	public CreditCardRule(string? message = null, string? code = null)
 	{
 		_message = message.OrNull();
+		_code = code.OrNull();
 	}
 
 	/// <summary>
@@ -92,4 +96,8 @@ public readonly record struct CreditCardRule : Core.IValidationRule<string>, Cor
 
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
 	public string Code => ErrorCode;
+
+	string? Core.IZodRule.Code => _code ?? ErrorCode;
+
+	string? Core.IZodRule.Origin => null;
 }

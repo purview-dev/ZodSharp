@@ -12,6 +12,8 @@ static partial class TypeLibraryGenerator
 
 	public const string ZodSharpCoreNamespace = ZodSharpNamespace + ".Core";
 
+	public const string ZodSharpRulesNamespace = ZodSharpNamespace + ".Rules";
+
 	public const string ZodSharpSchemasNamespace = ZodSharpNamespace + ".Schemas";
 
 	// The Purview.ValueObjects scalar contracts. A scalar value object is validated through its underlying

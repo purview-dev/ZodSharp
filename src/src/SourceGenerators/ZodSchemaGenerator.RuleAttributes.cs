@@ -72,13 +72,7 @@ partial class ZodSchemaGenerator
 		{
 			return GeneratorResult<RuleAttributeGenerationModel>.Create(
 				default(RuleAttributeGenerationModel),
-				ReportableDiagnostic.Create(
-					DiagnosticLibrary.UnsupportedRuleAttributeGeneration,
-					true,
-					ruleType,
-					ruleType.Name,
-					"only non-nested, non-abstract rules are supported"
-				)
+				ReportUnsupportedRuleAttributeGeneration(ruleType, "only non-nested, non-abstract rules are supported")
 			);
 		}
 
@@ -89,11 +83,8 @@ partial class ZodSchemaGenerator
 		{
 			return GeneratorResult<RuleAttributeGenerationModel>.Create(
 				default(RuleAttributeGenerationModel),
-				ReportableDiagnostic.Create(
-					DiagnosticLibrary.UnsupportedRuleAttributeGeneration,
-					true,
+				ReportUnsupportedRuleAttributeGeneration(
 					ruleType,
-					ruleType.Name,
 					"only non-generic rules and generic rules with a single type parameter are supported"
 				)
 			);
@@ -117,6 +108,22 @@ partial class ZodSchemaGenerator
 					claimed[0].ToDisplayString()
 				)
 			);
+		}
+
+		// A generated attribute sharing its name with a System.ComponentModel.DataAnnotations attribute would be
+		// ambiguous for any consumer importing both namespaces. Keep the DataAnnotations name and generate ours
+		// under a "Zod" suffix (for example `[MinLengthZod]`), so the rule's own error identity (Code/Message)
+		// stays usable instead of the rule being skipped entirely.
+		if (
+			context.SemanticModel.Compilation.GetTypeByMetadataName(
+				$"{TypeLibraryGenerator.SystemDataAnnotations}.{attributeName}"
+			)
+			is not null
+		)
+		{
+			attributeName = attributeName.EndsWith("Attribute", StringComparison.Ordinal)
+				? attributeName.Substring(0, attributeName.Length - "Attribute".Length) + "ZodAttribute"
+				: attributeName + "Zod";
 		}
 
 		// Both halves of a rule pair derive the same attribute name. The open generic mapping subsumes the
@@ -146,27 +153,40 @@ partial class ZodSchemaGenerator
 		}
 
 		var properties = ImmutableArray.CreateBuilder<GeneratedAttributeProperty>();
-		var constructor = ruleType
-			.InstanceConstructors.Where(static c => !c.IsStatic && c.DeclaredAccessibility == Accessibility.Public)
-			.OrderByDescending(static c => c.Parameters.Length)
-			.FirstOrDefault();
+		var constructor = CustomRuleResolver.SelectAttributeConstructor(ruleType);
 
 		if (constructor is not null)
 		{
+			IParameterSymbol? messageParameter = null;
+
 			foreach (var parameter in constructor.Parameters)
 			{
-				if (IsMessageParameter(parameter) || IsCancellationToken(parameter.Type))
+				if (CustomRuleResolver.IsMessageParameter(parameter))
+				{
+					// The rule's message flows through the inherited ValidationAttribute.ErrorMessage, which the
+					// resolver maps onto this parameter. The generated attribute additionally exposes a Message
+					// alias, so the rule's own parameter name stays usable at the call site.
+					messageParameter = parameter;
+					continue;
+				}
+
+				if (CustomRuleResolver.IsCancellationToken(parameter.Type))
 					continue;
 
-				if (!IsSupportedAttributePropertyType(parameter.Type))
+				// A type-parameter constructor argument (for example `MinValueRule<T>(T minValue)`) cannot be
+				// mirrored directly; it is surfaced as a double, the numeric type the schema pipeline uses and
+				// the type a `[MinValue]`-style attribute can carry.
+				var propertyType =
+					parameter.Type.TypeKind == TypeKind.TypeParameter
+						? context.SemanticModel.Compilation.GetSpecialType(SpecialType.System_Double)
+						: parameter.Type;
+
+				if (!CustomRuleResolver.IsSupportedAttributePropertyType(propertyType))
 				{
 					ImmutableArray<ReportableDiagnostic> propertyDiagnostics =
 					[
-						ReportableDiagnostic.Create(
-							DiagnosticLibrary.UnsupportedRuleAttributeGeneration,
-							true,
+						ReportUnsupportedRuleAttributeGeneration(
 							ruleType,
-							ruleType.Name,
 							$"constructor parameter '{parameter.Name}' has type '{parameter.Type.ToDisplayString()}', which cannot be represented as an attribute property"
 						),
 						.. identityWarnings,
@@ -177,10 +197,22 @@ partial class ZodSchemaGenerator
 
 				properties.Add(
 					new GeneratedAttributeProperty(
-						new TypeIdentity(TypeHelpers.StripNullableAnnotations(parameter.Type)),
+						new TypeIdentity(TypeHelpers.StripNullableAnnotations(propertyType)),
 						ToPascalCase(parameter.Name),
-						BuildInitializer(parameter),
-						TypeHelpers.CanBeNull(parameter.Type)
+						BuildInitializer(parameter, propertyType),
+						TypeHelpers.CanBeNull(propertyType)
+					)
+				);
+			}
+
+			if (messageParameter is not null)
+			{
+				properties.Add(
+					new GeneratedAttributeProperty(
+						new TypeIdentity(TypeHelpers.StripNullableAnnotations(messageParameter.Type)),
+						"Message",
+						BuildInitializer(messageParameter, messageParameter.Type),
+						TypeHelpers.CanBeNull(messageParameter.Type)
 					)
 				);
 			}
@@ -208,23 +240,49 @@ partial class ZodSchemaGenerator
 			&& definition.ContainingNamespace.ToDisplayString() == TypeLibraryGenerator.ZodSharpCoreNamespace
 		);
 
-	static bool IsMessageParameter(IParameterSymbol parameter) =>
-		string.Equals(parameter.Name, "message", StringComparison.OrdinalIgnoreCase);
+	/// <summary>
+	/// Determines whether <paramref name="ruleType"/> is a built-in rule shipped in the runtime assembly. A
+	/// generation failure for one of those is a documented library decision, so it is reported as ZODSGEN043
+	/// rather than as the error a custom rule's author would need.
+	/// </summary>
+	static bool IsBuiltInRule(INamedTypeSymbol ruleType) =>
+		ruleType.ContainingNamespace.ToDisplayString() == TypeLibraryGenerator.ZodSharpRulesNamespace;
 
-	static bool IsCancellationToken(ITypeSymbol type) => type.ToDisplayString() == "System.Threading.CancellationToken";
+	/// <summary>
+	/// Reports a rule that cannot produce a validation attribute: <c>ZODSGEN043</c> (informational, not blocking)
+	/// for a built-in rule whose gap is visible in the shipped build, and <c>ZODSGEN032</c> (error) for a custom
+	/// rule whose author marked it deliberately.
+	/// </summary>
+	/// <param name="ruleType">The marked rule.</param>
+	/// <param name="reason">Why the attribute cannot be generated.</param>
+	/// <returns>The diagnostic to carry out of the pipeline.</returns>
+	static ReportableDiagnostic ReportUnsupportedRuleAttributeGeneration(INamedTypeSymbol ruleType, string reason)
+	{
+		var isBuiltIn = IsBuiltInRule(ruleType);
 
-	static string BuildInitializer(IParameterSymbol parameter)
+		return ReportableDiagnostic.Create(
+			isBuiltIn
+				? DiagnosticLibrary.BuiltInRuleAttributeNotGenerated
+				: DiagnosticLibrary.UnsupportedRuleAttributeGeneration,
+			!isBuiltIn,
+			ruleType,
+			ruleType.Name,
+			reason
+		);
+	}
+
+	static string BuildInitializer(IParameterSymbol parameter, ITypeSymbol propertyType)
 	{
 		if (
 			parameter.HasExplicitDefaultValue
-			&& CustomRuleResolver.TryConvertValue(parameter.ExplicitDefaultValue, parameter.Type, out var literal)
+			&& CustomRuleResolver.TryConvertValue(parameter.ExplicitDefaultValue, propertyType, out var literal)
 		)
 		{
 			return literal;
 		}
 
 		// If the parameter has no default value, we still need to provide an initializer for the attribute property.
-		return parameter.Type.IsValueType ? "default!" : "null!";
+		return propertyType.IsValueType ? "default!" : "null!";
 	}
 
 	static string ToPascalCase(string name) =>
@@ -443,32 +501,6 @@ partial class ZodSchemaGenerator
 		return false;
 	}
 
-	static bool IsSupportedAttributePropertyType(ITypeSymbol type)
-	{
-		var unwrapped = TypeHelpers.UnwrapNullableType(type);
-		if (unwrapped is INamedTypeSymbol { TypeKind: TypeKind.Enum })
-			return true;
-
-		if (unwrapped.ToDisplayString() == "System.Type")
-			return true;
-
-		// Only primitive types and string are supported as attribute properties.
-		return unwrapped.SpecialType
-			is SpecialType.System_Boolean
-				or SpecialType.System_Byte
-				or SpecialType.System_SByte
-				or SpecialType.System_Char
-				or SpecialType.System_Int16
-				or SpecialType.System_UInt16
-				or SpecialType.System_Int32
-				or SpecialType.System_UInt32
-				or SpecialType.System_Int64
-				or SpecialType.System_UInt64
-				or SpecialType.System_Single
-				or SpecialType.System_Double
-				or SpecialType.System_String;
-	}
-
 	static void BuildRuleAttribute(CodeWriter writer, RuleAttributeGenerationModel model)
 	{
 		writer.AutoGeneratedHeader();
@@ -476,7 +508,7 @@ partial class ZodSchemaGenerator
 		writer.FileScopedNamespace(model.AttributeType.Namespace);
 
 		writer.XmlSummary(
-			$"Validation attribute that applies {CodeWriter.XmlSee(model.RuleType.Name)}.",
+			$"Validation attribute that applies {CodeWriter.XmlSee(model.RuleType)}.",
 			"Generated from the rule's [ZodRule] marker; the properties mirror the rule's constructor parameters."
 		);
 
@@ -493,7 +525,11 @@ partial class ZodSchemaGenerator
 							Arguments =
 							[
 								new AttributeArgumentOptions(
-									"global::System.AttributeTargets.Property | global::System.AttributeTargets.Field | global::System.AttributeTargets.Parameter",
+									"global::System.AttributeTargets.Class"
+										+ " | global::System.AttributeTargets.Struct"
+										+ " | global::System.AttributeTargets.Property"
+										+ " | global::System.AttributeTargets.Field"
+										+ " | global::System.AttributeTargets.Parameter",
 									null,
 									false
 								),
