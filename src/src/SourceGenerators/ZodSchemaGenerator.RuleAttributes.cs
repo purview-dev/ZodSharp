@@ -152,93 +152,49 @@ partial class ZodSchemaGenerator
 			];
 		}
 
+		var ruleConstructors = CustomRuleResolver.SelectAttributeConstructors(ruleType);
 		var properties = ImmutableArray.CreateBuilder<GeneratedAttributeProperty>();
-		var constructorParameters = ImmutableArray.CreateBuilder<GeneratedAttributeParameter>();
-		var constructor = CustomRuleResolver.SelectAttributeConstructor(ruleType);
+		HashSet<string> propertyNames = [with(StringComparer.OrdinalIgnoreCase)];
+		var constructors = ImmutableArray.CreateBuilder<GeneratedAttributeConstructor>();
+		var messageParameter = ruleConstructors
+			.SelectMany(static constructor => constructor.Parameters)
+			.FirstOrDefault(CustomRuleResolver.IsMessageParameter);
 
-		if (constructor is not null)
+		// Every attribute-addressable rule overload surfaces its own attribute constructor. Overloads that
+		// differ only in the message/identity parameters collapse to the same parameterless attribute
+		// constructor, so identical signatures are emitted once.
+		foreach (var ruleConstructor in ruleConstructors)
 		{
-			IParameterSymbol? messageParameter = null;
-
-			foreach (var parameter in constructor.Parameters)
+			if (
+				!TryBuildAttributeConstructorModel(
+					ruleConstructor,
+					ruleType,
+					context.SemanticModel.Compilation,
+					identityWarnings,
+					properties,
+					propertyNames,
+					out var generatedConstructor,
+					out var failureDiagnostics
+				)
+			)
 			{
-				if (CustomRuleResolver.IsMessageParameter(parameter))
-				{
-					// The rule's message flows through the inherited ValidationAttribute.ErrorMessage, which the
-					// resolver maps onto this parameter. The generated attribute additionally exposes a Message
-					// alias, so the rule's own parameter name stays usable at the call site.
-					messageParameter = parameter;
-					continue;
-				}
-
-				if (CustomRuleResolver.IsCancellationToken(parameter.Type))
-					continue;
-
-				var isIdentityParameter = CustomRuleResolver.IsIdentityParameter(parameter);
-
-				// A type-parameter constructor argument (for example `MinValueRule<T>(T minValue)`) cannot be
-				// mirrored directly; it is surfaced as a double, the numeric type the schema pipeline uses and
-				// the type a `[MinValue]`-style attribute can carry.
-				var propertyType =
-					parameter.Type.TypeKind == TypeKind.TypeParameter
-						? context.SemanticModel.Compilation.GetSpecialType(SpecialType.System_Double)
-						: parameter.Type;
-
-				if (!CustomRuleResolver.IsSupportedAttributePropertyType(propertyType))
-				{
-					ImmutableArray<ReportableDiagnostic> propertyDiagnostics =
-					[
-						ReportUnsupportedRuleAttributeGeneration(
-							ruleType,
-							$"constructor parameter '{parameter.Name}' has type '{parameter.Type.ToDisplayString()}', which cannot be represented as an attribute property"
-						),
-						.. identityWarnings,
-					];
-
-					return GeneratorResult<RuleAttributeGenerationModel>.Create(default, propertyDiagnostics);
-				}
-
-				TypeIdentity propertyTypeIdentity = new(TypeHelpers.StripNullableAnnotations(propertyType));
-				var propertyName = ToPascalCase(parameter.Name);
-				var initializer = BuildPropertyInitializer(parameter, propertyType, ruleType, isIdentityParameter);
-				var isNullable = TypeHelpers.CanBeNull(propertyType);
-
-				properties.Add(
-					new GeneratedAttributeProperty(propertyTypeIdentity, propertyName, initializer, isNullable)
-				);
-
-				// The attribute constructor mirrors the rule's value parameters so a required value (for
-				// example the `maxValue` of `LessThanOrEqualRule<T>`) has to be supplied at the usage site
-				// instead of silently falling back to the type's default. A defaulted parameter keeps its
-				// default, so `[Even]`-style attributes stay applicable without arguments.
-				//
-				// Identity parameters stay properties only: the resolver reads the reported error identity from
-				// the applied attribute's named arguments, so a constructor parameter would never feed it.
-				if (isIdentityParameter)
-					continue;
-
-				constructorParameters.Add(
-					new GeneratedAttributeParameter(
-						propertyTypeIdentity,
-						parameter.Name,
-						propertyName,
-						parameter.HasExplicitDefaultValue ? initializer : null,
-						isNullable
-					)
-				);
+				return GeneratorResult<RuleAttributeGenerationModel>.Create(default, failureDiagnostics);
 			}
 
-			if (messageParameter is not null)
-			{
-				properties.Add(
-					new GeneratedAttributeProperty(
-						new TypeIdentity(TypeHelpers.StripNullableAnnotations(messageParameter.Type)),
-						"Message",
-						BuildMessageInitializer(messageParameter, ruleType),
-						TypeHelpers.CanBeNull(messageParameter.Type)
-					)
-				);
-			}
+			if (!constructors.Any(existing => HaveSameParameters(existing.Parameters, generatedConstructor.Parameters)))
+				constructors.Add(generatedConstructor);
+		}
+
+		if (messageParameter is not null && propertyNames.Add("Message"))
+		{
+			properties.Add(
+				new GeneratedAttributeProperty(
+					new TypeIdentity(TypeHelpers.StripNullableAnnotations(messageParameter.Type)),
+					"Message",
+					BuildMessageInitializer(messageParameter, ruleType),
+					TypeHelpers.CanBeNull(messageParameter.Type)
+				)
+			);
 		}
 
 		return GeneratorResult<RuleAttributeGenerationModel>.Create(
@@ -252,10 +208,138 @@ partial class ZodSchemaGenerator
 				GetNamedString(attribute, "Origin"),
 				GetNamedBool(attribute, "AllowMultiple"),
 				new(properties.ToImmutable()),
-				new(constructorParameters.ToImmutable())
+				new(constructors.ToImmutable())
 			),
 			identityWarnings
 		);
+	}
+
+	/// <summary>
+	/// Builds the generated attribute constructor that mirrors one attribute-addressable rule overload, adding
+	/// the overload's properties to the shared property set. A parameter the rule declares without a default has
+	/// no default here either, so the attribute cannot be applied without it; the rule's <c>message</c> and
+	/// identity (<c>code</c>/<c>origin</c>) parameters stay properties.
+	/// </summary>
+	/// <param name="ruleConstructor">The rule overload to mirror.</param>
+	/// <param name="ruleType">The rule the attribute maps to.</param>
+	/// <param name="compilation">The compilation, used to resolve the surfaced type of a generic parameter.</param>
+	/// <param name="identityWarnings">Diagnostics to carry alongside an unsupported-parameter failure.</param>
+	/// <param name="properties">The shared generated attribute property set.</param>
+	/// <param name="propertyNames">The property names already added, so an overload pair does not duplicate one.</param>
+	/// <param name="constructor">The generated constructor when the overload can be surfaced.</param>
+	/// <param name="failureDiagnostics">The diagnostics to report when a parameter cannot be surfaced.</param>
+	/// <returns><see langword="true"/> when the overload was surfaced.</returns>
+	static bool TryBuildAttributeConstructorModel(
+		IMethodSymbol ruleConstructor,
+		INamedTypeSymbol ruleType,
+		Compilation compilation,
+		ImmutableArray<ReportableDiagnostic> identityWarnings,
+		ImmutableArray<GeneratedAttributeProperty>.Builder properties,
+		HashSet<string> propertyNames,
+		out GeneratedAttributeConstructor constructor,
+		out ImmutableArray<ReportableDiagnostic> failureDiagnostics
+	)
+	{
+		constructor = default;
+		failureDiagnostics = [];
+		var constructorParameters = ImmutableArray.CreateBuilder<GeneratedAttributeParameter>();
+
+		foreach (var parameter in ruleConstructor.Parameters)
+		{
+			// The rule's message flows through the inherited ValidationAttribute.ErrorMessage, which the
+			// resolver maps onto this parameter. The generated attribute additionally exposes a Message alias,
+			// so the rule's own parameter name stays usable at the call site.
+			if (CustomRuleResolver.IsMessageParameter(parameter))
+				continue;
+
+			if (CustomRuleResolver.IsCancellationToken(parameter.Type))
+				continue;
+
+			var isIdentityParameter = CustomRuleResolver.IsIdentityParameter(parameter);
+
+			// A type-parameter constructor argument (for example `MinValueRule<T>(T minValue)`) cannot be
+			// mirrored directly; it is surfaced as a double, the numeric type the schema pipeline uses and the
+			// type a `[MinValue]`-style attribute can carry.
+			var propertyType =
+				parameter.Type.TypeKind == TypeKind.TypeParameter
+					? compilation.GetSpecialType(SpecialType.System_Double)
+					: parameter.Type;
+
+			if (!CustomRuleResolver.IsSupportedAttributePropertyType(propertyType))
+			{
+				failureDiagnostics =
+				[
+					ReportUnsupportedRuleAttributeGeneration(
+						ruleType,
+						$"constructor parameter '{parameter.Name}' has type '{parameter.Type.ToDisplayString()}', which cannot be represented as an attribute property"
+					),
+					.. identityWarnings,
+				];
+
+				return false;
+			}
+
+			TypeIdentity propertyTypeIdentity = new(TypeHelpers.StripNullableAnnotations(propertyType));
+			var propertyName = ToPascalCase(parameter.Name);
+			var initializer = BuildPropertyInitializer(parameter, propertyType, ruleType, isIdentityParameter);
+			var isNullable = TypeHelpers.CanBeNull(propertyType);
+
+			// The widest overload is visited first, so its property type and initializer win when an overload
+			// pair shares a parameter.
+			if (propertyNames.Add(propertyName))
+			{
+				properties.Add(
+					new GeneratedAttributeProperty(propertyTypeIdentity, propertyName, initializer, isNullable)
+				);
+			}
+
+			// The attribute constructor mirrors the rule's value parameters so a required value (for example
+			// the `maxValue` of `LessThanOrEqualRule<T>`) has to be supplied at the usage site instead of
+			// silently falling back to the type's default. A defaulted parameter keeps its default, so
+			// `[Even]`-style attributes stay applicable without arguments.
+			//
+			// Identity parameters stay properties only: the resolver reads the reported error identity from the
+			// applied attribute's named arguments, so a constructor parameter would never feed it.
+			if (isIdentityParameter)
+				continue;
+
+			constructorParameters.Add(
+				new GeneratedAttributeParameter(
+					propertyTypeIdentity,
+					parameter.Name,
+					propertyName,
+					parameter.HasExplicitDefaultValue ? initializer : null,
+					isNullable
+				)
+			);
+		}
+
+		constructor = new GeneratedAttributeConstructor(constructorParameters.ToImmutable());
+		return true;
+	}
+
+	/// <summary>
+	/// Determines whether two generated attribute constructor signatures are identical, so an overload pair that
+	/// differs only in message/identity parameters is emitted once.
+	/// </summary>
+	/// <param name="left">The first constructor's parameters.</param>
+	/// <param name="right">The second constructor's parameters.</param>
+	/// <returns><see langword="true"/> when the signatures match.</returns>
+	static bool HaveSameParameters(
+		EquatableArray<GeneratedAttributeParameter> left,
+		EquatableArray<GeneratedAttributeParameter> right
+	)
+	{
+		if (left.Count != right.Count)
+			return false;
+
+		for (var i = 0; i < left.Count; i++)
+		{
+			if (left[i] != right[i])
+				return false;
+		}
+
+		return true;
 	}
 
 	static bool IsValidationRule(INamedTypeSymbol ruleType) =>
@@ -356,6 +440,7 @@ partial class ZodSchemaGenerator
 			return errorCode.StringLiteral();
 		}
 
+		// The rule's own default is used for every other property, so the generated attribute is self-describing and
 		return BuildInitializer(parameter, propertyType);
 	}
 
@@ -633,7 +718,17 @@ partial class ZodSchemaGenerator
 			)
 		)
 		{
-			BuildAttributeConstructor(writer, model);
+			// A single parameterless constructor is left implicit; once any constructor is emitted the
+			// parameterless overload must be emitted explicitly so the attribute stays applicable without
+			// arguments (for example `[Uuid]` alongside `[Uuid(UuidVersion.V4)]`).
+			if (
+				model.Constructors.Count > 1
+				|| (model.Constructors.Count == 1 && model.Constructors[0].Parameters.Count > 0)
+			)
+			{
+				foreach (var constructor in model.Constructors)
+					BuildAttributeConstructor(writer, model, constructor);
+			}
 
 			foreach (var property in model.Properties)
 			{
@@ -654,27 +749,27 @@ partial class ZodSchemaGenerator
 	}
 
 	/// <summary>
-	/// Emits the attribute constructor that carries the rule's value parameters. A parameter the rule declares
-	/// without a default has no default here either, so the attribute cannot be applied without it; the rule's
-	/// <c>message</c> and identity (<c>code</c>/<c>origin</c>) parameters stay properties. Rules whose only
-	/// constructor parameters are message/identity (or none) emit no constructor and keep the implicit
-	/// parameterless one.
+	/// Emits one attribute constructor that carries a rule overload's value parameters. A parameter the rule
+	/// declares without a default has no default here either, so the attribute cannot be applied without it; the
+	/// rule's <c>message</c> and identity (<c>code</c>/<c>origin</c>) parameters stay properties.
 	/// </summary>
 	/// <param name="writer">The writer positioned inside the attribute's class scope.</param>
 	/// <param name="model">The generation model describing the attribute.</param>
-	static void BuildAttributeConstructor(CodeWriter writer, RuleAttributeGenerationModel model)
+	/// <param name="constructor">The constructor signature to emit.</param>
+	static void BuildAttributeConstructor(
+		CodeWriter writer,
+		RuleAttributeGenerationModel model,
+		GeneratedAttributeConstructor constructor
+	)
 	{
-		if (model.ConstructorParameters.IsEmpty)
-			return;
-
 		writer.XmlSummary(
 			$"Initializes the attribute with the values required by {CodeWriter.XmlSee(model.RuleType)}.",
 			"A required rule constructor value cannot be omitted; optional values keep their rule default."
 		);
 
-		var parameters = ImmutableArray.CreateBuilder<ParameterDeclarationOptions>(model.ConstructorParameters.Count);
+		var parameters = ImmutableArray.CreateBuilder<ParameterDeclarationOptions>(constructor.Parameters.Count);
 
-		foreach (var constructorParameter in model.ConstructorParameters)
+		foreach (var constructorParameter in constructor.Parameters)
 		{
 			var parameterType = constructorParameter.IsNullable
 				? constructorParameter.Type.AsTypeReference().Nullable(writer)
@@ -695,7 +790,7 @@ partial class ZodSchemaGenerator
 			},
 			constructorBody =>
 			{
-				foreach (var constructorParameter in model.ConstructorParameters)
+				foreach (var constructorParameter in constructor.Parameters)
 					constructorBody.Assignment(constructorParameter.PropertyName, constructorParameter.Name);
 			}
 		);

@@ -710,25 +710,41 @@ static class CustomRuleResolver
 	}
 
 	/// <summary>
-	/// Gets the public constructor parameters used to build the rule's arguments: the constructor the generated
-	/// attribute mirrors, matching the rule instantiation contract.
+	/// Gets every public constructor parameter used to build the rule's arguments across all attribute-addressable
+	/// constructors, matching the rule instantiation contract. Used to decide whether an applied named argument
+	/// is consumed by any overload.
 	/// </summary>
 	/// <param name="ruleType">The resolved rule type.</param>
-	/// <returns>The mapped constructor parameters.</returns>
-	static ImmutableArray<IParameterSymbol> MappedParameters(INamedTypeSymbol ruleType) =>
-		SelectAttributeConstructor(ruleType)?.Parameters ?? [];
+	/// <returns>The mapped constructor parameters, de-duplicated by name.</returns>
+	static ImmutableArray<IParameterSymbol> MappedParameters(INamedTypeSymbol ruleType)
+	{
+		HashSet<string> seen = [with(StringComparer.OrdinalIgnoreCase)];
+		var parameters = ImmutableArray.CreateBuilder<IParameterSymbol>();
+
+		foreach (var constructor in SelectAttributeConstructors(ruleType))
+		{
+			foreach (var parameter in constructor.Parameters)
+			{
+				if (seen.Add(parameter.Name))
+					parameters.Add(parameter);
+			}
+		}
+
+		return parameters.ToImmutable();
+	}
 
 	/// <summary>
-	/// Selects the public constructor a rule attribute mirrors and the generated validation instantiates: the
-	/// one whose parameters are all representable as attribute properties (a <c>message</c> or
-	/// <c>CancellationToken</c> parameter is consumed rather than mirrored), preferring the one with the most
-	/// parameters. Rules that declare a second overload only to accept a non-attribute-argument type (for
-	/// example <see cref="System.Text.RegularExpressions.Regex"/>) are still attribute-addressable through the
-	/// compatible overload.
+	/// Selects the public constructors a rule attribute mirrors and the generated validation instantiates: every
+	/// overload whose parameters are all representable as attribute properties (a <c>message</c> or
+	/// <c>CancellationToken</c> parameter is consumed rather than mirrored), widest first. A rule that overloads
+	/// its constructor for a non-attribute-argument type (for example <see cref="System.Text.RegularExpressions.Regex"/>)
+	/// only surfaces the compatible overload; a rule whose overloads are all addressable (for example the
+	/// versioned and versionless UUID rules) surfaces one attribute constructor per overload so each stays
+	/// reachable.
 	/// </summary>
 	/// <param name="ruleType">The rule type to inspect.</param>
-	/// <returns>The selected constructor, or <see langword="null"/> when the rule declares none.</returns>
-	internal static IMethodSymbol? SelectAttributeConstructor(INamedTypeSymbol ruleType)
+	/// <returns>The selected constructors, widest first, or an empty array when the rule declares none.</returns>
+	internal static ImmutableArray<IMethodSymbol> SelectAttributeConstructors(INamedTypeSymbol ruleType)
 	{
 		var candidates = ruleType
 			.InstanceConstructors.Where(static c => !c.IsStatic && c.DeclaredAccessibility == Accessibility.Public)
@@ -741,11 +757,16 @@ static class CustomRuleResolver
 			? [.. candidates.Where(static c => !c.IsImplicitlyDeclared)]
 			: candidates;
 
-		return considered
-				.Where(static c => c.Parameters.All(IsAttributeMappableParameter))
-				.OrderByDescending(static c => c.Parameters.Length)
-				.FirstOrDefault()
-			?? considered.OrderByDescending(static c => c.Parameters.Length).FirstOrDefault();
+		var mappable = considered
+			.Where(static c => c.Parameters.All(IsAttributeMappableParameter))
+			.OrderByDescending(static c => c.Parameters.Length)
+			.ToImmutableArray();
+
+		if (!mappable.IsEmpty)
+			return mappable;
+
+		// No overload is addressable; keep the widest so the caller can still report the offending parameter.
+		return [.. considered.OrderByDescending(static c => c.Parameters.Length).Take(1)];
 	}
 
 	static bool IsAttributeMappableParameter(IParameterSymbol parameter) =>
@@ -880,6 +901,19 @@ static class CustomRuleResolver
 		return false;
 	}
 
+	/// <summary>
+	/// Builds the rule constructor arguments for an applied attribute, choosing the rule overload the attribute
+	/// addresses. A rule that overloads its constructor (for example the versioned and versionless UUID rules)
+	/// exposes one attribute constructor per overload; the applied attribute's constructor selects the matching
+	/// rule overload, so a bare <c>[Uuid]</c> does not try to satisfy the versioned overload's required version.
+	/// </summary>
+	/// <param name="attribute">The applied attribute.</param>
+	/// <param name="ruleType">The resolved rule type.</param>
+	/// <param name="arguments">The argument expressions, in the selected constructor's parameter order.</param>
+	/// <param name="unmappedParameterName">
+	/// The parameter that could not be mapped when no overload could be satisfied.
+	/// </param>
+	/// <returns><see langword="true"/> when an overload was satisfied.</returns>
 	static bool TryBuildArguments(
 		AttributeData attribute,
 		INamedTypeSymbol ruleType,
@@ -890,10 +924,100 @@ static class CustomRuleResolver
 		arguments = new([]);
 		unmappedParameterName = null;
 
-		var constructor = SelectAttributeConstructor(ruleType);
-
-		if (constructor is null)
+		var candidates = SelectAttributeConstructors(ruleType);
+		if (candidates.IsDefaultOrEmpty)
 			return false;
+
+		// Prefer an overload that consumes every value the attribute supplies, so a named/positional value that
+		// only the wider overload declares (for example `Version`) is not silently dropped by a narrower one.
+		foreach (var candidate in candidates)
+		{
+			if (!ConsumesSuppliedArguments(attribute, candidate))
+				continue;
+
+			if (TryBuildArgumentsFor(attribute, candidate, out arguments, out _))
+				return true;
+		}
+
+		// Fall back to any overload that can be built: hand-authored attributes map positionally and may name
+		// their parameters differently from the rule's.
+		foreach (var candidate in candidates)
+		{
+			if (TryBuildArgumentsFor(attribute, candidate, out arguments, out _))
+				return true;
+		}
+
+		// Report the failure against the widest overload for a useful message.
+		TryBuildArgumentsFor(attribute, candidates[0], out _, out unmappedParameterName);
+		return false;
+	}
+
+	/// <summary>
+	/// Determines whether <paramref name="candidate"/> has a parameter for every value the applied attribute
+	/// supplies: each named argument is either a constructor parameter or part of the error identity, and each
+	/// positional argument maps by the applied constructor's parameter name or by position.
+	/// </summary>
+	static bool ConsumesSuppliedArguments(AttributeData attribute, IMethodSymbol candidate)
+	{
+		HashSet<string> parameterNames = [with(StringComparer.OrdinalIgnoreCase)];
+		foreach (var parameter in candidate.Parameters)
+			parameterNames.Add(parameter.Name);
+
+		foreach (var pair in attribute.NamedArguments)
+		{
+			if (IsIdentityOrValidationName(pair.Key))
+				continue;
+
+			if (!parameterNames.Contains(pair.Key))
+				return false;
+		}
+
+		var positional = attribute.ConstructorArguments;
+		if (positional.IsDefaultOrEmpty)
+			return true;
+
+		var appliedParameters = attribute.AttributeConstructor is { } appliedConstructor
+			? appliedConstructor.Parameters
+			: default;
+
+		for (var i = 0; i < positional.Length; i++)
+		{
+			var appliedName =
+				!appliedParameters.IsDefaultOrEmpty && i < appliedParameters.Length ? appliedParameters[i].Name : null;
+
+			if (appliedName is not null && parameterNames.Contains(appliedName))
+				continue;
+
+			if (i < candidate.Parameters.Length)
+				continue;
+
+			return false;
+		}
+
+		return true;
+	}
+
+	/// <summary>
+	/// Determines whether <paramref name="name"/> is consumed by every rule overload: the error identity
+	/// (<c>Code</c>/<c>Origin</c>) and the inherited <c>ValidationAttribute</c> message members are read from the
+	/// applied attribute rather than passed to the rule, so no overload needs a matching parameter.
+	/// </summary>
+	static bool IsIdentityOrValidationName(string name) =>
+		name.Equals("Code", StringComparison.OrdinalIgnoreCase)
+		|| name.Equals("Origin", StringComparison.OrdinalIgnoreCase)
+		|| name.Equals("ErrorMessage", StringComparison.OrdinalIgnoreCase)
+		|| name.Equals("ErrorMessageResourceName", StringComparison.OrdinalIgnoreCase)
+		|| name.Equals("ErrorMessageResourceType", StringComparison.OrdinalIgnoreCase);
+
+	static bool TryBuildArgumentsFor(
+		AttributeData attribute,
+		IMethodSymbol constructor,
+		out EquatableArray<string> arguments,
+		out string? unmappedParameterName
+	)
+	{
+		arguments = new([]);
+		unmappedParameterName = null;
 
 		var validation = ValidationAttributeData.FromAttributeData(attribute);
 		var positional = attribute.ConstructorArguments;

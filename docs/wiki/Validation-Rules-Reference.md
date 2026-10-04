@@ -187,7 +187,7 @@ Each built-in rule that can be expressed as an attribute ships a generated `Vali
 | `[Email]` | `EmailRule` | |
 | `[E164]` | `E164Rule` | |
 | `[Regex("…")]` | `RegexRule` | mirrors the `(string pattern, string? message)` overload |
-| `[UUID(UuidVersion.…)]` | `UUIDRule` | the version is required |
+| `[UUID]` / `[UUID(UuidVersion.…)]` | `UUIDRule` | the version is optional; omit it for the versionless rule |
 | `[ULID]` | `ULIDRule` | |
 | `[JWT]` | `JWTRule` | |
 | `[IPAddress]` / `[IPAddress(IPAddressRuleType.…)]` | `IPAddressRule` | defaults to `Any`; pass a type to require IPv4/IPv6 |

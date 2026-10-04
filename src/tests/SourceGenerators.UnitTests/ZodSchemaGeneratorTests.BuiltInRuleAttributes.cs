@@ -586,4 +586,103 @@ partial class ZodSchemaGeneratorTests
 			.That(generated)
 			.ContainsGeneratedCode("new global::ZodSharp.Rules.EmailRule(\"Not an email.\", \"bad_email\")");
 	}
+
+	/// <summary>
+	/// A <c>[ZodSchema]</c> class that applies the shipped <c>[UUID]</c> attribute both without a version and
+	/// with an explicit RFC 9562 version. The rule overloads its constructor, so the attribute overloads too.
+	/// </summary>
+	const string UuidAttributeSource = """
+		using ZodSharp;
+		using ZodSharp.Rules;
+
+		namespace Testing
+		{
+			[ZodSchema]
+			public partial class Identifiers
+			{
+				[UUID]
+				public string AnyUuid { get; set; } = string.Empty;
+
+				[UUID(UuidVersion.V4)]
+				public string V4Uuid { get; set; } = string.Empty;
+
+				[UUID(Version = UuidVersion.V7)]
+				public string V7Uuid { get; set; } = string.Empty;
+			}
+		}
+		""";
+
+	[Test]
+	public async Task RuleAttributeGeneration_GivenVersionlessAndVersionedUuid_SelectsTheMatchingRuleOverload(
+		CancellationToken cancellationToken
+	)
+	{
+		// Act
+		var driverResult = await GenerateAsync(UuidAttributeSource, cancellationToken);
+		var generated = driverResult.GetSource("IdentifiersSchema");
+
+		// Assert - the bare [UUID] maps to the versionless overload and [UUID(UuidVersion.V4)] to the versioned
+		// one, rather than both collapsing to the widest constructor (which would demand a version for [UUID]).
+		await Assert.That(generated).ContainsGeneratedCode("new global::ZodSharp.Rules.UUIDRule(null!, null!)");
+		await Assert
+			.That(generated)
+			.ContainsGeneratedCode(
+				"new global::ZodSharp.Rules.UUIDRule((global::ZodSharp.UuidVersion)4, null!, null!)"
+			);
+		// A version supplied through the property rather than positionally selects the versioned overload too.
+		await Assert
+			.That(generated)
+			.ContainsGeneratedCode(
+				"new global::ZodSharp.Rules.UUIDRule((global::ZodSharp.UuidVersion)7, null!, null!)"
+			);
+	}
+
+	[Test]
+	public async Task RuleAttributeGeneration_GivenVersionlessAndVersionedUuid_ValidatesWithTheMatchingOverload(
+		CancellationToken cancellationToken
+	)
+	{
+		// Arrange
+		var driverResult = await GenerateAsync(
+			UuidAttributeSource,
+			new ZodSourceGeneratorTestOptions().Compile(),
+			cancellationToken
+		);
+		var assembly = await Assert.That(driverResult.CompilationResult.Assembly).IsNotNull();
+		var modelType = assembly.GetType("Testing.Identifiers")!;
+		var validate = assembly.GetType("Testing.IdentifiersSchema")!.GetMethod("Validate")!;
+
+		// Act - each member receives a UUID of the version its attribute requires; the versionless member accepts
+		// either. A V7 UUID supplied to the V4 member fails only that rule.
+		var validInstance = Activator.CreateInstance(modelType)!;
+		modelType.GetProperty("AnyUuid")!.SetValue(validInstance, "550e8400-e29b-41d4-a716-446655440000");
+		modelType.GetProperty("V4Uuid")!.SetValue(validInstance, "550e8400-e29b-41d4-a716-446655440000");
+		modelType.GetProperty("V7Uuid")!.SetValue(validInstance, "0192b4c1-7a9b-7f5e-9a3c-2d4e6f8a0b1c");
+		var validResult = validate.Invoke(null, [validInstance])!;
+
+		var invalidInstance = Activator.CreateInstance(modelType)!;
+		modelType.GetProperty("AnyUuid")!.SetValue(invalidInstance, "0192b4c1-7a9b-7f5e-9a3c-2d4e6f8a0b1c");
+		modelType.GetProperty("V4Uuid")!.SetValue(invalidInstance, "0192b4c1-7a9b-7f5e-9a3c-2d4e6f8a0b1c");
+		modelType.GetProperty("V7Uuid")!.SetValue(invalidInstance, "0192b4c1-7a9b-7f5e-9a3c-2d4e6f8a0b1c");
+		var invalidResult = validate.Invoke(null, [invalidInstance])!;
+
+		// Assert
+		await Assert.That((bool)validResult.GetType().GetProperty("IsSuccess")!.GetValue(validResult)!).IsTrue();
+		await Assert.That((bool)invalidResult.GetType().GetProperty("IsSuccess")!.GetValue(invalidResult)!).IsFalse();
+	}
+
+	[Test]
+	public async Task RuleAttributeGeneration_GivenUuidRule_GeneratedAttributeExposesBothRuleOverloads(
+		CancellationToken cancellationToken
+	)
+	{
+		cancellationToken.ThrowIfCancellationRequested();
+
+		// Arrange - the shipped attribute is generated when the runtime assembly builds, so reflect over it here.
+		var attributeType = typeof(Rules.UUIDAttribute);
+
+		// Assert - the versionless and versioned rule overloads are both reachable through the attribute.
+		await Assert.That(attributeType.GetConstructor([])).IsNotNull();
+		await Assert.That(attributeType.GetConstructor([typeof(UuidVersion)])).IsNotNull();
+	}
 }

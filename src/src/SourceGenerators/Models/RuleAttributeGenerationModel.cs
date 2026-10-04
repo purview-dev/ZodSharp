@@ -14,10 +14,12 @@ namespace ZodSharp.SourceGenerators.Models;
 /// <c>[ZodRule(AllowMultiple = ...)]</c>.
 /// </param>
 /// <param name="Properties">The generated attribute properties, mirroring the rule constructor parameters.</param>
-/// <param name="ConstructorParameters">
-/// The attribute constructor parameters carrying the rule's constructor values, in the rule's declaration
+/// <param name="Constructors">
+/// The attribute constructors, one per attribute-addressable rule constructor, in the rule's declaration
 /// order. A parameter without a <see cref="GeneratedAttributeParameter.DefaultValue"/> is required, so the
-/// attribute cannot be applied without it.
+/// attribute cannot be applied without it. A rule with overloaded constructors (for example the versioned and
+/// versionless UUID rules) surfaces one attribute constructor per overload so each rule overload stays
+/// reachable.
 /// </param>
 readonly record struct RuleAttributeGenerationModel(
 	TypeIdentity RuleType,
@@ -27,8 +29,19 @@ readonly record struct RuleAttributeGenerationModel(
 	string? Origin,
 	bool AllowMultiple,
 	EquatableArray<GeneratedAttributeProperty> Properties,
-	EquatableArray<GeneratedAttributeParameter> ConstructorParameters = default
+	EquatableArray<GeneratedAttributeConstructor> Constructors = default
 );
+
+/// <summary>
+/// Describes one constructor of a generated validation attribute, mirroring a single attribute-addressable
+/// constructor of the rule it maps to.
+/// </summary>
+/// <param name="Parameters">
+/// The constructor parameters carrying the rule's constructor values. Empty when the rule overload has no
+/// attribute-addressable value parameters (its <c>message</c>/identity parameters are surfaced as properties),
+/// which produces an explicit parameterless constructor when another constructor is also emitted.
+/// </param>
+readonly record struct GeneratedAttributeConstructor(EquatableArray<GeneratedAttributeParameter> Parameters);
 
 /// <summary>
 /// Describes a settable property on a generated validation attribute.
