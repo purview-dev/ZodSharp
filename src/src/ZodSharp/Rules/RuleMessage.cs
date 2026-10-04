@@ -12,7 +12,7 @@ namespace ZodSharp.Rules;
 /// Centralising formatting keeps the culture provider in one place (satisfying CA1305) and lets every rule
 /// expose its message as a <c>public const string</c> without re-parsing that constant on each failure.
 /// </remarks>
-static class RuleMessage
+public static class RuleMessage
 {
 	static readonly ConcurrentDictionary<string, CompositeFormat> Formats = new(StringComparer.Ordinal);
 
