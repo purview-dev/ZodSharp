@@ -732,7 +732,7 @@ static class CustomRuleResolver
 		// attribute-mappable" vacuously and silently drop the rule's real constructor arguments. It is only a
 		// candidate when the rule declares no constructor of its own (for example a parameterless rule).
 		var considered = candidates.Any(static c => !c.IsImplicitlyDeclared)
-			? candidates.Where(static c => !c.IsImplicitlyDeclared).ToArray()
+			? [.. candidates.Where(static c => !c.IsImplicitlyDeclared)]
 			: candidates;
 
 		return considered
@@ -1091,6 +1091,7 @@ static class CustomRuleResolver
 		}
 	}
 
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0072:Add missing cases")]
 	static Type? GetNumericClrType(SpecialType specialType) =>
 		specialType switch
 		{
@@ -1108,6 +1109,7 @@ static class CustomRuleResolver
 			_ => null,
 		};
 
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0072:Add missing cases")]
 	static Type? GetNumericClrType(Type type) =>
 		Type.GetTypeCode(type) switch
 		{
