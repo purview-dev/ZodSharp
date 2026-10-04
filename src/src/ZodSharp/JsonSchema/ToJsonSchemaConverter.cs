@@ -194,7 +194,7 @@ public static class ToJsonSchemaConverter
 					if (maxValueField?.GetValue(rule) is double maxValue)
 						result.Maximum = maxValue;
 				}
-				else if (ruleName == "GreaterThanOrEqualRule")
+				else if (ruleName.StartsWith("GreaterThanOrEqualRule", StringComparison.Ordinal))
 				{
 					var minValueField = ruleType.GetField(
 						"_minValue",
@@ -203,7 +203,7 @@ public static class ToJsonSchemaConverter
 					if (minValueField?.GetValue(rule) is double minValue)
 						result.Minimum = minValue;
 				}
-				else if (ruleName == "LessThanOrEqualRule")
+				else if (ruleName.StartsWith("LessThanOrEqualRule", StringComparison.Ordinal))
 				{
 					var maxValueField = ruleType.GetField(
 						"_maxValue",
@@ -212,11 +212,11 @@ public static class ToJsonSchemaConverter
 					if (maxValueField?.GetValue(rule) is double maxValue)
 						result.Maximum = maxValue;
 				}
-				else if (ruleName == "IntRule")
+				else if (ruleName.StartsWith("IntRule", StringComparison.Ordinal))
 				{
 					result.Type = "integer";
 				}
-				else if (ruleName == "MultipleOfRule")
+				else if (ruleName.StartsWith("MultipleOfRule", StringComparison.Ordinal))
 				{
 					var divisorField = ruleType.GetField(
 						"_divisor",

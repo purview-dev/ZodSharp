@@ -22,10 +22,12 @@ public class ZodDate : ZodType<DateTime>
 	/// Equivalent to Zod's <c>z.date().min(value)</c>.
 	/// </summary>
 	/// <param name="minValue">The earliest allowed date (inclusive)</param>
+	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
 	/// <returns>This schema for method chaining</returns>
-	public ZodDate Min(DateTime minValue)
+	public ZodDate Min(DateTime minValue, string? message = null, string? code = null)
 	{
-		AddRule(new MinValueRule<DateTime>(minValue));
+		AddRule(new MinValueRule<DateTime>(minValue, message, code));
 		return this;
 	}
 
@@ -34,10 +36,12 @@ public class ZodDate : ZodType<DateTime>
 	/// Equivalent to Zod's <c>z.date().max(value)</c>.
 	/// </summary>
 	/// <param name="maxValue">The latest allowed date (inclusive)</param>
+	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
 	/// <returns>This schema for method chaining</returns>
-	public ZodDate Max(DateTime maxValue)
+	public ZodDate Max(DateTime maxValue, string? message = null, string? code = null)
 	{
-		AddRule(new MaxValueRule<DateTime>(maxValue));
+		AddRule(new MaxValueRule<DateTime>(maxValue, message, code));
 		return this;
 	}
 
@@ -46,10 +50,11 @@ public class ZodDate : ZodType<DateTime>
 	/// <see cref="DateTime.MaxValue"/>.
 	/// </summary>
 	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
 	/// <returns>This schema for method chaining</returns>
-	public override ZodDate NonSentinel(string? message = null)
+	public override ZodDate NonSentinel(string? message = null, string? code = null)
 	{
-		AddRule(new NonSentinelRule<DateTime>(message));
+		AddRule(new NonSentinelRule<DateTime>(message, code));
 		return this;
 	}
 }

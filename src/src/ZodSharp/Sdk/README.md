@@ -132,7 +132,7 @@ public class User
 }
 ```
 
-Marking the rule itself with the parameterless `[ZodRule]` makes the generator emit a matching `NoWhitespaceAttribute` whose properties mirror the rule's constructor parameters.
+Marking the rule itself with the parameterless `[ZodRule]` makes the generator emit a matching `NoWhitespaceAttribute`: its properties mirror the rule's constructor parameters, and its value parameters also become a constructor — a parameter the rule declares without a default is required at the call site, while one with a default keeps that default.
 
 Rules can be **generic**: map the unbound generic rule type and the generator closes it with the property type, so one rule serves every primitive. Implementing `IZodRule` lets the rule supply a per-member error code:
 

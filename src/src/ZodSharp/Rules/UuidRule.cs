@@ -16,18 +16,24 @@ public readonly record struct UUIDRule : Core.IValidationRule<string>, Core.IStr
 	/// <summary>Gets the version-specific message format; <c>{0}</c> is the version and <c>{1}</c> the value.</summary>
 	public const string VersionedMessageFormat = "Invalid UUID v{0} format: {1}";
 
-	readonly string? _message;
+	const string NilUuid = "00000000-0000-0000-0000-000000000000";
+	const string MaxUuid = "ffffffff-ffff-ffff-ffff-ffffffffffff";
+
 	readonly UuidVersion? _version;
+	readonly string? _message;
+	readonly string _code;
 
 	/// <summary>
 	/// Initializes a new instance of the UuidRule struct with Zod-parity semantics
 	/// (version 1-8, variant 8-9/a-b, plus the nil and max UUIDs).
 	/// </summary>
 	/// <param name="message">Optional error message</param>
-	public UUIDRule(string? message = null)
+	/// <param name="code">Optional error code override</param>
+	public UUIDRule(string? message = null, string? code = null)
 	{
 		_version = null;
 		_message = message.OrNull();
+		_code = code.Or(ErrorCode);
 	}
 
 	/// <summary>
@@ -35,13 +41,15 @@ public readonly record struct UUIDRule : Core.IValidationRule<string>, Core.IStr
 	/// </summary>
 	/// <param name="version">The required UUID version</param>
 	/// <param name="message">Optional error message</param>
-	public UUIDRule(UuidVersion version, string? message = null)
+	/// <param name="code">Optional error code override</param>
+	public UUIDRule(UuidVersion version, string? message = null, string? code = null)
 	{
 		if (version == UuidVersion.None)
 			throw new ArgumentOutOfRangeException(nameof(version), version, "UUID version must be between V1 and V8.");
 
 		_version = version;
 		_message = message.OrNull();
+		_code = code.Or(ErrorCode);
 	}
 
 	/// <summary>
@@ -85,16 +93,16 @@ public readonly record struct UUIDRule : Core.IValidationRule<string>, Core.IStr
 	/// <returns>The error message</returns>
 	public string GetErrorMessage(ReadOnlySpan<char> value) => GetErrorMessageCore(value.ToString());
 
-	const string NilUuid = "00000000-0000-0000-0000-000000000000";
-	const string MaxUuid = "ffffffff-ffff-ffff-ffff-ffffffffffff";
+	string GetErrorMessageCore(string value)
+	{
+		if (_message is not null)
+			return RuleMessage.Format(_message, value, _version);
 
-	string GetErrorMessageCore(string value) =>
-		_message
-		?? (
-			_version is UuidVersion version
-				? RuleMessage.Format(VersionedMessageFormat, (int)version, value)
-				: RuleMessage.Format(MessageFormat, value)
-		);
+		// If a specific version is required, include it in the message; otherwise, use the generic message.
+		return _version is UuidVersion version
+			? RuleMessage.Format(VersionedMessageFormat, (int)version, value)
+			: RuleMessage.Format(MessageFormat, value);
+	}
 
 	static bool IsValidVersionless(ReadOnlySpan<char> value)
 	{
@@ -134,7 +142,7 @@ public readonly record struct UUIDRule : Core.IValidationRule<string>, Core.IStr
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
 	public string Code => ErrorCode;
 
-	string? Core.IZodRule.Code => ErrorCode;
+	string? Core.IZodRule.Code => _code;
 
 	string? Core.IZodRule.Origin => null;
 }

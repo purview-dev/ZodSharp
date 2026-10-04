@@ -105,7 +105,7 @@ public class ZodString : ZodType<string>
 				continue;
 
 			builder ??= ImmutableArray.CreateBuilder<ValidationError>();
-			builder.Add(new ValidationError(rule.Code, rule.GetErrorMessage(value), EmptyPath));
+			builder.Add(new ValidationError(ResolveCode(rule), rule.GetErrorMessage(value), EmptyPath));
 		}
 
 		if (builder is null)
@@ -115,16 +115,26 @@ public class ZodString : ZodType<string>
 		return false;
 	}
 
+	/// <summary>
+	/// Resolves the error code to report for a failed span rule: a rule that implements
+	/// <see cref="IZodRule"/> and supplies a code wins over the rule's intrinsic
+	/// <see cref="IStringValidationRule.Code"/>.
+	/// </summary>
+	static string ResolveCode(IStringValidationRule rule) =>
+		rule is IZodRule zodRule && zodRule.Code is { } code ? code : rule.Code;
+
 	bool SupportsSpanRules => _spanRulesSupported && SupportsSpanValidation && _spanRules.Length == RuleCount;
 
 	/// <summary>
 	/// Adds a minimum length validation.
 	/// </summary>
 	/// <param name="minLength">The minimum length</param>
+	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
 	/// <returns>This schema for method chaining</returns>
-	public ZodString Min(int minLength)
+	public ZodString Min(int minLength, string? message = null, string? code = null)
 	{
-		AddRule(new MinLengthRule(minLength));
+		AddRule(new MinLengthRule(minLength, message, code));
 		return this;
 	}
 
@@ -132,20 +142,24 @@ public class ZodString : ZodType<string>
 	/// Adds a maximum length validation.
 	/// </summary>
 	/// <param name="maxLength">The maximum length</param>
+	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
 	/// <returns>This schema for method chaining</returns>
-	public ZodString Max(int maxLength)
+	public ZodString Max(int maxLength, string? message = null, string? code = null)
 	{
-		AddRule(new MaxLengthRule(maxLength));
+		AddRule(new MaxLengthRule(maxLength, message, code));
 		return this;
 	}
 
 	/// <summary>
 	/// Adds an email format validation.
 	/// </summary>
+	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
 	/// <returns>This schema for method chaining</returns>
-	public ZodString Email()
+	public ZodString Email(string? message = null, string? code = null)
 	{
-		AddRule(new EmailRule());
+		AddRule(new EmailRule(message, code));
 		return this;
 	}
 
@@ -154,10 +168,11 @@ public class ZodString : ZodType<string>
 	/// </summary>
 	/// <param name="pattern">The regex pattern</param>
 	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
 	/// <returns>This schema for method chaining</returns>
-	public ZodString Regex(Regex pattern, string? message = null)
+	public ZodString Regex(Regex pattern, string? message = null, string? code = null)
 	{
-		AddRule(new RegexRule(pattern, message));
+		AddRule(new RegexRule(pattern, message, code));
 		return this;
 	}
 
@@ -166,22 +181,25 @@ public class ZodString : ZodType<string>
 	/// </summary>
 	/// <param name="pattern">The regex pattern string</param>
 	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
 	/// <returns>This schema for method chaining</returns>
-	public ZodString Regex(string pattern, string? message = null)
+	public ZodString Regex(string pattern, string? message = null, string? code = null)
 	{
 		Regex regex = new(pattern, RegexOptions.Compiled, TimeSpan.FromMilliseconds(100));
-		return Regex(regex, message);
+		return Regex(regex, message, code);
 	}
 
 	/// <summary>
 	/// Sets the exact string length.
 	/// </summary>
 	/// <param name="length">The exact length</param>
+	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
 	/// <returns>This schema for method chaining</returns>
-	public ZodString Length(int length)
+	public ZodString Length(int length, string? message = null, string? code = null)
 	{
-		AddRule(new MinLengthRule(length));
-		AddRule(new MaxLengthRule(length));
+		AddRule(new MinLengthRule(length, message, code));
+		AddRule(new MaxLengthRule(length, message, code));
 		return this;
 	}
 
@@ -189,15 +207,16 @@ public class ZodString : ZodType<string>
 	/// Adds a URL format validation.
 	/// </summary>
 	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
 	/// <returns>This schema for method chaining</returns>
 	[System.Diagnostics.CodeAnalysis.SuppressMessage(
 		"Naming",
 		"PDS0004:Use correct acronym capitalization",
 		Justification = "Name is real"
 	)]
-	public ZodString Url(string? message = null)
+	public ZodString Url(string? message = null, string? code = null)
 	{
-		AddRule(new UrlRule(message));
+		AddRule(new UrlRule(message, code));
 		return this;
 	}
 
@@ -205,18 +224,20 @@ public class ZodString : ZodType<string>
 	/// Adds a URI format validation that accepts a relative or absolute URI.
 	/// </summary>
 	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
 	/// <returns>This schema for method chaining</returns>
-	public ZodString Uri(string? message = null) => Uri(UriKind.RelativeOrAbsolute, message);
+	public ZodString Uri(string? message = null, string? code = null) => Uri(UriKind.RelativeOrAbsolute, message, code);
 
 	/// <summary>
 	/// Adds a URI format validation requiring the specified <see cref="UriKind"/>.
 	/// </summary>
 	/// <param name="uriKind">The kind of URI the value must be</param>
 	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
 	/// <returns>This schema for method chaining</returns>
-	public ZodString Uri(UriKind uriKind, string? message = null)
+	public ZodString Uri(UriKind uriKind, string? message = null, string? code = null)
 	{
-		AddRule(new UriRule(uriKind, message));
+		AddRule(new UriRule(uriKind, message, code));
 		return this;
 	}
 
@@ -224,10 +245,11 @@ public class ZodString : ZodType<string>
 	/// Adds a phone number format validation.
 	/// </summary>
 	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
 	/// <returns>This schema for method chaining</returns>
-	public ZodString Phone(string? message = null)
+	public ZodString Phone(string? message = null, string? code = null)
 	{
-		AddRule(new PhoneRule(message));
+		AddRule(new PhoneRule(message, code));
 		return this;
 	}
 
@@ -235,10 +257,11 @@ public class ZodString : ZodType<string>
 	/// Adds a credit card number format validation.
 	/// </summary>
 	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
 	/// <returns>This schema for method chaining</returns>
-	public ZodString CreditCard(string? message = null)
+	public ZodString CreditCard(string? message = null, string? code = null)
 	{
-		AddRule(new CreditCardRule(message));
+		AddRule(new CreditCardRule(message, code));
 		return this;
 	}
 
@@ -246,10 +269,11 @@ public class ZodString : ZodType<string>
 	/// Adds a Base64 string format validation.
 	/// </summary>
 	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
 	/// <returns>This schema for method chaining</returns>
-	public ZodString Base64String(string? message = null)
+	public ZodString Base64String(string? message = null, string? code = null)
 	{
-		AddRule(new Base64StringRule(message));
+		AddRule(new Base64StringRule(message, code));
 		return this;
 	}
 
@@ -258,10 +282,11 @@ public class ZodString : ZodType<string>
 	/// variant nibble, plus the nil and max UUIDs.
 	/// </summary>
 	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
 	/// <returns>This schema for method chaining</returns>
-	public ZodString UUID(string? message = null)
+	public ZodString UUID(string? message = null, string? code = null)
 	{
-		AddRule(new UUIDRule(message));
+		AddRule(new UUIDRule(message, code));
 		return this;
 	}
 
@@ -270,10 +295,11 @@ public class ZodString : ZodType<string>
 	/// </summary>
 	/// <param name="version">The required UUID version</param>
 	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
 	/// <returns>This schema for method chaining</returns>
-	public ZodString UUID(UuidVersion version, string? message = null)
+	public ZodString UUID(UuidVersion version, string? message = null, string? code = null)
 	{
-		AddRule(new UUIDRule(version, message));
+		AddRule(new UUIDRule(version, message, code));
 		return this;
 	}
 
@@ -281,11 +307,18 @@ public class ZodString : ZodType<string>
 	/// Adds a validation that the string must start with the specified prefix.
 	/// </summary>
 	/// <param name="prefix">The required prefix</param>
+	/// <param name="comparison">The string comparison type</param>
 	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
 	/// <returns>This schema for method chaining</returns>
-	public ZodString StartsWith(string prefix, string? message = null)
+	public ZodString StartsWith(
+		string prefix,
+		StringComparison comparison = StringComparison.Ordinal,
+		string? message = null,
+		string? code = null
+	)
 	{
-		AddRule(new StartsWithRule(prefix, message));
+		AddRule(new StartsWithRule(prefix, comparison, message, code));
 		return this;
 	}
 
@@ -293,11 +326,18 @@ public class ZodString : ZodType<string>
 	/// Adds a validation that the string must end with the specified suffix.
 	/// </summary>
 	/// <param name="suffix">The required suffix</param>
+	/// <param name="comparison">The string comparison type</param>
 	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
 	/// <returns>This schema for method chaining</returns>
-	public ZodString EndsWith(string suffix, string? message = null)
+	public ZodString EndsWith(
+		string suffix,
+		StringComparison comparison = StringComparison.Ordinal,
+		string? message = null,
+		string? code = null
+	)
 	{
-		AddRule(new EndsWithRule(suffix, message));
+		AddRule(new EndsWithRule(suffix, comparison, message, code));
 		return this;
 	}
 
@@ -307,10 +347,11 @@ public class ZodString : ZodType<string>
 	/// </summary>
 	/// <param name="substring">The required substring</param>
 	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
 	/// <returns>This schema for method chaining</returns>
-	public ZodString Includes(string substring, string? message = null)
+	public ZodString Includes(string substring, string? message = null, string? code = null)
 	{
-		AddRule(new IncludesRule(substring, message));
+		AddRule(new IncludesRule(substring, message, code));
 		return this;
 	}
 
@@ -319,10 +360,25 @@ public class ZodString : ZodType<string>
 	/// Equivalent to Zod's <c>z.string().ip()</c>.
 	/// </summary>
 	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
 	/// <returns>This schema for method chaining</returns>
-	public ZodString IP(string? message = null)
+	public ZodString IP(string? message = null, string? code = null)
 	{
-		AddRule(new IPAddressRule(message));
+		AddRule(new IPAddressRule(message, code));
+		return this;
+	}
+
+	/// <summary>
+	/// Adds an IPv4 or IPv6 address format validation requiring the specified
+	/// <see cref="IPAddressRuleType"/>.
+	/// </summary>
+	/// <param name="ruleType">The IP address family the value must be</param>
+	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
+	/// <returns>This schema for method chaining</returns>
+	public ZodString IP(IPAddressRuleType ruleType, string? message = null, string? code = null)
+	{
+		AddRule(new IPAddressRule(ruleType, message, code));
 		return this;
 	}
 
@@ -331,10 +387,11 @@ public class ZodString : ZodType<string>
 	/// Equivalent to Zod's <c>z.string().jwt()</c>.
 	/// </summary>
 	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
 	/// <returns>This schema for method chaining</returns>
-	public ZodString JWT(string? message = null)
+	public ZodString JWT(string? message = null, string? code = null)
 	{
-		AddRule(new JWTRule(message));
+		AddRule(new JWTRule(message, code));
 		return this;
 	}
 
@@ -343,10 +400,11 @@ public class ZodString : ZodType<string>
 	/// Equivalent to Zod's <c>z.string().hex()</c>.
 	/// </summary>
 	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
 	/// <returns>This schema for method chaining</returns>
-	public ZodString Hex(string? message = null)
+	public ZodString Hex(string? message = null, string? code = null)
 	{
-		AddRule(new HexRule(message));
+		AddRule(new HexRule(message, code));
 		return this;
 	}
 
@@ -355,15 +413,16 @@ public class ZodString : ZodType<string>
 	/// Equivalent to Zod's <c>z.string().base64url()</c>.
 	/// </summary>
 	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
 	/// <returns>This schema for method chaining</returns>
 	[System.Diagnostics.CodeAnalysis.SuppressMessage(
 		"Naming",
 		"PDS0004:Use correct acronym capitalization",
 		Justification = "Name matches Zod's base64url() method."
 	)]
-	public ZodString Base64Url(string? message = null)
+	public ZodString Base64Url(string? message = null, string? code = null)
 	{
-		AddRule(new Base64UrlRule(message));
+		AddRule(new Base64UrlRule(message, code));
 		return this;
 	}
 
@@ -372,10 +431,11 @@ public class ZodString : ZodType<string>
 	/// Equivalent to Zod's <c>z.string().ulid()</c>.
 	/// </summary>
 	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
 	/// <returns>This schema for method chaining</returns>
-	public ZodString ULID(string? message = null)
+	public ZodString ULID(string? message = null, string? code = null)
 	{
-		AddRule(new ULIDRule(message));
+		AddRule(new ULIDRule(message, code));
 		return this;
 	}
 
@@ -384,10 +444,11 @@ public class ZodString : ZodType<string>
 	/// Equivalent to Zod's <c>z.string().datetime()</c>.
 	/// </summary>
 	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
 	/// <returns>This schema for method chaining</returns>
-	public ZodString Datetime(string? message = null)
+	public ZodString Datetime(string? message = null, string? code = null)
 	{
-		AddRule(new DatetimeStringRule(message));
+		AddRule(new DatetimeStringRule(message, code));
 		return this;
 	}
 
@@ -396,10 +457,11 @@ public class ZodString : ZodType<string>
 	/// Equivalent to Zod's <c>z.string().date()</c>.
 	/// </summary>
 	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
 	/// <returns>This schema for method chaining</returns>
-	public ZodString Date(string? message = null)
+	public ZodString Date(string? message = null, string? code = null)
 	{
-		AddRule(new DateStringRule(message));
+		AddRule(new DateStringRule(message, code));
 		return this;
 	}
 
@@ -408,10 +470,11 @@ public class ZodString : ZodType<string>
 	/// Equivalent to Zod's <c>z.string().time()</c>.
 	/// </summary>
 	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
 	/// <returns>This schema for method chaining</returns>
-	public ZodString Time(string? message = null)
+	public ZodString Time(string? message = null, string? code = null)
 	{
-		AddRule(new TimeStringRule(message));
+		AddRule(new TimeStringRule(message, code));
 		return this;
 	}
 
@@ -420,10 +483,11 @@ public class ZodString : ZodType<string>
 	/// Equivalent to Zod's <c>z.string().nanoid()</c>.
 	/// </summary>
 	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
 	/// <returns>This schema for method chaining</returns>
-	public ZodString Nanoid(string? message = null)
+	public ZodString Nanoid(string? message = null, string? code = null)
 	{
-		AddRule(new NanoidRule(message));
+		AddRule(new NanoidRule(message, code));
 		return this;
 	}
 
@@ -432,10 +496,11 @@ public class ZodString : ZodType<string>
 	/// Equivalent to Zod's <c>z.string().cuid2()</c>.
 	/// </summary>
 	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
 	/// <returns>This schema for method chaining</returns>
-	public ZodString Cuid2(string? message = null)
+	public ZodString Cuid2(string? message = null, string? code = null)
 	{
-		AddRule(new Cuid2Rule(message));
+		AddRule(new Cuid2Rule(message, code));
 		return this;
 	}
 
@@ -444,10 +509,11 @@ public class ZodString : ZodType<string>
 	/// Equivalent to Zod's <c>z.string().e164()</c>.
 	/// </summary>
 	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
 	/// <returns>This schema for method chaining</returns>
-	public ZodString E164(string? message = null)
+	public ZodString E164(string? message = null, string? code = null)
 	{
-		AddRule(new E164Rule(message));
+		AddRule(new E164Rule(message, code));
 		return this;
 	}
 
@@ -455,10 +521,11 @@ public class ZodString : ZodType<string>
 	/// Adds a non-sentinel validation that rejects <c>null</c>, empty, and whitespace strings.
 	/// </summary>
 	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
 	/// <returns>This schema for method chaining</returns>
-	public override ZodString NonSentinel(string? message = null)
+	public override ZodString NonSentinel(string? message = null, string? code = null)
 	{
-		AddRule(new NonSentinelRule<string>(message));
+		AddRule(new NonSentinelRule<string>(message, code));
 		return this;
 	}
 
@@ -493,7 +560,7 @@ public class ZodString : ZodType<string>
 		return new ZodStringWrapper(transform);
 	}
 
-	class ZodStringWrapper(ZodTransform<string, string> transform) : ZodString
+	sealed class ZodStringWrapper(ZodTransform<string, string> transform) : ZodString
 	{
 		protected override bool SupportsSpanValidation => false;
 

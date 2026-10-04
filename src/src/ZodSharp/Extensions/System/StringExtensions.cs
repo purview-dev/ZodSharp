@@ -1,11 +1,11 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 
 namespace System;
 
 /// <inheritdoc/>
 [EditorBrowsable(EditorBrowsableState.Never)]
-public static class StringExtensions
+static class StringExtensions
 {
 	/// <summary>
 	/// Returns the string if it is not null or empty; otherwise, returns null.

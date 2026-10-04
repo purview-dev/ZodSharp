@@ -13,13 +13,19 @@ public readonly record struct ULIDRule : Core.IValidationRule<string>, Core.IStr
 	/// <summary>Gets the message format; <c>{0}</c> is the offending value.</summary>
 	public const string MessageFormat = "Invalid ULID: {0}";
 
-	readonly string? _message;
+	readonly string _message;
+	readonly string _code;
 
 	/// <summary>
 	/// Initializes a new instance of the ULIDRule struct.
 	/// </summary>
 	/// <param name="message">Optional error message</param>
-	public ULIDRule(string? message = null) => _message = message.OrNull();
+	/// <param name="code">Optional error code override</param>
+	public ULIDRule(string? message = null, string? code = null)
+	{
+		_message = message.Or(MessageFormat);
+		_code = code.Or(ErrorCode);
+	}
 
 	/// <summary>
 	/// Validates that the value is a ULID.
@@ -56,7 +62,7 @@ public readonly record struct ULIDRule : Core.IValidationRule<string>, Core.IStr
 	/// </summary>
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
-	public string GetErrorMessage(in string value) => _message ?? RuleMessage.Format(MessageFormat, value);
+	public string GetErrorMessage(in string value) => RuleMessage.Format(_message ?? MessageFormat, value);
 
 	/// <summary>
 	/// Gets the error message for a failed span validation.
@@ -64,7 +70,7 @@ public readonly record struct ULIDRule : Core.IValidationRule<string>, Core.IStr
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
 	public string GetErrorMessage(ReadOnlySpan<char> value) =>
-		_message ?? RuleMessage.Format(MessageFormat, value.ToString());
+		RuleMessage.Format(_message ?? MessageFormat, value.ToString());
 
 	static bool IsCrockfordBase32(char c) =>
 		c switch
@@ -86,7 +92,7 @@ public readonly record struct ULIDRule : Core.IValidationRule<string>, Core.IStr
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
 	public string Code => ErrorCode;
 
-	string? Core.IZodRule.Code => ErrorCode;
+	string? Core.IZodRule.Code => _code;
 
 	string? Core.IZodRule.Origin => null;
 }

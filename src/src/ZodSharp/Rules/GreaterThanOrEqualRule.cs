@@ -4,8 +4,10 @@ namespace ZodSharp.Rules;
 /// Validation rule for an inclusive lower numeric bound (greater than or equal to).
 /// Uses struct to avoid allocations.
 /// </summary>
+/// <typeparam name="T">The comparable type</typeparam>
 [Core.ZodRule]
-public readonly record struct GreaterThanOrEqualRule : Core.IValidationRule<double>, Core.IZodRule
+public readonly record struct GreaterThanOrEqualRule<T> : Core.IValidationRule<T>, Core.IZodRule
+	where T : IComparable<T>
 {
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
 	public const string ErrorCode = "too_small";
@@ -13,18 +15,21 @@ public readonly record struct GreaterThanOrEqualRule : Core.IValidationRule<doub
 	/// <summary>Gets the message format; <c>{0}</c> is the bound and <c>{1}</c> the offending value.</summary>
 	public const string MessageFormat = "Value must be greater than or equal to {0}, but got {1}";
 
-	readonly double _minValue;
-	readonly string? _message;
+	readonly T _minValue;
+	readonly string _message;
+	readonly string _code;
 
 	/// <summary>
 	/// Initializes a new instance of the GreaterThanOrEqualRule struct.
 	/// </summary>
 	/// <param name="minValue">The inclusive lower bound</param>
 	/// <param name="message">Optional error message</param>
-	public GreaterThanOrEqualRule(double minValue, string? message = null)
+	/// <param name="code">Optional error code override</param>
+	public GreaterThanOrEqualRule(T minValue, string? message = null, string? code = null)
 	{
 		_minValue = minValue;
-		_message = message.OrNull();
+		_message = message.Or(MessageFormat);
+		_code = code.Or(ErrorCode);
 	}
 
 	/// <summary>
@@ -32,19 +37,19 @@ public readonly record struct GreaterThanOrEqualRule : Core.IValidationRule<doub
 	/// </summary>
 	/// <param name="value">The value to validate</param>
 	/// <returns>True if valid, false otherwise</returns>
-	public bool IsValid(in double value) => value >= _minValue;
+	public bool IsValid(in T value) => value.CompareTo(_minValue) >= 0;
 
 	/// <summary>
 	/// Gets the error message for a failed validation.
 	/// </summary>
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
-	public string GetErrorMessage(in double value) => _message ?? RuleMessage.Format(MessageFormat, _minValue, value);
+	public string GetErrorMessage(in T value) => RuleMessage.Format(_message ?? MessageFormat, _minValue, value);
 
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
 	public string Code => ErrorCode;
 
-	string? Core.IZodRule.Code => ErrorCode;
+	string? Core.IZodRule.Code => _code;
 
 	string? Core.IZodRule.Origin => null;
 }

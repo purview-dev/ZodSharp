@@ -33,7 +33,7 @@ The generator reports `Origin = "string"` for string size failures, `Origin = "a
 
 ### Rule errors
 
-Rules evaluated by the base `Validate` pipeline emit Zod-compatible codes: `too_small`/`too_big` for bounds, `not_multiple_of`/`not_finite` for numbers, `invalid_string` for string-format validations, `invalid_type` for `IntRule`, and `invalid_value` for `NonSentinelRule<T>`. Custom rules that do not declare a code default to `validation_failed`. Every rule exposes its correlated code and message template as public `const string ErrorCode` / `MessageFormat` constants so tests can assert against the rule rather than duplicating literals; a source-declared rule that omits them is reported as `ZODSGEN042`. Structured `too_small`/`too_big` issues (with `Origin`, `Minimum`/`Maximum`, and `Inclusive`) are produced by `ZodArray` and by the source generator's size validators.
+Rules evaluated by the base `Validate` pipeline emit Zod-compatible codes: `too_small`/`too_big` for bounds, `not_multiple_of`/`not_finite` for numbers, `invalid_string` for string-format validations, `invalid_type` for `IntRule<T>`, and `invalid_value` for `NonSentinelRule<T>`. Custom rules that do not declare a code default to `validation_failed`. Every rule exposes its correlated code and message template as public `const string ErrorCode` / `MessageFormat` constants so tests can assert against the rule rather than duplicating literals; a source-declared rule that omits them is reported as `ZODSGEN042`. Structured `too_small`/`too_big` issues (with `Origin`, `Minimum`/`Maximum`, and `Inclusive`) are produced by `ZodArray` and by the source generator's size validators.
 
 ### String transforms allocate
 
@@ -41,7 +41,7 @@ Rules evaluated by the base `Validate` pipeline emit Zod-compatible codes: `too_
 
 ### Number semantics
 
-`ZodNumber` operates on `double`. `Int()`, `Safe()`, and `Finite()` are validation rules, not conversions; `.Int()` rejects fractional values rather than rounding them. `Positive()`/`Negative()` are strict (they reject `0`; use `NonNegative()`/`NonPositive()` for inclusive bounds). `MultipleOf` compares the quotient to its nearest integer with a relative tolerance (`1e-12`), so `0.3` is accepted for `MultipleOf(0.1)` while `0.3000000001` is not; NaN and infinity are rejected, and a zero divisor throws `ArgumentException`.
+`ZodNumber` operates on `double`. `Int()`, `Safe()`, and `Finite()` are validation rules, not conversions; `.Int()` rejects fractional values rather than rounding them. `Positive()`/`Negative()` are strict (they reject `0`; use `NonNegative()`/`NonPositive()` for inclusive bounds). `MultipleOf` compares the distance to the nearest multiple against a relative tolerance (`1e-12`), so `0.3` is accepted for `MultipleOf(0.1)` while `0.3000000001` is not; NaN and infinity are rejected, and a zero divisor throws `ArgumentException`.
 
 ### Enum semantics
 

@@ -13,7 +13,7 @@ public class RuleConstantsTests
 	/// <see cref="Core.IValidationRule{T}"/>.
 	/// </summary>
 	public static IEnumerable<Type> RuleTypes() =>
-		typeof(IntRule)
+		typeof(IntRule<>)
 			.Assembly.GetTypes()
 			.Where(type => type is { IsPublic: true, IsValueType: true } && type.Namespace == "ZodSharp.Rules")
 			.Where(type =>

@@ -13,18 +13,21 @@ public readonly record struct UriRule : Core.IValidationRule<string>, Core.IZodR
 	/// <summary>Gets the message format; <c>{0}</c> is the <see cref="UriKind"/> and <c>{1}</c> the value.</summary>
 	public const string MessageFormat = "Invalid Uri, kind: {0}, format: {1}";
 
-	readonly string? _message;
 	readonly UriKind _uriKind;
+	readonly string _message;
+	readonly string _code;
 
 	/// <summary>
-	/// Initializes a new instance of the UrlRule struct.
+	/// Initializes a new instance of the UriRule struct.
 	/// </summary>
 	/// <param name="uriKind">The uri kind to validate against</param>
 	/// <param name="message">Optional error message</param>
-	public UriRule(UriKind uriKind, string? message = null)
+	/// <param name="code">Optional error code override</param>
+	public UriRule(UriKind uriKind, string? message = null, string? code = null)
 	{
 		_uriKind = uriKind;
-		_message = message.OrNull();
+		_message = message.Or(MessageFormat);
+		_code = code.Or(ErrorCode);
 	}
 
 	/// <summary>
@@ -40,12 +43,12 @@ public readonly record struct UriRule : Core.IValidationRule<string>, Core.IZodR
 	/// </summary>
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
-	public string GetErrorMessage(in string value) => _message ?? RuleMessage.Format(MessageFormat, _uriKind, value);
+	public string GetErrorMessage(in string value) => RuleMessage.Format(_message ?? MessageFormat, _uriKind, value);
 
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
 	public string Code => ErrorCode;
 
-	string? Core.IZodRule.Code => ErrorCode;
+	string? Core.IZodRule.Code => _code;
 
 	string? Core.IZodRule.Origin => null;
 }

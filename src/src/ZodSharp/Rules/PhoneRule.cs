@@ -15,8 +15,8 @@ public readonly record struct PhoneRule : Core.IValidationRule<string>, Core.ISt
 	/// <summary>Gets the message format; <c>{0}</c> is the offending value.</summary>
 	public const string MessageFormat = "Invalid phone number format: {0}";
 
-	readonly string? _message;
-	readonly string? _code;
+	readonly string _message;
+	readonly string _code;
 
 	/// <summary>
 	/// Initializes a new instance of the PhoneRule struct.
@@ -25,8 +25,8 @@ public readonly record struct PhoneRule : Core.IValidationRule<string>, Core.ISt
 	/// <param name="code">Optional error code override</param>
 	public PhoneRule(string? message = null, string? code = null)
 	{
-		_message = message.OrNull();
-		_code = code.OrNull();
+		_message = message.Or(MessageFormat);
+		_code = code.Or(ErrorCode);
 	}
 
 	/// <summary>
@@ -71,7 +71,7 @@ public readonly record struct PhoneRule : Core.IValidationRule<string>, Core.ISt
 	/// </summary>
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
-	public string GetErrorMessage(in string value) => _message ?? RuleMessage.Format(MessageFormat, value);
+	public string GetErrorMessage(in string value) => RuleMessage.Format(_message ?? MessageFormat, value);
 
 	/// <summary>
 	/// Gets the error message for a failed span validation.
@@ -79,12 +79,12 @@ public readonly record struct PhoneRule : Core.IValidationRule<string>, Core.ISt
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
 	public string GetErrorMessage(ReadOnlySpan<char> value) =>
-		_message ?? RuleMessage.Format(MessageFormat, value.ToString());
+		RuleMessage.Format(_message ?? MessageFormat, value.ToString());
 
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
 	public string Code => ErrorCode;
 
-	string? Core.IZodRule.Code => _code ?? ErrorCode;
+	string? Core.IZodRule.Code => _code;
 
 	string? Core.IZodRule.Origin => null;
 }

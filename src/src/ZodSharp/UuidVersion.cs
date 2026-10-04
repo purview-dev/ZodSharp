@@ -1,7 +1,7 @@
 namespace ZodSharp;
 
 /// <summary>
-/// RFC 9562 UUID versions supported by <see cref="Schemas.ZodString.UUID(UuidVersion, string?)"/>.
+/// RFC 9562 UUID versions supported by <see cref="Schemas.ZodString.UUID(UuidVersion, string?, string?)"/>.
 /// </summary>
 public enum UuidVersion
 {

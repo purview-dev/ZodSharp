@@ -16,17 +16,20 @@ public readonly record struct RegexRule : Core.IValidationRule<string>, Core.ISt
 	public const string MessageFormat = "String does not match the required pattern: {0}";
 
 	readonly Regex _pattern;
-	readonly string? _message;
+	readonly string _message;
+	readonly string _code;
 
 	/// <summary>
 	/// Initializes a new instance of the RegexRule struct.
 	/// </summary>
 	/// <param name="pattern">The regex pattern</param>
 	/// <param name="message">Optional error message</param>
-	public RegexRule(Regex pattern, string? message = null)
+	/// <param name="code">Optional error code override</param>
+	public RegexRule(Regex pattern, string? message = null, string? code = null)
 	{
 		_pattern = pattern ?? throw new ArgumentNullException(nameof(pattern));
-		_message = message.OrNull();
+		_message = message.Or(MessageFormat);
+		_code = code.Or(ErrorCode);
 	}
 
 	/// <summary>
@@ -34,8 +37,9 @@ public readonly record struct RegexRule : Core.IValidationRule<string>, Core.ISt
 	/// </summary>
 	/// <param name="pattern">The regex pattern</param>
 	/// <param name="message">Optional error message</param>
-	public RegexRule(string pattern, string? message = null)
-		: this(new Regex(pattern, RegexOptions.Compiled), message) { }
+	/// <param name="code">Optional error code override</param>
+	public RegexRule(string pattern, string? message = null, string? code = null)
+		: this(new Regex(pattern, RegexOptions.Compiled), message, code) { }
 
 	/// <summary>
 	/// Validates that the value matches the regex pattern.
@@ -56,7 +60,7 @@ public readonly record struct RegexRule : Core.IValidationRule<string>, Core.ISt
 	/// </summary>
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
-	public string GetErrorMessage(in string value) => _message ?? RuleMessage.Format(MessageFormat, _pattern);
+	public string GetErrorMessage(in string value) => RuleMessage.Format(_message ?? MessageFormat, value);
 
 	/// <summary>
 	/// Gets the error message for a failed span validation.
@@ -68,7 +72,7 @@ public readonly record struct RegexRule : Core.IValidationRule<string>, Core.ISt
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
 	public string Code => ErrorCode;
 
-	string? Core.IZodRule.Code => ErrorCode;
+	string? Core.IZodRule.Code => _code;
 
 	string? Core.IZodRule.Origin => null;
 }

@@ -52,7 +52,7 @@ public abstract class ZodType<TOutput, TInput> : IZodSchema<TOutput, TInput>, IO
 			if (!rule.IsValid(validatedValue))
 			{
 				errors ??= [with(rulesCount)];
-				errors.Add(new ValidationError(rule.Code, rule.GetErrorMessage(validatedValue), EmptyPath));
+				errors.Add(new ValidationError(ResolveCode(rule), rule.GetErrorMessage(validatedValue), EmptyPath));
 			}
 		}
 
@@ -126,17 +126,28 @@ public abstract class ZodType<TOutput, TInput> : IZodSchema<TOutput, TInput>, IO
 	/// <see cref="DateTime.MinValue"/>). Types without a known sentinel always pass.
 	/// </summary>
 	/// <param name="message">Optional error message.</param>
+	/// <param name="code">Optional error code override.</param>
 	/// <returns>This schema for method chaining.</returns>
 	/// <remarks>
 	/// Concrete schemas whose output type has a known sentinel (for example
 	/// <see cref="Schemas.ZodString"/> and <see cref="Schemas.ZodDate"/>) override this method with a
 	/// covariant return type so the fluent chain keeps the concrete schema.
 	/// </remarks>
-	public virtual ZodType<TOutput, TInput> NonSentinel(string? message = null)
+	public virtual ZodType<TOutput, TInput> NonSentinel(string? message = null, string? code = null)
 	{
-		AddRule(new NonSentinelRule<TOutput>(message));
+		AddRule(new NonSentinelRule<TOutput>(message, code));
 		return this;
 	}
+
+	/// <summary>
+	/// Resolves the error code to report for a failed rule: a rule that implements <see cref="IZodRule"/>
+	/// and supplies a code (typically from its constructor) wins over the rule's intrinsic
+	/// <see cref="IValidationRule{T}.Code"/>.
+	/// </summary>
+	/// <param name="rule">The rule that failed.</param>
+	/// <returns>The code to report.</returns>
+	static string ResolveCode(IValidationRule<TOutput> rule) =>
+		rule is IZodRule zodRule && zodRule.Code is { } code ? code : rule.Code;
 
 	/// <summary>
 	/// Gets the number of rules accumulated on this schema.

@@ -11,7 +11,7 @@ namespace ZodSharp.Rules;
 /// </summary>
 public class GeneratedRuleAttributesTests
 {
-	static Assembly RulesAssembly => typeof(IntRule).Assembly;
+	static Assembly RulesAssembly => typeof(IntRule<>).Assembly;
 
 	/// <summary>The attribute name the rule derives: a trailing <c>Rule</c> becomes <c>Attribute</c>.</summary>
 	static string AttributeName(string ruleName) =>
@@ -130,6 +130,8 @@ public class GeneratedRuleAttributesTests
 	[Arguments(typeof(MaxValueRule<>), "MaxValue")]
 	[Arguments(typeof(GreaterThanRule<>), "ExclusiveMinimum")]
 	[Arguments(typeof(LessThanRule<>), "ExclusiveMaximum")]
+	[Arguments(typeof(GreaterThanOrEqualRule<>), "MinValue")]
+	[Arguments(typeof(LessThanOrEqualRule<>), "MaxValue")]
 	public async Task Attribute_GivenGenericBoundRule_ExposesDoubleBound(Type ruleType, string propertyName)
 	{
 		// Act - the type-parameter bound cannot be mirrored directly, so it is surfaced as a double.
@@ -144,8 +146,8 @@ public class GeneratedRuleAttributesTests
 	[Arguments(typeof(RegexRule))]
 	[Arguments(typeof(E164Rule))]
 	[Arguments(typeof(NonSentinelRule<>))]
-	[Arguments(typeof(GreaterThanOrEqualRule))]
-	[Arguments(typeof(LessThanOrEqualRule))]
+	[Arguments(typeof(GreaterThanOrEqualRule<>))]
+	[Arguments(typeof(LessThanOrEqualRule<>))]
 	[Arguments(typeof(EvenRule<>))]
 	[Arguments(typeof(OddRule<>))]
 	public async Task Attribute_GivenRuleWithMessageParameter_ExposesMessageAlias(Type ruleType)
@@ -159,13 +161,31 @@ public class GeneratedRuleAttributesTests
 	}
 
 	[Test]
-	public async Task Attribute_GivenRuleWithoutMessageParameter_HasNoMessageAlias()
+	public async Task Attribute_GivenRuleWithoutMessageParameter_HasDefaultMessage()
 	{
+		// Arrange - the generated Message property mirrors the rule's own default message format.
+		var attributeType = FindAttribute(typeof(EmailRule))!;
+		var instance = Activator.CreateInstance(attributeType)!;
+
 		// Act
-		var message = FindAttribute(typeof(EmailRule))!.GetProperty("Message");
+		var message = (string?)attributeType.GetProperty("Message")!.GetValue(instance);
 
 		// Assert
-		await Assert.That(message).IsNull();
+		await Assert.That(message).IsEqualTo(EmailRule.MessageFormat);
+	}
+
+	[Test]
+	public async Task Attribute_GivenRuleWithoutCodeParameter_HasDefaultCode()
+	{
+		// Arrange - the generated Code property mirrors the rule's own default error code.
+		var attributeType = FindAttribute(typeof(EmailRule))!;
+		var instance = Activator.CreateInstance(attributeType)!;
+
+		// Act
+		var code = (string?)attributeType.GetProperty("Code")!.GetValue(instance);
+
+		// Assert
+		await Assert.That(code).IsEqualTo(EmailRule.ErrorCode);
 	}
 
 	[Test]

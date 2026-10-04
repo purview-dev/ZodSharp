@@ -19,13 +19,19 @@ public readonly record struct DatetimeStringRule
 	/// <summary>Gets the message format; <c>{0}</c> is the offending value.</summary>
 	public const string MessageFormat = "Invalid date-time: {0}";
 
-	readonly string? _message;
+	readonly string _message;
+	readonly string _code;
 
 	/// <summary>
 	/// Initializes a new instance of the DatetimeStringRule struct.
 	/// </summary>
 	/// <param name="message">Optional error message</param>
-	public DatetimeStringRule(string? message = null) => _message = message.OrNull();
+	/// <param name="code">Optional error code override</param>
+	public DatetimeStringRule(string? message = null, string? code = null)
+	{
+		_message = message.Or(MessageFormat);
+		_code = code.Or(ErrorCode);
+	}
 
 	/// <summary>
 	/// Validates that the value is an ISO 8601 date-time.
@@ -66,7 +72,7 @@ public readonly record struct DatetimeStringRule
 	/// </summary>
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
-	public string GetErrorMessage(in string value) => _message ?? RuleMessage.Format(MessageFormat, value);
+	public string GetErrorMessage(in string value) => RuleMessage.Format(_message ?? MessageFormat, value);
 
 	/// <summary>
 	/// Gets the error message for a failed span validation.
@@ -74,7 +80,7 @@ public readonly record struct DatetimeStringRule
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
 	public string GetErrorMessage(ReadOnlySpan<char> value) =>
-		_message ?? RuleMessage.Format(MessageFormat, value.ToString());
+		RuleMessage.Format(_message ?? MessageFormat, value.ToString());
 
 	static bool IsIsoTime(ReadOnlySpan<char> value, bool secondsRequired)
 	{
@@ -119,7 +125,7 @@ public readonly record struct DatetimeStringRule
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
 	public string Code => ErrorCode;
 
-	string? Core.IZodRule.Code => ErrorCode;
+	string? Core.IZodRule.Code => _code;
 
 	string? Core.IZodRule.Origin => null;
 }

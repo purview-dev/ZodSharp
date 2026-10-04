@@ -24,6 +24,15 @@ public readonly record struct EmailRule : Core.IValidationRule<string>, Core.ISt
 		TimeSpan.FromMilliseconds(100)
 	);
 
+	readonly string _message;
+	readonly string _code;
+
+	public EmailRule(string? message = null, string? code = null)
+	{
+		_message = message.Or(MessageFormat);
+		_code = code.Or(ErrorCode);
+	}
+
 	/// <summary>
 	/// Validates that the value matches the email format.
 	/// </summary>
@@ -43,19 +52,20 @@ public readonly record struct EmailRule : Core.IValidationRule<string>, Core.ISt
 	/// </summary>
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
-	public string GetErrorMessage(in string value) => RuleMessage.Format(MessageFormat, value);
+	public string GetErrorMessage(in string value) => RuleMessage.Format(_message ?? MessageFormat, value);
 
 	/// <summary>
 	/// Gets the error message for a failed span validation.
 	/// </summary>
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
-	public string GetErrorMessage(ReadOnlySpan<char> value) => RuleMessage.Format(MessageFormat, value.ToString());
+	public string GetErrorMessage(ReadOnlySpan<char> value) =>
+		RuleMessage.Format(_message ?? MessageFormat, value.ToString());
 
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
 	public string Code => ErrorCode;
 
-	string? Core.IZodRule.Code => ErrorCode;
+	string? Core.IZodRule.Code => _code;
 
 	string? Core.IZodRule.Origin => null;
 }

@@ -14,8 +14,8 @@ public readonly record struct MinLengthRule : Core.IValidationRule<string>, Core
 	public const string MessageFormat = "String must be at least {0} characters long, but got {1}";
 
 	readonly int _minLength;
-	readonly string? _message;
-	readonly string? _code;
+	readonly string _message;
+	readonly string _code;
 
 	/// <summary>
 	/// Initializes a new instance of the MinLengthRule struct.
@@ -26,8 +26,8 @@ public readonly record struct MinLengthRule : Core.IValidationRule<string>, Core
 	public MinLengthRule(int minLength, string? message = null, string? code = null)
 	{
 		_minLength = minLength;
-		_message = message.OrNull();
-		_code = code.OrNull();
+		_message = message.Or(MessageFormat);
+		_code = code.Or(ErrorCode);
 	}
 
 	/// <summary>
@@ -50,7 +50,7 @@ public readonly record struct MinLengthRule : Core.IValidationRule<string>, Core
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
 	public string GetErrorMessage(in string value) =>
-		_message ?? RuleMessage.Format(MessageFormat, _minLength, value.LengthOrDefault());
+		RuleMessage.Format(_message ?? MessageFormat, _minLength, value.LengthOrDefault());
 
 	/// <summary>
 	/// Gets the error message for a failed span validation.
@@ -58,12 +58,12 @@ public readonly record struct MinLengthRule : Core.IValidationRule<string>, Core
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
 	public string GetErrorMessage(ReadOnlySpan<char> value) =>
-		_message ?? RuleMessage.Format(MessageFormat, _minLength, value.Length);
+		RuleMessage.Format(_message ?? MessageFormat, _minLength, value.Length);
 
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
 	public string Code => ErrorCode;
 
-	string? Core.IZodRule.Code => _code ?? ErrorCode;
+	string? Core.IZodRule.Code => _code;
 
 	string? Core.IZodRule.Origin => null;
 }

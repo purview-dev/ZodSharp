@@ -14,17 +14,20 @@ public readonly record struct IncludesRule : Core.IValidationRule<string>, Core.
 	public const string MessageFormat = "String must contain '{0}', but got '{1}'";
 
 	readonly string _substring;
-	readonly string? _message;
+	readonly string _message;
+	readonly string _code;
 
 	/// <summary>
 	/// Initializes a new instance of the IncludesRule struct.
 	/// </summary>
 	/// <param name="substring">The required substring</param>
 	/// <param name="message">Optional error message</param>
-	public IncludesRule(string substring, string? message = null)
+	/// <param name="code">Optional error code override</param>
+	public IncludesRule(string substring, string? message = null, string? code = null)
 	{
 		_substring = substring ?? throw new ArgumentNullException(nameof(substring));
-		_message = message.OrNull();
+		_message = message.Or(MessageFormat);
+		_code = code.Or(ErrorCode);
 	}
 
 	/// <summary>
@@ -46,7 +49,7 @@ public readonly record struct IncludesRule : Core.IValidationRule<string>, Core.
 	/// </summary>
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
-	public string GetErrorMessage(in string value) => _message ?? RuleMessage.Format(MessageFormat, _substring, value);
+	public string GetErrorMessage(in string value) => RuleMessage.Format(_message ?? MessageFormat, _substring, value);
 
 	/// <summary>
 	/// Gets the error message for a failed span validation.
@@ -54,12 +57,12 @@ public readonly record struct IncludesRule : Core.IValidationRule<string>, Core.
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
 	public string GetErrorMessage(ReadOnlySpan<char> value) =>
-		_message ?? RuleMessage.Format(MessageFormat, _substring, value.ToString());
+		RuleMessage.Format(_message ?? MessageFormat, _substring, value.ToString());
 
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
 	public string Code => ErrorCode;
 
-	string? Core.IZodRule.Code => ErrorCode;
+	string? Core.IZodRule.Code => _code;
 
 	string? Core.IZodRule.Origin => null;
 }

@@ -153,6 +153,7 @@ partial class ZodSchemaGenerator
 		}
 
 		var properties = ImmutableArray.CreateBuilder<GeneratedAttributeProperty>();
+		var constructorParameters = ImmutableArray.CreateBuilder<GeneratedAttributeParameter>();
 		var constructor = CustomRuleResolver.SelectAttributeConstructor(ruleType);
 
 		if (constructor is not null)
@@ -172,6 +173,8 @@ partial class ZodSchemaGenerator
 
 				if (CustomRuleResolver.IsCancellationToken(parameter.Type))
 					continue;
+
+				var isIdentityParameter = CustomRuleResolver.IsIdentityParameter(parameter);
 
 				// A type-parameter constructor argument (for example `MinValueRule<T>(T minValue)`) cannot be
 				// mirrored directly; it is surfaced as a double, the numeric type the schema pipeline uses and
@@ -195,12 +198,32 @@ partial class ZodSchemaGenerator
 					return GeneratorResult<RuleAttributeGenerationModel>.Create(default, propertyDiagnostics);
 				}
 
+				TypeIdentity propertyTypeIdentity = new(TypeHelpers.StripNullableAnnotations(propertyType));
+				var propertyName = ToPascalCase(parameter.Name);
+				var initializer = BuildPropertyInitializer(parameter, propertyType, ruleType, isIdentityParameter);
+				var isNullable = TypeHelpers.CanBeNull(propertyType);
+
 				properties.Add(
-					new GeneratedAttributeProperty(
-						new TypeIdentity(TypeHelpers.StripNullableAnnotations(propertyType)),
-						ToPascalCase(parameter.Name),
-						BuildInitializer(parameter, propertyType),
-						TypeHelpers.CanBeNull(propertyType)
+					new GeneratedAttributeProperty(propertyTypeIdentity, propertyName, initializer, isNullable)
+				);
+
+				// The attribute constructor mirrors the rule's value parameters so a required value (for
+				// example the `maxValue` of `LessThanOrEqualRule<T>`) has to be supplied at the usage site
+				// instead of silently falling back to the type's default. A defaulted parameter keeps its
+				// default, so `[Even]`-style attributes stay applicable without arguments.
+				//
+				// Identity parameters stay properties only: the resolver reads the reported error identity from
+				// the applied attribute's named arguments, so a constructor parameter would never feed it.
+				if (isIdentityParameter)
+					continue;
+
+				constructorParameters.Add(
+					new GeneratedAttributeParameter(
+						propertyTypeIdentity,
+						parameter.Name,
+						propertyName,
+						parameter.HasExplicitDefaultValue ? initializer : null,
+						isNullable
 					)
 				);
 			}
@@ -211,7 +234,7 @@ partial class ZodSchemaGenerator
 					new GeneratedAttributeProperty(
 						new TypeIdentity(TypeHelpers.StripNullableAnnotations(messageParameter.Type)),
 						"Message",
-						BuildInitializer(messageParameter, messageParameter.Type),
+						BuildMessageInitializer(messageParameter, ruleType),
 						TypeHelpers.CanBeNull(messageParameter.Type)
 					)
 				);
@@ -228,7 +251,8 @@ partial class ZodSchemaGenerator
 				GetNamedString(attribute, "Code"),
 				GetNamedString(attribute, "Origin"),
 				GetNamedBool(attribute, "AllowMultiple"),
-				new(properties.ToImmutable())
+				new(properties.ToImmutable()),
+				new(constructorParameters.ToImmutable())
 			),
 			identityWarnings
 		);
@@ -287,6 +311,65 @@ partial class ZodSchemaGenerator
 
 	static string ToPascalCase(string name) =>
 		name.Length == 0 ? name : string.Concat(char.ToUpperInvariant(name[0]), name.AsSpan(1).ToString());
+
+	/// <summary>
+	/// Reads a <c>public const string</c> member (for example a rule's <c>ErrorCode</c> or
+	/// <c>MessageFormat</c>) so the generated attribute can mirror the rule's own default.
+	/// </summary>
+	/// <param name="ruleType">The rule type to inspect.</param>
+	/// <param name="memberName">The name of the constant member.</param>
+	/// <returns>The constant's value, or <see langword="null"/> when no such constant exists.</returns>
+	static string? GetRuleConstString(INamedTypeSymbol ruleType, string memberName)
+	{
+		foreach (var member in ruleType.GetMembers(memberName))
+		{
+			if (member is IFieldSymbol { IsConst: true, ConstantValue: string value })
+				return value;
+		}
+
+		return null;
+	}
+
+	/// <summary>
+	/// Builds the initializer for a generated attribute property. The identity <c>Code</c> property mirrors
+	/// the rule's own <c>ErrorCode</c> default so the generated attribute is self-describing; every other
+	/// property keeps the parameter's own default.
+	/// </summary>
+	/// <param name="parameter">The rule constructor parameter the property mirrors.</param>
+	/// <param name="propertyType">The property type.</param>
+	/// <param name="ruleType">The rule type.</param>
+	/// <param name="isIdentityParameter">Whether the parameter is the rule's <c>code</c>/<c>origin</c>.</param>
+	/// <returns>The initializer expression.</returns>
+	static string BuildPropertyInitializer(
+		IParameterSymbol parameter,
+		ITypeSymbol propertyType,
+		INamedTypeSymbol ruleType,
+		bool isIdentityParameter
+	)
+	{
+		if (
+			isIdentityParameter
+			&& string.Equals(parameter.Name, "code", StringComparison.OrdinalIgnoreCase)
+			&& GetRuleConstString(ruleType, "ErrorCode") is { } errorCode
+		)
+		{
+			return errorCode.StringLiteral();
+		}
+
+		return BuildInitializer(parameter, propertyType);
+	}
+
+	/// <summary>
+	/// Builds the initializer for the generated <c>Message</c> property, mirroring the rule's own
+	/// <c>MessageFormat</c> default when the rule exposes one.
+	/// </summary>
+	/// <param name="messageParameter">The rule's <c>message</c> constructor parameter.</param>
+	/// <param name="ruleType">The rule type.</param>
+	/// <returns>The initializer expression.</returns>
+	static string BuildMessageInitializer(IParameterSymbol messageParameter, INamedTypeSymbol ruleType) =>
+		GetRuleConstString(ruleType, "MessageFormat") is { } messageFormat
+			? messageFormat.StringLiteral()
+			: BuildInitializer(messageParameter, messageParameter.Type);
 
 	static string? GetNamedString(AttributeData attribute, string name)
 	{
@@ -550,6 +633,8 @@ partial class ZodSchemaGenerator
 			)
 		)
 		{
+			BuildAttributeConstructor(writer, model);
+
 			foreach (var property in model.Properties)
 			{
 				var propertyType = property.IsNullable
@@ -566,6 +651,54 @@ partial class ZodSchemaGenerator
 				);
 			}
 		}
+	}
+
+	/// <summary>
+	/// Emits the attribute constructor that carries the rule's value parameters. A parameter the rule declares
+	/// without a default has no default here either, so the attribute cannot be applied without it; the rule's
+	/// <c>message</c> and identity (<c>code</c>/<c>origin</c>) parameters stay properties. Rules whose only
+	/// constructor parameters are message/identity (or none) emit no constructor and keep the implicit
+	/// parameterless one.
+	/// </summary>
+	/// <param name="writer">The writer positioned inside the attribute's class scope.</param>
+	/// <param name="model">The generation model describing the attribute.</param>
+	static void BuildAttributeConstructor(CodeWriter writer, RuleAttributeGenerationModel model)
+	{
+		if (model.ConstructorParameters.IsEmpty)
+			return;
+
+		writer.XmlSummary(
+			$"Initializes the attribute with the values required by {CodeWriter.XmlSee(model.RuleType)}.",
+			"A required rule constructor value cannot be omitted; optional values keep their rule default."
+		);
+
+		var parameters = ImmutableArray.CreateBuilder<ParameterDeclarationOptions>(model.ConstructorParameters.Count);
+
+		foreach (var constructorParameter in model.ConstructorParameters)
+		{
+			var parameterType = constructorParameter.IsNullable
+				? constructorParameter.Type.AsTypeReference().Nullable(writer)
+				: constructorParameter.Type.AsTypeReference();
+
+			parameters.Add(
+				new ParameterDeclarationOptions(constructorParameter.Name, parameterType)
+				{
+					DefaultValue = constructorParameter.DefaultValue,
+				}
+			);
+		}
+
+		writer.Constructor(
+			new ConstructorDeclarationOptions(model.AttributeType, TypeDeclarationAccessibility.Public)
+			{
+				Parameters = parameters.ToImmutable(),
+			},
+			constructorBody =>
+			{
+				foreach (var constructorParameter in model.ConstructorParameters)
+					constructorBody.Assignment(constructorParameter.PropertyName, constructorParameter.Name);
+			}
+		);
 	}
 
 	static ImmutableArray<AttributeArgumentOptions> BuildRuleArguments(RuleAttributeGenerationModel model)

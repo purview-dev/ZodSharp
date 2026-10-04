@@ -16,21 +16,23 @@ var result = schema.Validate(30.0);
 | `Min` | `Min(double minValue)` | `MinValueRule<double>` — `Value must be at least ...` |
 | `Max` | `Max(double maxValue)` | `MaxValueRule<double>` |
 | `Gt` | `Gt(double value)` | `GreaterThanRule<double>` — strictly greater than `value` |
-| `Gte` | `Gte(double value)` | `GreaterThanOrEqualRule` — greater than or equal to `value` |
+| `Gte` | `Gte(double value)` | `GreaterThanOrEqualRule<double>` — greater than or equal to `value` |
 | `Lt` | `Lt(double value)` | `LessThanRule<double>` — strictly less than `value` |
-| `Lte` | `Lte(double value)` | `LessThanOrEqualRule` — less than or equal to `value` |
-| `Int` | `Int()` | `IntRule` — `value == Math.Truncate(value)`; failure code `invalid_type` |
+| `Lte` | `Lte(double value)` | `LessThanOrEqualRule<double>` — less than or equal to `value` |
+| `Int` | `Int()` | `IntRule<double>` — `value % 1 == 0`; failure code `invalid_type` |
 | `Positive` | `Positive()` | `GreaterThanRule<double>(0.0)` — strictly greater than zero |
 | `Negative` | `Negative()` | `LessThanRule<double>(0.0)` — strictly less than zero |
 | `NonNegative` | `NonNegative()` | `MinValueRule<double>(0.0)` — greater than or equal to zero |
 | `NonPositive` | `NonPositive()` | `MaxValueRule<double>(0.0)` — less than or equal to zero |
-| `MultipleOf` | `MultipleOf(double divisor, string? message)` | `MultipleOfRule` — throws `ArgumentException` for a zero divisor; relative-tolerance comparison (`1e-12`) |
-| `Finite` | `Finite(string? message)` | `FiniteRule` — `double.IsFinite` |
+| `MultipleOf` | `MultipleOf(double divisor, string? message)` | `MultipleOfRule<double>` — throws `ArgumentException` for a zero divisor; relative-tolerance comparison (`1e-12`) |
+| `Finite` | `Finite(string? message)` | `FiniteRule<double>` — `T.IsFinite` |
 | `Safe` | `Safe(string? message)` | `SafeIntegerRule` — integer within `int.MinValue`..`int.MaxValue`; failure code `too_big` |
 | `Even` | `Even(string? message)` | `EvenRule<double>` — `value % 2 == 0`; failure code `invalid_value` |
 | `Odd` | `Odd(string? message)` | `OddRule<double>` — `value % 2 != 0`; failure code `invalid_value` |
 
-`GreaterThanOrEqualRule`/`LessThanOrEqualRule` (the rules behind `Gte`/`Lte`) and `EvenRule<T>`/`OddRule<T>` are available directly too. `EvenRule<T>`/`OddRule<T>` are generic over `T : INumber<T>`, so they close with any numeric type (`int`, `long`, `decimal`, …) — not just `double`.
+All six bound rules (`MinValueRule<T>`, `MaxValueRule<T>`, `GreaterThanRule<T>`, `LessThanRule<T>`, `GreaterThanOrEqualRule<T>`, `LessThanOrEqualRule<T>`) are generic over `T : IComparable<T>`, and the arithmetic rules (`IntRule<T>`, `FiniteRule<T>`, `MultipleOfRule<T>`, `EvenRule<T>`, `OddRule<T>`) are generic over `T : INumber<T>`, so they close with any numeric type (`int`, `long`, `decimal`, …) — not just `double`. `ZodNumber` closes them with `double`; `ZodBigInt` and `ZodDate` close the bound rules with `long` and `DateTime`. `SafeIntegerRule` is intentionally `double`-only, because "safe integer" is a JavaScript `Number` concept.
+
+Every numeric method also accepts optional `string? message` and `string? code` parameters: `message` overrides the rule's default message, and `code` overrides the reported error code (otherwise the rule's own `ErrorCode` is reported).
 
 ## Examples
 

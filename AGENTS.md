@@ -96,6 +96,18 @@ The generator and analyzer are built with `Purview.SourceGeneratorFramework`:
 
 Validation rules follow a conventions analyzer (`ValidationRuleConventionsAnalyzer`, diagnostic `ZODSGEN042`): a source-declared rule (a type implementing `ZodSharp.Core.IValidationRule<T>`) must expose its error identity as public `const string ErrorCode` and `const string MessageFormat` constants, so tests can assert against the rule rather than duplicating literals. New built-in rules must follow the same convention; keep `AnalyzerReleases.Shipped.md`/`AnalyzerReleases.Unshipped.md` in sync when a diagnostic is added or changed.
 
+## Numeric rules
+
+The numeric rules are split by the constraint each family needs — pick the constraint that matches the operations, never widen a rule unnecessarily:
+
+- **Bound rules** — `MinValueRule<T>`, `MaxValueRule<T>`, `GreaterThanRule<T>`, `LessThanRule<T>`, `GreaterThanOrEqualRule<T>`, `LessThanOrEqualRule<T>` — are generic over `T : IComparable<T>`. Keep this constraint: `ZodDate` closes the bound rules with `DateTime`, which does **not** implement `INumber<T>`. Do not change them to `INumber<T>`.
+- **Arithmetic rules** — `IntRule<T>`, `FiniteRule<T>`, `MultipleOfRule<T>`, `EvenRule<T>`, `OddRule<T>` — are generic over `T : INumber<T>` so they close with any numeric type (`int`, `long`, `double`, `decimal`, …).
+- **`SafeIntegerRule`** is intentionally `double`-only, because "safe integer" is a JavaScript `Number` concept (`int.MinValue`..`int.MaxValue`); do not make it generic.
+- `ZodNumber` closes the rules with `double`, `ZodBigInt` with `long`, and `ZodDate` with `DateTime`. Fluent methods on `ZodNumber` therefore use `XxxRule<double>`.
+- Any code that matches a rule by name (for example the JSON Schema converter) must tolerate the generic arity suffix: a generic rule's `Type.Name` is `IntRule\`1`, so match with `StartsWith` rather than equality.
+
+Generated rule attributes carry the rule's **value** parameters as a constructor: a parameter declared without a default is a required constructor argument (so it cannot be silently omitted), a parameter with a default keeps it, and `message`/`code`/`origin` stay properties. Attribute usages for required values are positional (`[MinValue(3)]`, `[Regex("^[a-z]+$")]`); defaulted values may still be set by property name. When changing rule constructor parameters, update the affected generator tests and the wiki attribute tables.
+
 ## Packing and package READMEs
 
 Each package ships its own `README.md`, placed in the project's `Sdk/` folder (for example `src/src/ZodSharp/Sdk/README.md`). The SDK's `PurviewAutoSdkPack` automatically maps `Sdk/*.md` to the package root and `Sdk/buildTransitive/**` to `buildTransitive/`, and the repo-root `README.md` is skipped when a package already packs its own README. Packages also ship `purview-logo-light.png` (linked via `src/Directory.Build.props`) and the core package ships `buildTransitive/Purview.ZodSharp.props`.

@@ -25,10 +25,10 @@ var result = schema.Validate("user@example.com");
 | `Base64String` | `Base64String(string? message)` | `Base64StringRule` — `Convert.FromBase64String` |
 | `UUID` | `UUID(string? message)` | `UUIDRule` — char-scan, RFC 9562 versions 1-8, variant nibble `8-9/a-b`, plus nil and max |
 | `UUID` | `UUID(UuidVersion version, string? message)` | `UUIDRule` — requires a specific version (e.g. `V7`), variant nibble `8-9/a-b`, nil/max rejected |
-| `StartsWith` | `StartsWith(string prefix, string? message)` | `StartsWithRule` — ordinal comparison |
-| `EndsWith` | `EndsWith(string suffix, string? message)` | `EndsWithRule` — ordinal comparison |
-| `Includes` | `Includes(string substring, string? message)` | `IncludesRule` — ordinal substring containment |
-| `IP` | `IP(string? message)` | `IPAddressRule` — IPv4 or IPv6 address |
+| `StartsWith` | `StartsWith(string prefix, StringComparison comparison = StringComparison.Ordinal, string? message, string? code)` | `StartsWithRule` — comparison defaults to `Ordinal` |
+| `EndsWith` | `EndsWith(string suffix, StringComparison comparison = StringComparison.Ordinal, string? message, string? code)` | `EndsWithRule` — comparison defaults to `Ordinal` |
+| `Includes` | `Includes(string substring, string? message, string? code)` | `IncludesRule` — ordinal substring containment |
+| `IP` | `IP(string? message, string? code)` / `IP(IPAddressRuleType ruleType, string? message, string? code)` | `IPAddressRule` — IPv4/IPv6, or only the requested family (`IPv4`/`IPv6`/`Any`; defaults to `Any`) |
 | `JWT` | `JWT(string? message)` | `JWTRule` — three base64url-encoded segments |
 | `Hex` | `Hex(string? message)` | `HexRule` — hexadecimal characters (empty string is valid, matching Zod) |
 | `Base64Url` | `Base64Url(string? message)` | `Base64UrlRule` — URL-safe base64, no padding (groups of 4 plus a 2-3 character tail) |
@@ -48,6 +48,8 @@ var result = schema.Validate("user@example.com");
 
 > [!NOTE]
 > `ToLower`, `ToUpper`, and `Trim` produce a new string on every validation. `IsValidSpan` does not allocate when the value is valid; `ValidateSpan` allocates once because its result carries a `string`.
+
+Every method that adds a rule also accepts optional `string? message` and `string? code` parameters: `message` overrides the rule's default message, and `code` overrides the reported error code (otherwise the rule's own `ErrorCode` is reported). The rule's default message format is used when `message` is omitted.
 
 ## Examples
 
@@ -73,7 +75,7 @@ var spanResult = Z.String().Min(3).Max(50).Email().ValidateSpan(span);
 
 ## Error messages
 
-Rules produce `ValidationError` entries with an empty path. Size validations emit `too_small` or `too_big`; string-format validations emit `invalid_string`. Many methods accept a custom `message` parameter. Rule structs live in `ZodSharp.Rules` and can be reused standalone with `IValidationRule<T>`. For the full catalogue — including rules without a fluent method — see [Validation Rules Reference](Validation-Rules-Reference.md).
+Rules produce `ValidationError` entries with an empty path. Size validations emit `too_small` or `too_big`; string-format validations emit `invalid_string`. Many methods accept a custom `message` and `code` parameter. Rule structs live in `ZodSharp.Rules` and can be reused standalone with `IValidationRule<T>`. For the full catalogue — including rules without a fluent method — see [Validation Rules Reference](Validation-Rules-Reference.md).
 
 Every rule exposes its error identity as public constants — `public const string ErrorCode` and a `public const string MessageFormat` (a `{0}`-style template) — so tests and consumers can assert against the rule instead of duplicating literals:
 

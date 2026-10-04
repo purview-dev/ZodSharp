@@ -604,10 +604,7 @@ static class CustomRuleResolver
 	{
 		foreach (var parameter in MappedParameters(ruleType))
 		{
-			if (
-				string.Equals(parameter.Name, "code", StringComparison.OrdinalIgnoreCase)
-				|| string.Equals(parameter.Name, "origin", StringComparison.OrdinalIgnoreCase)
-			)
+			if (IsIdentityParameter(parameter))
 			{
 				parameterName = parameter.Name;
 				return true;
@@ -617,6 +614,15 @@ static class CustomRuleResolver
 		parameterName = string.Empty;
 		return false;
 	}
+
+	/// <summary>
+	/// Determines whether the parameter declares the rule's error identity (<c>code</c>/<c>origin</c>).
+	/// </summary>
+	/// <param name="parameter">The rule constructor parameter to test.</param>
+	/// <returns><see langword="true"/> when the parameter is an identity parameter.</returns>
+	internal static bool IsIdentityParameter(IParameterSymbol parameter) =>
+		string.Equals(parameter.Name, "code", StringComparison.OrdinalIgnoreCase)
+		|| string.Equals(parameter.Name, "origin", StringComparison.OrdinalIgnoreCase);
 
 	/// <summary>
 	/// Gets the named arguments an applied attribute supplies that the resolved rule never consumes: the
@@ -895,6 +901,21 @@ static class CustomRuleResolver
 		foreach (var pair in attribute.NamedArguments)
 			named[pair.Key] = pair.Value;
 
+		// The applied attribute's positional arguments are matched by its own constructor parameter names
+		// first, so a generated constructor that omits the rule's message/identity parameters keeps the rule
+		// parameters aligned. The raw index remains the fallback for hand-authored attributes whose parameter
+		// names differ from the rule's.
+		Dictionary<string, TypedConstant> positionalByName = [with(StringComparer.OrdinalIgnoreCase)];
+		if (attribute.AttributeConstructor is { } appliedConstructor)
+		{
+			for (var i = 0; i < appliedConstructor.Parameters.Length && i < positional.Length; i++)
+			{
+				var appliedName = appliedConstructor.Parameters[i].Name;
+				if (!positionalByName.ContainsKey(appliedName))
+					positionalByName.Add(appliedName, positional[i]);
+			}
+		}
+
 		var expressions = ImmutableArray.CreateBuilder<string>(constructor.Parameters.Length);
 
 		for (var i = 0; i < constructor.Parameters.Length; i++)
@@ -910,6 +931,18 @@ static class CustomRuleResolver
 				}
 
 				expressions.Add(namedExpression);
+				continue;
+			}
+
+			if (positionalByName.TryGetValue(parameter.Name, out var positionalValue))
+			{
+				if (!TryConvertConstant(positionalValue, parameter.Type, out var namedPositionalExpression))
+				{
+					unmappedParameterName = parameter.Name;
+					return false;
+				}
+
+				expressions.Add(namedPositionalExpression);
 				continue;
 			}
 

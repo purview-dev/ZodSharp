@@ -253,7 +253,7 @@ Path    = ["Name"]
 Because the attribute derives from `ValidationAttribute`, the property participates in the same "carries a data annotation" discovery as the built-in attributes. The default error code is `validation_failed` when `Code` is not set.
 
 > [!NOTE]
-> The attribute's constructor arguments are mapped positionally and its named arguments by name (case-insensitive) to the rule's public constructor parameters. A parameter named `message` is supplied from the attribute's `ErrorMessage` when one is set.
+> The attribute's arguments are mapped to the rule's public constructor parameters: named arguments by name (case-insensitive), and positional arguments by the applied attribute's own constructor parameter names first (with the raw position as a fallback for hand-authored attributes whose parameter names differ from the rule's). A parameter named `message` is supplied from the attribute's `ErrorMessage` when one is set.
 
 ### Error identity: code and origin precedence
 
@@ -417,6 +417,12 @@ This produces a `NoWhitespaceAttribute` in the rule's namespace, shaped like:
 public sealed class NoWhitespaceAttribute
     : global::System.ComponentModel.DataAnnotations.ValidationAttribute
 {
+    /// <summary>Initializes the attribute with the values required by NoWhitespaceRule.</summary>
+    public NoWhitespaceAttribute(bool allowEmpty = true)
+    {
+        AllowEmpty = allowEmpty;
+    }
+
     public bool AllowEmpty { get; set; } = true;
 
     public string? Message { get; set; } = null;
@@ -426,7 +432,7 @@ public sealed class NoWhitespaceAttribute
 Mapping rules:
 
 - The attribute name is the rule name with a trailing `Rule` replaced by `Attribute` (`NoWhitespaceRule` → `NoWhitespaceAttribute`). Override it with `[ZodRule(AttributeName = "…")]`.
-- Each public constructor parameter becomes a settable property, Pascal-cased, with the parameter's default value preserved. A parameter named `message` becomes a `Message` property (the resolver maps it onto the rule's `message` argument); a parameter named `code` becomes a `Code` property; the inherited `ValidationAttribute.ErrorMessage` remains the fallback. A type-parameter parameter (for example the bound of `MinValueRule<T>`) is surfaced as a `double`.
+- Each public constructor parameter becomes a settable property, Pascal-cased, with the parameter's default value preserved. The rule's **value** parameters are additionally emitted as a constructor: a parameter the rule declares without a default becomes a required constructor argument, so an attribute like `[MinValue]` cannot be applied without its bound, while a parameter with a default keeps that default (so `[NoWhitespace]` still works). A parameter named `message` becomes a `Message` property (the resolver maps it onto the rule's `message` argument) and defaults to the rule's `MessageFormat`; a parameter named `code`/`origin` becomes a `Code`/`Origin` property and `Code` defaults to the rule's `ErrorCode`; the inherited `ValidationAttribute.ErrorMessage` remains the fallback. A type-parameter parameter (for example the bound of `MinValueRule<T>`) is surfaced as a `double`.
 - If the derived name collides with a `System.ComponentModel.DataAnnotations` attribute, the generated attribute is emitted under a `Zod` suffix (`MinLengthAttribute` → `MinLengthZodAttribute`, used as `[MinLengthZod]`).
 - The attribute is always decorated with `AttributeTargets.Class | Struct | Property | Field | Parameter`, so it can annotate a member or a scalar value object. (`Class`/`Struct` are what make the [type-level form](#type-level-rules) possible.)
 - The rule must be non-nested and non-abstract, and every parameter type must be a legal attribute-argument type (primitive, `string`, `enum`, `System.Type`).
@@ -479,7 +485,7 @@ public partial class Contact
     [E164]
     public string Phone { get; set; } = string.Empty;
 
-    [Regex(Pattern = "^[a-z]+$")]
+    [Regex("^[a-z]+$")]
     public string Code { get; set; } = string.Empty;
 
     [NonSentinel(Message = "Id must not be the default.")]
@@ -487,14 +493,14 @@ public partial class Contact
 }
 ```
 
-Each attribute mirrors its rule's constructor parameters and reports the rule's own `ErrorCode`/`Origin` (every built-in rule implements `IZodRule`). `[Regex]` uses the `(string pattern, string? message)` overload, so `Pattern` is a string; a rule's `message` parameter is surfaced as a `Message` property and its `code` parameter (where present) as a `Code` property.
+Each attribute mirrors its rule's constructor parameters and reports the rule's own `ErrorCode`/`Origin` (every built-in rule implements `IZodRule`). A value the rule declares without a default is a **required constructor argument** — `[Regex("^[a-z]+$")]`, `[UUID(UuidVersion.V4)]`, `[MinValue(3)]` — so it can never be silently omitted; a value with a default keeps it (for example `[StartsWith("https://", StringComparison.OrdinalIgnoreCase)]`). `[Regex]` uses the `(string pattern, string? message)` overload, so `Pattern` is a string. A rule's `message` parameter is surfaced as a `Message` property (defaulting to the rule's `MessageFormat`) and its `code` parameter (where present) as a `Code` property (defaulting to the rule's `ErrorCode`).
 
 Two adjustments keep every rule addressable:
 
 - **Name collisions.** `MinLengthRule`, `MaxLengthRule`, `UrlRule`, `PhoneRule`, `CreditCardRule`, and `Base64StringRule` derive an attribute name that `System.ComponentModel.DataAnnotations` already uses. Their attributes are emitted under a `Zod` suffix instead — `[MinLengthZod]`, `[MaxLengthZod]`, `[UrlZod]`, `[PhoneZod]`, `[CreditCardZod]`, `[Base64StringZod]` — so the rule's own `Code`/`Message` stay usable alongside the DataAnnotations attribute.
-- **Generic bounds.** The generic bound rules (`MinValueRule<T>`, `MaxValueRule<T>`, `GreaterThanRule<T>`, `LessThanRule<T>`) surface their type-parameter bound as a `double`, so `[MinValue(MinValue = 3)]` works on an `int` or a `double` member (the value is converted to the member type).
+- **Generic bounds.** The generic bound rules (`MinValueRule<T>`, `MaxValueRule<T>`, `GreaterThanRule<T>`, `LessThanRule<T>`, `GreaterThanOrEqualRule<T>`, `LessThanOrEqualRule<T>`) surface their type-parameter bound as a `double`, so `[MinValue(3)]` works on an `int` or a `double` member (the value is converted to the member type).
 
-The numeric parity and inclusive-comparison rules follow the same pattern: `[GreaterThanOrEqual(MinValue = …)]`, `[LessThanOrEqual(MaxValue = …)]`, `[Even]`, and `[Odd]`.
+The numeric parity and inclusive-comparison rules follow the same pattern: `[GreaterThanOrEqual(…)]`, `[LessThanOrEqual(…)]`, `[Even]`, and `[Odd]`.
 
 ## Type-level rules
 

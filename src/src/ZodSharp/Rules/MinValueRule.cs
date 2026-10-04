@@ -16,14 +16,20 @@ public readonly record struct MinValueRule<T> : Core.IValidationRule<T>, Core.IZ
 	public const string MessageFormat = "Value must be at least {0}, but got {1}";
 
 	readonly T _minValue;
+	readonly string _message;
+	readonly string _code;
 
 	/// <summary>
 	/// Initializes a new instance of the MinValueRule struct.
 	/// </summary>
 	/// <param name="minValue">The minimum value</param>
-	public MinValueRule(T minValue)
+	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
+	public MinValueRule(T minValue, string? message = null, string? code = null)
 	{
 		_minValue = minValue;
+		_message = message.Or(MessageFormat);
+		_code = code.Or(ErrorCode);
 	}
 
 	/// <summary>
@@ -38,12 +44,12 @@ public readonly record struct MinValueRule<T> : Core.IValidationRule<T>, Core.IZ
 	/// </summary>
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
-	public string GetErrorMessage(in T value) => RuleMessage.Format(MessageFormat, _minValue, value);
+	public string GetErrorMessage(in T value) => RuleMessage.Format(_message ?? MessageFormat, _minValue, value);
 
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
 	public string Code => ErrorCode;
 
-	string? Core.IZodRule.Code => ErrorCode;
+	string? Core.IZodRule.Code => _code;
 
 	string? Core.IZodRule.Origin => null;
 }

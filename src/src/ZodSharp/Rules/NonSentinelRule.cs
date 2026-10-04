@@ -35,13 +35,19 @@ public readonly record struct NonSentinelRule<T> : Core.IValidationRule<T>, Core
 	/// <summary>Gets the message format; <c>{0}</c> is the offending value.</summary>
 	public const string MessageFormat = "Value is a sentinel value, but got {0}";
 
-	readonly string? _message;
+	readonly string _message;
+	readonly string _code;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="NonSentinelRule{T}"/> struct.
 	/// </summary>
 	/// <param name="message">Optional error message</param>
-	public NonSentinelRule(string? message = null) => _message = message.OrNull();
+	/// <param name="code">Optional error code override</param>
+	public NonSentinelRule(string? message = null, string? code = null)
+	{
+		_message = message.Or(MessageFormat);
+		_code = code.Or(ErrorCode);
+	}
 
 	/// <summary>
 	/// Validates that the value is not a sentinel value.
@@ -55,12 +61,12 @@ public readonly record struct NonSentinelRule<T> : Core.IValidationRule<T>, Core
 	/// </summary>
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
-	public string GetErrorMessage(in T value) => _message ?? RuleMessage.Format(MessageFormat, value);
+	public string GetErrorMessage(in T value) => RuleMessage.Format(_message ?? MessageFormat, value);
 
 	/// <summary>Gets the error code reported when the rule fails.</summary>
 	public string Code => ErrorCode;
 
-	string? Core.IZodRule.Code => ErrorCode;
+	string? Core.IZodRule.Code => _code;
 
 	string? Core.IZodRule.Origin => null;
 }

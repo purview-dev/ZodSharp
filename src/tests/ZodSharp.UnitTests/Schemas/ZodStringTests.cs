@@ -144,6 +144,36 @@ public class ZodStringTests
 	}
 
 	[Test]
+	public async Task StringStartsWith_GivenOrdinalIgnoreCaseComparison_IgnoresCase()
+	{
+		var result = Z.String()
+			.StartsWith("HTTPS://", StringComparison.OrdinalIgnoreCase)
+			.Validate("https://example.com");
+
+		await Assert.That(result.IsSuccess).IsTrue();
+	}
+
+	[Test]
+	public async Task StringEndsWith_GivenOrdinalIgnoreCaseComparison_IgnoresCase()
+	{
+		var result = Z.String().EndsWith(".COM", StringComparison.OrdinalIgnoreCase).Validate("example.com");
+
+		await Assert.That(result.IsSuccess).IsTrue();
+	}
+
+	[Test]
+	public async Task StringStartsWith_GivenCustomMessageAndCode_ReportsThem()
+	{
+		var result = Z.String()
+			.StartsWith("https://", message: "Must start with https.", code: "bad_prefix")
+			.Validate("http://example.com");
+
+		await Assert.That(result.IsSuccess).IsFalse();
+		await Assert.That(result.Errors[0].Code).IsEqualTo("bad_prefix");
+		await Assert.That(result.Errors[0].Message).IsEqualTo("Must start with https.");
+	}
+
+	[Test]
 	[Arguments("  hello  ", "hello")]
 	[Arguments("\t hello \t", "hello")]
 	[Arguments("hello", "hello")]
@@ -228,6 +258,23 @@ public class ZodStringTests
 	public async Task StringIP_GivenValue_ReturnsExpectedResult(string value, bool expected)
 	{
 		var result = Z.String().IP().Validate(value);
+
+		await Assert.That(result.IsSuccess).IsEqualTo(expected);
+	}
+
+	[Test]
+	[Arguments(IPAddressRuleType.IPv4, "192.168.1.1", true)]
+	[Arguments(IPAddressRuleType.IPv4, "::1", false)]
+	[Arguments(IPAddressRuleType.IPv6, "::1", true)]
+	[Arguments(IPAddressRuleType.IPv6, "192.168.1.1", false)]
+	[Arguments(IPAddressRuleType.Any, "2001:db8::8a2e:370:7334", true)]
+	public async Task StringIP_GivenRuleType_ReturnsExpectedResult(
+		IPAddressRuleType ruleType,
+		string value,
+		bool expected
+	)
+	{
+		var result = Z.String().IP(ruleType).Validate(value);
 
 		await Assert.That(result.IsSuccess).IsEqualTo(expected);
 	}

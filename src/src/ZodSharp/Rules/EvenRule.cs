@@ -17,13 +17,19 @@ public readonly record struct EvenRule<T> : Core.IValidationRule<T>, Core.IZodRu
 	/// <summary>Gets the message format; <c>{0}</c> is the offending value.</summary>
 	public const string MessageFormat = "Number must be even, but got {0}";
 
-	readonly string? _message;
+	readonly string _message;
+	readonly string _code;
 
 	/// <summary>
 	/// Initializes a new instance of the EvenRule struct.
 	/// </summary>
 	/// <param name="message">Optional error message</param>
-	public EvenRule(string? message = null) => _message = message.OrNull();
+	/// <param name="code">Optional error code override</param>
+	public EvenRule(string? message = null, string? code = null)
+	{
+		_message = message.Or(MessageFormat);
+		_code = code.Or(ErrorCode);
+	}
 
 	/// <summary>
 	/// Validates that the value is even.
@@ -37,12 +43,12 @@ public readonly record struct EvenRule<T> : Core.IValidationRule<T>, Core.IZodRu
 	/// </summary>
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
-	public string GetErrorMessage(in T value) => _message ?? RuleMessage.Format(MessageFormat, value);
+	public string GetErrorMessage(in T value) => RuleMessage.Format(_message ?? MessageFormat, value);
 
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
 	public string Code => ErrorCode;
 
-	string? Core.IZodRule.Code => ErrorCode;
+	string? Core.IZodRule.Code => _code;
 
 	string? Core.IZodRule.Origin => null;
 }

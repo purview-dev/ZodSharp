@@ -15,6 +15,16 @@ public class ZodNumberTests
 	}
 
 	[Test]
+	public async Task NumberMin_GivenCustomMessageAndCode_ReportsThem()
+	{
+		var result = Z.Number().Min(5, "Too small.", "custom_too_small").Validate(3);
+
+		await Assert.That(result.IsSuccess).IsFalse();
+		await Assert.That(result.Errors[0].Code).IsEqualTo("custom_too_small");
+		await Assert.That(result.Errors[0].Message).IsEqualTo("Too small.");
+	}
+
+	[Test]
 	[Arguments(25.0, true)]
 	[Arguments(121.0, false)]
 	[Arguments(120.0, true)]

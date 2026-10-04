@@ -73,8 +73,115 @@ partial class ZodSchemaGeneratorTests
 		// Assert
 		await Assert.That(generated).ContainsGeneratedCode("public double Threshold { get; set; } = default!;");
 		await Assert.That(generated).ContainsGeneratedCode("typeof(global::Testing.Rules.ThresholdRule<>)");
+		// The required bound becomes a constructor parameter, so the attribute cannot be applied without it.
+		await Assert.That(generated).ContainsGeneratedCode("public ThresholdAttribute(double threshold)");
+		await Assert.That(generated).ContainsGeneratedCode("Threshold = threshold;");
 		await Assert.That(driverResult).DoesNotHaveDiagnostic("ZODSGEN043");
 		await Assert.That(driverResult).DoesNotHaveDiagnostic("ZODSGEN032");
+	}
+
+	[Test]
+	public async Task RuleAttributeGeneration_GivenRequiredValue_GeneratesAConstructorParameter(
+		CancellationToken cancellationToken
+	)
+	{
+		// Arrange - a rule whose value parameter has no default: the attribute must demand it.
+		const string source = """
+			using ZodSharp.Core;
+
+			namespace Testing.Rules
+			{
+				[ZodRule]
+				public readonly record struct UpperBoundRule<T>(T maxValue, string? message = null)
+					: IValidationRule<T>
+					where T : IComparable<T>
+				{
+					public bool IsValid(in T value) => value.CompareTo(maxValue) <= 0;
+
+					public string GetErrorMessage(in T value) => message ?? "Too big.";
+				}
+			}
+			""";
+
+		// Act
+		var driverResult = await GenerateAsync(
+			source,
+			new ZodSourceGeneratorTestOptions().Compile(),
+			cancellationToken
+		);
+		var generated = driverResult.GetSource("UpperBoundAttribute");
+		var assembly = await Assert.That(driverResult.CompilationResult.Assembly).IsNotNull();
+		var attributeType = assembly.GetType("Testing.Rules.UpperBoundAttribute")!;
+
+		// Assert - the constructor takes the required value and the message stays a named property.
+		await Assert.That(generated).ContainsGeneratedCode("public UpperBoundAttribute(double maxValue)");
+		await Assert.That(generated).ContainsGeneratedCode("MaxValue = maxValue;");
+		await Assert.That(generated).ContainsGeneratedCode("public string? Message { get; set; } = null;");
+		await Assert.That(attributeType.GetConstructor([typeof(double)])).IsNotNull();
+		await Assert.That(attributeType.GetConstructor([])).IsNull();
+		driverResult.AssertNoCompilationErrors();
+	}
+
+	[Test]
+	public async Task RuleAttributeGeneration_GivenMissingRequiredValue_FailsToCompile(
+		CancellationToken cancellationToken
+	)
+	{
+		// Arrange - the same attribute applied without its required value.
+		const string source = """
+			using ZodSharp;
+			using ZodSharp.Rules;
+
+			namespace Testing
+			{
+				[ZodSchema]
+				public partial class Sample
+				{
+					[LessThanOrEqual]
+					public int Value { get; set; }
+				}
+			}
+			""";
+
+		// Act - the harness normally rejects a run whose compilation has errors, so validation is disabled here
+		// to assert the error explicitly.
+		var driverResult = await GenerateAsync(source, ZodSourceGeneratorTestOptions.NoValidation, cancellationToken);
+
+		// Assert - a missing required value is a compile error at the attribute's usage site (CS7036), not a
+		// generator diagnostic that only surfaces when a schema is generated.
+		var diagnostics = driverResult.CompilationResult.Compilation.GetDiagnostics(cancellationToken);
+		await Assert.That(diagnostics).Contains(d => d.Id == "CS7036");
+	}
+
+	[Test]
+	public async Task RuleAttributeGeneration_GivenOptionalValueOnly_KeepsTheParameterlessConstructor(
+		CancellationToken cancellationToken
+	)
+	{
+		// Arrange - a rule whose only constructor parameter is the message: nothing is required.
+		const string source = """
+			using ZodSharp.Core;
+
+			namespace Testing.Rules
+			{
+				[ZodRule]
+				public readonly record struct WholeRule<T>(string? message = null) : IValidationRule<T>
+					where T : System.Numerics.INumber<T>
+				{
+					public bool IsValid(in T value) => value % T.One == T.Zero;
+
+					public string GetErrorMessage(in T value) => message ?? "Expected a whole number.";
+				}
+			}
+			""";
+
+		// Act
+		var driverResult = await GenerateAsync(source, cancellationToken);
+		var generated = driverResult.GetSource("WholeAttribute");
+
+		// Assert
+		await Assert.That(generated).ContainsGeneratedCode("public string? Message { get; set; } = null;");
+		await Assert.That(generated).DoesNotContain("public WholeAttribute(");
 	}
 
 	[Test]
@@ -157,7 +264,7 @@ partial class ZodSchemaGeneratorTests
 				[E164]
 				public string Phone { get; set; } = string.Empty;
 
-				[Regex(Pattern = "^[a-z]+$")]
+				[Regex("^[a-z]+$")]
 				public string Code { get; set; } = string.Empty;
 
 				[NonSentinel(Message = "Value must not be the default.")]
@@ -176,14 +283,17 @@ partial class ZodSchemaGeneratorTests
 		var generated = driverResult.GetSource("ContactSchema");
 
 		// Assert - each shipped attribute resolves to its built-in rule. The regex attribute mirrors the
-		// string overload (not the Regex one) and the open generic is closed with the member type.
-		await Assert.That(generated).ContainsGeneratedCode("new global::ZodSharp.Rules.EmailRule()");
-		await Assert.That(generated).ContainsGeneratedCode("new global::ZodSharp.Rules.E164Rule(null!)");
-		await Assert.That(generated).ContainsGeneratedCode("new global::ZodSharp.Rules.RegexRule(\"^[a-z]+$\", null!)");
+		// string overload (not the Regex one) and the open generic is closed with the member type. Every
+		// rule now takes (message, code), so an unset message/code is emitted as null!.
+		await Assert.That(generated).ContainsGeneratedCode("new global::ZodSharp.Rules.EmailRule(null!, null!)");
+		await Assert.That(generated).ContainsGeneratedCode("new global::ZodSharp.Rules.E164Rule(null!, null!)");
+		await Assert
+			.That(generated)
+			.ContainsGeneratedCode("new global::ZodSharp.Rules.RegexRule(\"^[a-z]+$\", null!, null!)");
 		await Assert
 			.That(generated)
 			.ContainsGeneratedCode(
-				"new global::ZodSharp.Rules.NonSentinelRule<global::System.Guid>(\"Value must not be the default.\")"
+				"new global::ZodSharp.Rules.NonSentinelRule<global::System.Guid>(\"Value must not be the default.\", null!)"
 			);
 		// The built-in rules own their identity, so the generated validation reads it from the rule.
 		await Assert.That(generated).Contains("((global::ZodSharp.Core.IZodRule)");
@@ -338,16 +448,19 @@ partial class ZodSchemaGeneratorTests
 			[ZodSchema]
 			public partial class Metrics
 			{
-				[MinValue(MinValue = 3)]
+				[MinValue(3)]
 				public int Count { get; set; }
 
 				[Even]
 				public int EvenCount { get; set; }
 
-				[GreaterThanOrEqual(MinValue = 1.5)]
+				[GreaterThanOrEqual(1.5)]
 				public double Ratio { get; set; }
 
-				[MinLengthZod(MinLength = 3, Code = "too_short", Message = "Too short.")]
+				[LessThanOrEqual(10)]
+				public int Bounded { get; set; }
+
+				[MinLengthZod(3, Code = "too_short", Message = "Too short.")]
 				public string Code { get; set; } = string.Empty;
 			}
 		}
@@ -362,13 +475,20 @@ partial class ZodSchemaGeneratorTests
 		var driverResult = await GenerateAsync(NewBuiltInAttributeSource, cancellationToken);
 		var generated = driverResult.GetSource("MetricsSchema");
 
-		// Assert - the generic bound rule is closed with the member type (its double bound converted to int),
-		// the generic even rule is closed with int, and the suffixed length attribute carries code and message.
-		await Assert.That(generated).ContainsGeneratedCode("new global::ZodSharp.Rules.MinValueRule<int>(3)");
-		await Assert.That(generated).ContainsGeneratedCode("new global::ZodSharp.Rules.EvenRule<int>(null!)");
+		// Assert - the generic bound rules are closed with the member type (their double bound converted to
+		// int), the generic even rule is closed with int, and the suffixed length attribute carries code and
+		// message. The inclusive bounds close with the member type too, so an int member works. Every rule now
+		// takes (message, code), so an unset message/code is emitted as null!.
 		await Assert
 			.That(generated)
-			.ContainsGeneratedCode("new global::ZodSharp.Rules.GreaterThanOrEqualRule(1.5D, null!)");
+			.ContainsGeneratedCode("new global::ZodSharp.Rules.MinValueRule<int>(3, null!, null!)");
+		await Assert.That(generated).ContainsGeneratedCode("new global::ZodSharp.Rules.EvenRule<int>(null!, null!)");
+		await Assert
+			.That(generated)
+			.ContainsGeneratedCode("new global::ZodSharp.Rules.GreaterThanOrEqualRule<double>(1.5D, null!, null!)");
+		await Assert
+			.That(generated)
+			.ContainsGeneratedCode("new global::ZodSharp.Rules.LessThanOrEqualRule<int>(10, null!, null!)");
 		await Assert
 			.That(generated)
 			.ContainsGeneratedCode("new global::ZodSharp.Rules.MinLengthRule(3, \"Too short.\", \"too_short\")");
@@ -389,9 +509,10 @@ partial class ZodSchemaGeneratorTests
 		var modelType = assembly.GetType("Testing.Metrics")!;
 		var validate = assembly.GetType("Testing.MetricsSchema")!.GetMethod("Validate")!;
 
-		// Act - the default metrics are all invalid; the even member is set odd.
+		// Act - the default metrics are all invalid; the even member is set odd and the upper bound is exceeded.
 		var instance = Activator.CreateInstance(modelType)!;
 		modelType.GetProperty("EvenCount")!.SetValue(instance, 3);
+		modelType.GetProperty("Bounded")!.SetValue(instance, 11);
 		var result = validate.Invoke(null, [instance])!;
 
 		// Assert
@@ -400,7 +521,69 @@ partial class ZodSchemaGeneratorTests
 			result.GetType().GetProperty("Errors")!.GetValue(result)!;
 		await Assert.That(errors.Any(error => error.Code == Rules.MinValueRule<int>.ErrorCode)).IsTrue();
 		await Assert.That(errors.Any(error => error.Code == Rules.EvenRule<int>.ErrorCode)).IsTrue();
-		await Assert.That(errors.Any(error => error.Code == Rules.GreaterThanOrEqualRule.ErrorCode)).IsTrue();
+		await Assert.That(errors.Any(error => error.Code == Rules.GreaterThanOrEqualRule<double>.ErrorCode)).IsTrue();
+		await Assert.That(errors.Any(error => error.Code == Rules.LessThanOrEqualRule<int>.ErrorCode)).IsTrue();
 		await Assert.That(errors.Any(error => error.Code == "too_short")).IsTrue();
+	}
+
+	/// <summary>
+	/// A <c>[ZodSchema]</c> class that uses the shipped attributes' optional value parameters (string
+	/// comparison, IP family) alongside message/code overrides.
+	/// </summary>
+	const string OptionalValueAttributeSource = """
+		using System;
+		using ZodSharp;
+		using ZodSharp.Rules;
+
+		namespace Testing
+		{
+			[ZodSchema]
+			public partial class Preferences
+			{
+				[StartsWith("https://", StringComparison.OrdinalIgnoreCase, Code = "bad_scheme")]
+				public string Endpoint { get; set; } = string.Empty;
+
+				[IPAddress(IPAddressRuleType.IPv4)]
+				public string Address { get; set; } = string.Empty;
+
+				[IPAddress]
+				public string AnyAddress { get; set; } = string.Empty;
+
+				[Email(Message = "Not an email.", Code = "bad_email")]
+				public string Contact { get; set; } = string.Empty;
+			}
+		}
+		""";
+
+	[Test]
+	public async Task RuleAttributeGeneration_GivenOptionalValueAttributes_ResolvesTheRules(
+		CancellationToken cancellationToken
+	)
+	{
+		// Act
+		var driverResult = await GenerateAsync(OptionalValueAttributeSource, cancellationToken);
+		var generated = driverResult.GetSource("PreferencesSchema");
+
+		// Assert - the string comparison and IP family flow into the rule (rendered as their enum value) and
+		// the message/code overrides are carried through.
+		await Assert
+			.That(generated)
+			.ContainsGeneratedCode(
+				"new global::ZodSharp.Rules.StartsWithRule(\"https://\", (global::System.StringComparison)5, null!, \"bad_scheme\")"
+			);
+		await Assert
+			.That(generated)
+			.ContainsGeneratedCode(
+				"new global::ZodSharp.Rules.IPAddressRule((global::ZodSharp.Rules.IPAddressRuleType)0, null!, null!)"
+			);
+		// A bare [IPAddress] keeps the rule's Any default.
+		await Assert
+			.That(generated)
+			.ContainsGeneratedCode(
+				"new global::ZodSharp.Rules.IPAddressRule((global::ZodSharp.Rules.IPAddressRuleType)2, null!, null!)"
+			);
+		await Assert
+			.That(generated)
+			.ContainsGeneratedCode("new global::ZodSharp.Rules.EmailRule(\"Not an email.\", \"bad_email\")");
 	}
 }
