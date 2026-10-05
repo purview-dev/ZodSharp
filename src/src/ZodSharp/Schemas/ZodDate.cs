@@ -46,6 +46,29 @@ public class ZodDate : ZodType<DateTime>
 	}
 
 	/// <summary>
+	/// Adds a range validation requiring the date to fall between a minimum and maximum.
+	/// </summary>
+	/// <param name="minimum">The lower bound</param>
+	/// <param name="maximum">The upper bound</param>
+	/// <param name="minimumIsExclusive">Whether the lower bound is exclusive</param>
+	/// <param name="maximumIsExclusive">Whether the upper bound is exclusive</param>
+	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
+	/// <returns>This schema for method chaining</returns>
+	public ZodDate Range(
+		DateTime minimum,
+		DateTime maximum,
+		bool minimumIsExclusive = false,
+		bool maximumIsExclusive = false,
+		string? message = null,
+		string? code = null
+	)
+	{
+		AddRule(new RangeRule<DateTime>(minimum, maximum, minimumIsExclusive, maximumIsExclusive, message, code));
+		return this;
+	}
+
+	/// <summary>
 	/// Adds a non-sentinel validation that rejects <see cref="DateTime.MinValue"/> and
 	/// <see cref="DateTime.MaxValue"/>.
 	/// </summary>

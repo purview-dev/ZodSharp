@@ -140,6 +140,33 @@ public abstract class ZodType<TOutput, TInput> : IZodSchema<TOutput, TInput>, IO
 	}
 
 	/// <summary>
+	/// Adds an <see cref="AllowedValuesRule{TOutput}"/> that requires the value to be one of the supplied
+	/// values.
+	/// </summary>
+	/// <param name="values">The allowed values.</param>
+	/// <param name="message">Optional error message.</param>
+	/// <param name="code">Optional error code override.</param>
+	/// <returns>This schema for method chaining.</returns>
+	public virtual ZodType<TOutput, TInput> AllowedValues(TOutput[] values, string? message = null, string? code = null)
+	{
+		AddRule(new AllowedValuesRule<TOutput>(values, message, code));
+		return this;
+	}
+
+	/// <summary>
+	/// Adds a <see cref="DeniedValuesRule{TOutput}"/> that rejects the supplied values.
+	/// </summary>
+	/// <param name="values">The denied values.</param>
+	/// <param name="message">Optional error message.</param>
+	/// <param name="code">Optional error code override.</param>
+	/// <returns>This schema for method chaining.</returns>
+	public virtual ZodType<TOutput, TInput> DeniedValues(TOutput[] values, string? message = null, string? code = null)
+	{
+		AddRule(new DeniedValuesRule<TOutput>(values, message, code));
+		return this;
+	}
+
+	/// <summary>
 	/// Resolves the error code to report for a failed rule: a rule that implements <see cref="IZodRule"/>
 	/// and supplies a code (typically from its constructor) wins over the rule's intrinsic
 	/// <see cref="IValidationRule{T}.Code"/>.

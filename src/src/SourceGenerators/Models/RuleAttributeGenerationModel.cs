@@ -46,17 +46,22 @@ readonly record struct GeneratedAttributeConstructor(EquatableArray<GeneratedAtt
 /// <summary>
 /// Describes a settable property on a generated validation attribute.
 /// </summary>
-/// <param name="Type">The property type.</param>
+/// <param name="Type">The property type. A <c>TypeReference</c> so an array parameter can be surfaced.</param>
 /// <param name="Name">The property name.</param>
 /// <param name="Initializer">The optional initializer expression.</param>
 /// <param name="IsNullable">Whether the property type is nullable.</param>
-readonly record struct GeneratedAttributeProperty(TypeIdentity Type, string Name, string? Initializer, bool IsNullable);
+readonly record struct GeneratedAttributeProperty(
+	TypeReference Type,
+	string Name,
+	string? Initializer,
+	bool IsNullable
+);
 
 /// <summary>
 /// Describes a constructor parameter on a generated validation attribute that carries a rule's constructor
 /// value.
 /// </summary>
-/// <param name="Type">The parameter type.</param>
+/// <param name="Type">The parameter type. A <c>TypeReference</c> so an array parameter can be surfaced.</param>
 /// <param name="Name">The parameter name, taken from the rule's constructor parameter.</param>
 /// <param name="PropertyName">The generated property the parameter assigns.</param>
 /// <param name="DefaultValue">
@@ -64,10 +69,15 @@ readonly record struct GeneratedAttributeProperty(TypeIdentity Type, string Name
 /// required and must be supplied at the attribute's usage site.
 /// </param>
 /// <param name="IsNullable">Whether the parameter type is nullable.</param>
+/// <param name="IsParams">
+/// Whether the parameter may be emitted as a <c>params</c> array. Only ever applied to the final parameter,
+/// so an array-valued rule parameter stays ergonomic at the attribute's usage site.
+/// </param>
 readonly record struct GeneratedAttributeParameter(
-	TypeIdentity Type,
+	TypeReference Type,
 	string Name,
 	string PropertyName,
 	string? DefaultValue,
-	bool IsNullable
+	bool IsNullable,
+	bool IsParams = false
 );

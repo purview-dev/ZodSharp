@@ -31,6 +31,13 @@ public class GeneratedRuleAttributesTests
 		typeof(PhoneRule),
 		typeof(CreditCardRule),
 		typeof(Base64StringRule),
+		typeof(RequiredRule<>),
+		typeof(RangeRule<>),
+		typeof(LengthRule),
+		typeof(StringLengthRule),
+		typeof(CompareRule),
+		typeof(AllowedValuesRule<>),
+		typeof(DeniedValuesRule<>),
 	];
 
 	static string GeneratedAttributeName(Type ruleType)
@@ -197,5 +204,42 @@ public class GeneratedRuleAttributesTests
 		// Assert
 		await Assert.That(pattern).IsNotNull();
 		await Assert.That(pattern!.PropertyType).IsEqualTo(typeof(string));
+	}
+
+	[Test]
+	public async Task Attribute_GivenRequiredRule_GeneratesTheZodSuffixedAttribute(CancellationToken cancellationToken)
+	{
+		cancellationToken.ThrowIfCancellationRequested();
+
+		// Act - RequiredAttribute already exists in System.ComponentModel.DataAnnotations, so the rule's
+		// attribute is emitted under the Zod suffix.
+		var attributeType = FindAttribute(typeof(RequiredRule<>));
+
+		// Assert
+		await Assert.That(attributeType).IsNotNull();
+		await Assert.That(attributeType!.Name).IsEqualTo("RequiredZodAttribute");
+		await Assert.That(attributeType.GetProperty("AllowEmptyString")).IsNotNull();
+		await Assert.That(attributeType.GetProperty("TrimWhitespace")).IsNotNull();
+		await Assert.That(attributeType.GetProperty("Message")).IsNotNull();
+		await Assert.That(attributeType.GetProperty("Code")).IsNotNull();
+	}
+
+	[Test]
+	public async Task Attribute_GivenRangeRule_GeneratesTheZodSuffixedAttributeWithDoubleBounds(
+		CancellationToken cancellationToken
+	)
+	{
+		cancellationToken.ThrowIfCancellationRequested();
+
+		// Act
+		var attributeType = FindAttribute(typeof(RangeRule<>));
+
+		// Assert - the type-parameter bounds surface as doubles so one attribute serves any numeric member.
+		await Assert.That(attributeType).IsNotNull();
+		await Assert.That(attributeType!.Name).IsEqualTo("RangeZodAttribute");
+		await Assert.That(attributeType.GetProperty("Minimum")!.PropertyType).IsEqualTo(typeof(double));
+		await Assert.That(attributeType.GetProperty("Maximum")!.PropertyType).IsEqualTo(typeof(double));
+		await Assert.That(attributeType.GetProperty("MinimumIsExclusive")).IsNotNull();
+		await Assert.That(attributeType.GetProperty("MaximumIsExclusive")).IsNotNull();
 	}
 }

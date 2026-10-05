@@ -685,4 +685,145 @@ partial class ZodSchemaGeneratorTests
 		await Assert.That(attributeType.GetConstructor([])).IsNotNull();
 		await Assert.That(attributeType.GetConstructor([typeof(UuidVersion)])).IsNotNull();
 	}
+
+	[Test]
+	public async Task RuleAttributeGeneration_GivenRequiredZodAttribute_ResolvesTheBuiltInRequiredRule(
+		CancellationToken cancellationToken
+	)
+	{
+		// Arrange - the shipped RequiredZod attribute is the Zod-suffixed form of RequiredRule.
+		const string source = """
+			using ZodSharp;
+			using ZodSharp.Rules;
+
+			namespace Testing
+			{
+				[ZodSchema]
+				public partial class Account
+				{
+					[RequiredZod(AllowEmptyString = false, TrimWhitespace = true)]
+					public string Name { get; set; } = string.Empty;
+				}
+			}
+			""";
+
+		// Act
+		var driverResult = await GenerateAsync(source, cancellationToken);
+		var generated = driverResult.GetSource("AccountSchema");
+
+		// Assert - the open generic is closed with the member type and carries both options.
+		await Assert
+			.That(generated)
+			.ContainsGeneratedCode("new global::ZodSharp.Rules.RequiredRule<string>(false, true, null!, null!)");
+	}
+
+	[Test]
+	public async Task RuleAttributeGeneration_GivenAllowedValuesZodAttribute_ClosesTheArrayWithTheMemberType(
+		CancellationToken cancellationToken
+	)
+	{
+		// Arrange - the params object[] attribute form supplies every allowed value.
+		const string source = """
+			using ZodSharp;
+			using ZodSharp.Rules;
+
+			namespace Testing
+			{
+				[ZodSchema]
+				public partial class Choice
+				{
+					[AllowedValuesZod("a", "b", "c")]
+					public string Code { get; set; } = string.Empty;
+				}
+			}
+			""";
+
+		// Act
+		var driverResult = await GenerateAsync(source, cancellationToken);
+		var generated = driverResult.GetSource("ChoiceSchema");
+
+		// Assert
+		await Assert
+			.That(generated)
+			.ContainsGeneratedCode(
+				"new global::ZodSharp.Rules.AllowedValuesRule<string>(new string[] { \"a\", \"b\", \"c\" }, null!, null!)"
+			);
+	}
+
+	[Test]
+	public async Task RuleAttributeGeneration_GivenAllowedValuesZodAttribute_ValidatesTheAllowedSet(
+		CancellationToken cancellationToken
+	)
+	{
+		// Arrange
+		const string source = """
+			using ZodSharp;
+			using ZodSharp.Rules;
+
+			namespace Testing
+			{
+				[ZodSchema]
+				public partial class Choice
+				{
+					[AllowedValuesZod("a", "b", "c")]
+					public string Code { get; set; } = string.Empty;
+				}
+			}
+			""";
+
+		// Act
+		var driverResult = await GenerateAsync(
+			source,
+			new ZodSourceGeneratorTestOptions().Compile(),
+			cancellationToken
+		);
+		var assembly = await Assert.That(driverResult.CompilationResult.Assembly).IsNotNull();
+		var modelType = assembly.GetType("Testing.Choice")!;
+		var validate = assembly.GetType("Testing.ChoiceSchema")!.GetMethod("Validate")!;
+
+		var validInstance = Activator.CreateInstance(modelType)!;
+		modelType.GetProperty("Code")!.SetValue(validInstance, "b");
+		var validResult = validate.Invoke(null, [validInstance])!;
+
+		var invalidInstance = Activator.CreateInstance(modelType)!;
+		modelType.GetProperty("Code")!.SetValue(invalidInstance, "z");
+		var invalidResult = validate.Invoke(null, [invalidInstance])!;
+
+		// Assert
+		await Assert.That((bool)validResult.GetType().GetProperty("IsSuccess")!.GetValue(validResult)!).IsTrue();
+		await Assert.That((bool)invalidResult.GetType().GetProperty("IsSuccess")!.GetValue(invalidResult)!).IsFalse();
+	}
+
+	[Test]
+	public async Task RuleAttributeGeneration_GivenDeniedValuesZodAttribute_ConvertsEachElementToTheMemberType(
+		CancellationToken cancellationToken
+	)
+	{
+		// Arrange - the elements are object-typed at the attribute, so the resolver converts each to int.
+		const string source = """
+			using ZodSharp;
+			using ZodSharp.Rules;
+
+			namespace Testing
+			{
+				[ZodSchema]
+				public partial class Rating
+				{
+					[DeniedValuesZod(1, 2, 3)]
+					public int Score { get; set; }
+				}
+			}
+			""";
+
+		// Act
+		var driverResult = await GenerateAsync(source, cancellationToken);
+		var generated = driverResult.GetSource("RatingSchema");
+
+		// Assert
+		await Assert
+			.That(generated)
+			.ContainsGeneratedCode(
+				"new global::ZodSharp.Rules.DeniedValuesRule<int>(new int[] { 1, 2, 3 }, null!, null!)"
+			);
+	}
 }

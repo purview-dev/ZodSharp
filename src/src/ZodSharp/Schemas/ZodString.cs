@@ -530,6 +530,161 @@ public class ZodString : ZodType<string>
 	}
 
 	/// <summary>
+	/// Adds a required validation that rejects <see langword="null"/> (and, unless allowed, empty or
+	/// whitespace-only) strings.
+	/// </summary>
+	/// <param name="allowEmptyString">Whether an empty string satisfies the rule.</param>
+	/// <param name="trimWhitespace">Whether a whitespace-only string counts as empty.</param>
+	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
+	/// <returns>This schema for method chaining</returns>
+	public ZodString Required(
+		bool allowEmptyString = false,
+		bool trimWhitespace = false,
+		string? message = null,
+		string? code = null
+	)
+	{
+		AddRule(new RequiredRule<string>(allowEmptyString, trimWhitespace, message, code));
+		return this;
+	}
+
+	/// <summary>
+	/// Adds an emoji-only validation.
+	/// Equivalent to Zod's <c>z.string().emoji()</c>.
+	/// </summary>
+	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
+	/// <returns>This schema for method chaining</returns>
+	public ZodString Emoji(string? message = null, string? code = null)
+	{
+		AddRule(new EmojiRule(message, code));
+		return this;
+	}
+
+	/// <summary>
+	/// Adds an XID format validation (20 base32hex characters).
+	/// Equivalent to Zod's <c>z.string().xid()</c>.
+	/// </summary>
+	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
+	/// <returns>This schema for method chaining</returns>
+	public ZodString Xid(string? message = null, string? code = null)
+	{
+		AddRule(new XidRule(message, code));
+		return this;
+	}
+
+	/// <summary>
+	/// Adds a KSUID format validation (27 base62 characters).
+	/// Equivalent to Zod's <c>z.string().ksuid()</c>.
+	/// </summary>
+	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
+	/// <returns>This schema for method chaining</returns>
+	public ZodString Ksuid(string? message = null, string? code = null)
+	{
+		AddRule(new KsuidRule(message, code));
+		return this;
+	}
+
+	/// <summary>
+	/// Adds an ISO 8601 duration format validation.
+	/// Equivalent to Zod's <c>z.string().duration()</c>.
+	/// </summary>
+	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
+	/// <returns>This schema for method chaining</returns>
+	public ZodString Duration(string? message = null, string? code = null)
+	{
+		AddRule(new DurationRule(message, code));
+		return this;
+	}
+
+	/// <summary>
+	/// Adds a GUID format validation (any 8-4-4-4-12 hexadecimal identifier).
+	/// Equivalent to Zod's <c>z.string().guid()</c>.
+	/// </summary>
+	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
+	/// <returns>This schema for method chaining</returns>
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Naming", "CA1720:Identifier contains type name")]
+	public ZodString Guid(string? message = null, string? code = null)
+	{
+		AddRule(new GuidRule(message, code));
+		return this;
+	}
+
+	/// <summary>
+	/// Adds a CIDR validation (either an IPv4 or IPv6 block).
+	/// Equivalent to Zod's <c>z.string().cidr()</c>.
+	/// </summary>
+	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
+	/// <returns>This schema for method chaining</returns>
+	public ZodString Cidr(string? message = null, string? code = null) => Cidr(CidrRuleType.Any, message, code);
+
+	/// <summary>
+	/// Adds a CIDR validation for a specific IP family.
+	/// </summary>
+	/// <param name="ruleType">The IP family the CIDR block must belong to</param>
+	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
+	/// <returns>This schema for method chaining</returns>
+	public ZodString Cidr(CidrRuleType ruleType, string? message = null, string? code = null)
+	{
+		AddRule(new CidrRule(ruleType, message, code));
+		return this;
+	}
+
+	/// <summary>
+	/// Adds an equality validation against a fixed value.
+	/// </summary>
+	/// <param name="other">The value the string must equal</param>
+	/// <param name="comparison">The string comparison to use</param>
+	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
+	/// <returns>This schema for method chaining</returns>
+	public ZodString Compare(
+		string other,
+		StringComparison comparison = StringComparison.Ordinal,
+		string? message = null,
+		string? code = null
+	)
+	{
+		AddRule(new CompareRule(other, comparison, message, code));
+		return this;
+	}
+
+	/// <summary>
+	/// Adds a string-length validation with an inclusive minimum and maximum.
+	/// </summary>
+	/// <param name="minimum">The inclusive minimum length</param>
+	/// <param name="maximum">The inclusive maximum length</param>
+	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
+	/// <returns>This schema for method chaining</returns>
+	public ZodString Length(int minimum, int maximum, string? message = null, string? code = null)
+	{
+		AddRule(new LengthRule(minimum, maximum, message, code));
+		return this;
+	}
+
+	/// <summary>
+	/// Adds a string-length validation with a maximum length and an optional minimum.
+	/// </summary>
+	/// <param name="maximumLength">The inclusive maximum length</param>
+	/// <param name="minimumLength">The inclusive minimum length</param>
+	/// <param name="message">Optional error message</param>
+	/// <param name="code">Optional error code override</param>
+	/// <returns>This schema for method chaining</returns>
+	public ZodString StringLength(int maximumLength, int minimumLength = 0, string? message = null, string? code = null)
+	{
+		AddRule(new StringLengthRule(maximumLength, minimumLength, message, code));
+		return this;
+	}
+
+	/// <summary>
 	/// Transforms the string to lowercase.
 	/// </summary>
 	/// <returns>A new schema that transforms the value</returns>

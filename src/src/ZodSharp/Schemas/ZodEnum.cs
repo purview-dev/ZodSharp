@@ -19,7 +19,7 @@ public class ZodEnum(HashSet<string> allowedValues) : ZodType<string>
 	/// <summary>
 	/// Gets the set of allowed values.
 	/// </summary>
-	public IReadOnlyCollection<string> AllowedValues => allowedValues;
+	public new IReadOnlyCollection<string> AllowedValues => allowedValues;
 
 	/// <summary>
 	/// Validates that the string is one of the allowed values.

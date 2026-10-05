@@ -62,8 +62,12 @@ The built-in rules report one of the following Zod-compatible codes:
 | `too_big` | A length or value exceeded an upper bound | `MaxLengthRule`, `MaxValueRule<T>`, `LessThanRule<T>`, `SafeIntegerRule` |
 | `not_multiple_of` | A number was not a multiple of the divisor | `MultipleOfRule<T>` |
 | `not_finite` | A number was `NaN` or infinite | `FiniteRule<T>` |
-| `invalid_value` | A value was a rejected sentinel | `NonSentinelRule<T>` |
+| `invalid_value` | A value was a rejected sentinel or was not in the allowed set | `NonSentinelRule<T>`, `AllowedValuesRule<T>`, `DeniedValuesRule<T>` |
 | `invalid_enum_value` | A value was not a defined member of the enum type, or was an excluded member | `EnumRule<TEnum>` |
+| `missing_field` | A required value was absent (or empty/whitespace-only) | `RequiredRule<T>` |
+| `invalid_length` | A string length fell outside the required range | `LengthRule`, `StringLengthRule` |
+| `invalid_range` | A comparable value fell outside the required range | `RangeRule<T>` |
+| `mismatch` | A value did not equal the expected value | `CompareRule` |
 | `validation_failed` | Fallback for rules that do not declare an identity | any rule without `ErrorCode`/`IZodRule` |
 
 ## String rules
@@ -105,6 +109,12 @@ Fluent methods live on `ZodString` (`ZodSharp.Schemas`). The `Span` column marks
 | `StartsWithRule` | `(string prefix, StringComparison comparison = StringComparison.Ordinal, string? message, string? code)` | `StartsWith(prefix, comparison)` | `invalid_string` | `String must start with '{0}', but got '{1}'` | yes |
 | `EndsWithRule` | `(string suffix, StringComparison comparison = StringComparison.Ordinal, string? message, string? code)` | `EndsWith(suffix, comparison)` | `invalid_string` | `String must end with '{0}', but got '{1}'` | yes |
 | `IncludesRule` | `(string substring, string? message, string? code)` | `Includes(substring)` | `invalid_string` | `String must contain '{0}', but got '{1}'` | yes |
+| `EmojiRule` | `(string? message)` | `Emoji()` | `invalid_string` | `Invalid emoji: {0}` | yes |
+| `XidRule` | `(string? message)` | `Xid()` | `invalid_string` | `Invalid XID: {0}` | yes |
+| `KsuidRule` | `(string? message)` | `Ksuid()` | `invalid_string` | `Invalid KSUID: {0}` | yes |
+| `DurationRule` | `(string? message)` | `Duration()` | `invalid_string` | `Invalid duration: {0}` | yes |
+| `GuidRule` | `(string? message)` | `Guid()` | `invalid_string` | `Invalid GUID: {0}` | yes |
+| `CidrRule` | `(CidrRuleType ruleType, string? message, string? code)` | `Cidr()` / `Cidr(ruleType)` | `invalid_string` | `Invalid {1} CIDR: {0}` | yes |
 
 Every rule constructor also accepts an optional `string? code = null` after `message`; when set it overrides the reported error code (otherwise the rule's own `ErrorCode` is reported).
 
@@ -127,6 +137,11 @@ Behaviour notes:
 - **`DateStringRule`** parses `yyyy-MM-dd` (invariant culture); **`TimeStringRule`** accepts `HH:mm`, optionally `:ss` and fractional seconds; **`DatetimeStringRule`** requires `yyyy-MM-dd` + `T` + `HH:mm:ss[.fff]` + `Z`.
 - **`NanoidRule`** requires exactly 21 URL-safe characters; **`Cuid2Rule`** requires non-empty lowercase alphanumerics.
 - **`StartsWithRule`** and **`EndsWithRule`** use the supplied `StringComparison` (default `Ordinal`); **`IncludesRule`** uses ordinal comparison.
+- **`EmojiRule`** mirrors Zod's `emoji()`: every rune must be an `Extended_Pictographic` or `Emoji_Component` code point, and at least one must be an anchor (a pictograph, a regional indicator, or a keycap). The Unicode tables are generated from Unicode 16.0 `emoji-data.txt`, because .NET's regex engine does not expose the `Extended_Pictographic` property.
+- **`XidRule`** requires exactly 20 base32hex characters (`0-9`, `a-v`/`A-V`); **`KsuidRule`** requires exactly 27 base62 characters.
+- **`DurationRule`** accepts ISO 8601-1 durations; the 8601-2 extensions (negative durations and fractional/negative components) are rejected, matching Zod.
+- **`GuidRule`** accepts any 8-4-4-4-12 hexadecimal identifier, including nil and max; `UUIDRule` additionally checks the RFC 9562 version and variant nibbles.
+- **`CidrRule`** accepts an IPv4 or IPv6 block; pass a `CidrRuleType` to require `IPv4` or `IPv6` (`Any` is the default).
 
 ## Number rules
 
@@ -178,6 +193,24 @@ var chained = Z.String().NonSentinel().Min(3);
 ```
 
 The same rule can be attached directly with `AddRule`/`Rule`, or through the shipped `[NonSentinel]` attribute, which closes the open generic with the annotated member/scalar type — see [Custom Rules](Custom-Rules.md#non-sentinel-values-ef-friendly).
+
+## DataAnnotations-mirroring rules
+
+These rules mirror `System.ComponentModel.DataAnnotations` attributes as first-class rules, so the same behaviour is available standalone, through the fluent API, or through a generated attribute:
+
+| Rule | Constructor | Fluent method | Code | Message format |
+|---|---|---|---|---|
+| `RequiredRule<T>` | `(bool allowEmptyString = false, bool trimWhitespace = false, string? message, string? code)` | `ZodString.Required(...)` | `missing_field` | `Field is required` |
+| `RangeRule<T>` | `(T minimum, T maximum, bool minimumIsExclusive = false, bool maximumIsExclusive = false, string? message, string? code)` | `ZodNumber.Range(...)`, `ZodBigInt.Range(...)`, `ZodDate.Range(...)` | `invalid_range` | `Value must be between {0} and {1}, but got {2}` |
+| `LengthRule` | `(int minimum, int maximum, string? message, string? code)` | `ZodString.Length(min, max)` | `invalid_length` | `String length must be between {0} and {1} characters, but got {2}` |
+| `StringLengthRule` | `(int maximumLength, int minimumLength = 0, string? message, string? code)` | `ZodString.StringLength(max, min)` | `invalid_length` | `String must be at most {0} characters long and at least {1}, but got {2}` |
+| `CompareRule` | `(string other, StringComparison comparison = Ordinal, string? message, string? code)` | `ZodString.Compare(...)` | `mismatch` | `Value must match '{0}', but got '{1}'` |
+| `AllowedValuesRule<T>` | `(T[] values, string? message, string? code)` | `AllowedValues(values)` | `invalid_value` | `Value '{0}' is not one of the allowed values` |
+| `DeniedValuesRule<T>` | `(T[] values, string? message, string? code)` | `DeniedValues(values)` | `invalid_value` | `Value '{0}' is one of the denied values` |
+
+`RequiredRule<T>` always rejects `null`. When `allowEmptyString` is `false` an empty string is rejected as well; `trimWhitespace` additionally treats a whitespace-only string as empty (leading/trailing whitespace on a non-empty value is preserved). The `ZodString.Required` fluent method is a covariant convenience over the generic rule.
+
+`AllowedValuesRule<T>` and `DeniedValuesRule<T>` accept both a single value (`new AllowedValuesRule<int>(5)`) and an array. The generated `[AllowedValuesZod]` / `[DeniedValuesZod]` attributes surface the array as a `params object[]` (plus a single-value overload), so `[AllowedValuesZod("a", "b", "c")]` works on a `string` member and `[DeniedValuesZod(1, 2, 3)]` on an `int` member; the resolver converts each element to the member type.
 
 ## Enum rules
 
@@ -262,12 +295,25 @@ Each built-in rule that can be expressed as an attribute ships a generated `Vali
 | `[PhoneZod]` | `PhoneRule` | as above |
 | `[CreditCardZod]` | `CreditCardRule` | as above |
 | `[Base64StringZod]` | `Base64StringRule` | as above |
+| `[Emoji]` | `EmojiRule` | |
+| `[Xid]` | `XidRule` | |
+| `[Ksuid]` | `KsuidRule` | |
+| `[Duration]` | `DurationRule` | |
+| `[Guid]` | `GuidRule` | accepts any 8-4-4-4-12 hex identifier |
+| `[Cidr]` / `[Cidr(CidrRuleType.…)]` | `CidrRule` | defaults to `Any`; pass a type to require IPv4/IPv6 |
+| `[RequiredZod(…)]` | `RequiredRule<T>` | suffixed; exposes `AllowEmptyString`/`TrimWhitespace` |
+| `[RangeZod(…)]` | `RangeRule<T>` | the type-parameter bounds are doubles; the rule closes with the member type |
+| `[LengthZod(…)]` | `LengthRule` | suffixed to avoid the DataAnnotations name |
+| `[StringLengthZod(…)]` | `StringLengthRule` | as above |
+| `[CompareZod(…)]` | `CompareRule` | as above |
+| `[AllowedValuesZod(…)]` | `AllowedValuesRule<T>` | a `params object[]` array (and a single-value overload); the rule closes with the member type |
+| `[DeniedValuesZod(…)]` | `DeniedValuesRule<T>` | a `params object[]` array (and a single-value overload); the rule closes with the member type |
 
 A generated attribute's constructor mirrors the rule's value parameters: a parameter the rule declares without a default becomes a required constructor argument, and a parameter with a default keeps that default (so an optional value such as `[StartsWith("…", StringComparison.OrdinalIgnoreCase)]` still has a usable default). The value parameters are also exposed as settable properties. The rule's `message` and identity (`code`/`origin`) parameters stay properties only — `Message` and, where present, `Code` — and default to the rule's own `MessageFormat`/`ErrorCode`, so the attribute is self-describing.
 
 Each generated attribute reports the rule's own `ErrorCode`/`Origin` because every built-in rule implements `IZodRule`.
 
-Rules whose derived attribute name is already taken by `System.ComponentModel.DataAnnotations` — `MinLengthRule`, `MaxLengthRule`, `UrlRule`, `PhoneRule`, `CreditCardRule`, `Base64StringRule` — are emitted under a `Zod` suffix instead (for example `[MinLengthZod]`), so the rule's own identity and message stay usable. The generic bound rules surface their type-parameter bound as a `double`, so `[MinValue(3)]` works on an `int` or a `double` member (the value is converted to the member type).
+Rules whose derived attribute name is already taken by `System.ComponentModel.DataAnnotations` — `MinLengthRule`, `MaxLengthRule`, `UrlRule`, `PhoneRule`, `CreditCardRule`, `Base64StringRule`, `RequiredRule`, `RangeRule`, `LengthRule`, `StringLengthRule`, `CompareRule`, `AllowedValuesRule`, `DeniedValuesRule` — are emitted under a `Zod` suffix instead (for example `[MinLengthZod]`, `[RequiredZod]`, `[RangeZod]`), so the rule's own identity and message stay usable. The generic bound rules surface their type-parameter bound as a `double`, so `[MinValue(3)]` works on an `int` or a `double` member (the value is converted to the member type).
 
 ## Exposed as DataAnnotations attributes
 
@@ -282,7 +328,7 @@ The `[ZodSchema]` generator maps several built-in rules to their `System.Compone
 | `[Base64String]` | `Base64StringRule` | `invalid_string` |
 | `[RegularExpression]` | compiled `Regex`, not `RegexRule` | `invalid_string` |
 
-Size and range attributes (`[Length]`, `[StringLength]`, `[MinLength]`, `[MaxLength]`, `[Range]`) are emitted as direct, typed codegen rather than as rule structs. The rule-identity variants of the colliding names are the suffixed [generated attributes](#generated-attributes) (`[MinLengthZod]`, `[MaxLengthZod]`, `[UrlZod]`, `[PhoneZod]`, `[CreditCardZod]`, `[Base64StringZod]`), which report the rule's own `Code` and accept a `Message`. The remaining built-in rules are covered by their own generated attributes — for example `[Regex("…")]` validates through `RegexRule`, whereas `[RegularExpression]` compiles the pattern inline. See [Source Generator DataAnnotations](Source-Generator-DataAnnotations.md) for the full attribute table and the generated metadata, and [Custom Rules](Custom-Rules.md) for mapping your own rules to attributes.
+Size and range attributes (`[Length]`, `[StringLength]`, `[MinLength]`, `[MaxLength]`, `[Range]`) are emitted as direct, typed codegen; the equivalent rule structs (`LengthRule`, `StringLengthRule`, `MinLengthRule`, `MaxLengthRule`, `RangeRule<T>`) are also available directly and through their generated attributes. The rule-identity variants of the colliding names are the suffixed [generated attributes](#generated-attributes) (`[MinLengthZod]`, `[MaxLengthZod]`, `[UrlZod]`, `[PhoneZod]`, `[CreditCardZod]`, `[Base64StringZod]`, `[RequiredZod]`, `[RangeZod]`, `[LengthZod]`, `[StringLengthZod]`, `[CompareZod]`, `[AllowedValuesZod]`, `[DeniedValuesZod]`), which report the rule's own `Code` and accept a `Message`. The remaining built-in rules are covered by their own generated attributes — for example `[Regex("…")]` validates through `RegexRule`, whereas `[RegularExpression]` compiles the pattern inline. See [Source Generator DataAnnotations](Source-Generator-DataAnnotations.md) for the full attribute table and the generated metadata, and [Custom Rules](Custom-Rules.md) for mapping your own rules to attributes.
 
 ## Related
 

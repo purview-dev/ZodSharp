@@ -41,7 +41,20 @@ public readonly record struct IPAddressRule : Core.IValidationRule<string>, Core
 	readonly string _message;
 
 	/// <summary>
-	/// Initializes a new instance of the IPAddressRule struct with default rule type (Any).
+	/// Initializes a new instance of the <see cref="IPAddressRule"/> struct with the default rule type (Any).
+	/// </summary>
+	/// <remarks>
+	/// A struct always has a parameterless constructor; declaring it explicitly stops <c>new IPAddressRule()</c>
+	/// from defaulting to the first enum member (<see cref="IPAddressRuleType.IPv4"/>).
+	/// </remarks>
+	public IPAddressRule()
+	{
+		_ruleType = IPAddressRuleType.Any;
+		_message = MessageFormat;
+	}
+
+	/// <summary>
+	/// Initializes a new instance of the <see cref="IPAddressRule"/> struct with default rule type (Any).
 	/// </summary>
 	/// <param name="message">Optional error message/ message format.</param>
 	/// <param name="code">Optional error code override. If one is not specified then the <see cref="ErrorCode"/> is used.</param>

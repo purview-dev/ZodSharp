@@ -806,13 +806,24 @@ static class CustomRuleResolver
 	internal static bool IsSupportedAttributePropertyType(ITypeSymbol type)
 	{
 		var unwrapped = TypeHelpers.UnwrapNullableType(type);
+
+		// A type parameter is surfaced as a double on the generated attribute (see the attribute builder), so
+		// it is addressable even though the parameter itself is not an attribute-argument type.
+		if (unwrapped.TypeKind == TypeKind.TypeParameter)
+			return true;
+
+		// A one-dimensional array of a supported type is a legal attribute argument. An array of a type
+		// parameter is surfaced as object[] by the attribute builder, so this also covers AllowedValuesRule<T>.
+		if (unwrapped is IArrayTypeSymbol { Rank: 1 } array)
+			return IsSupportedAttributePropertyType(array.ElementType);
+
 		if (unwrapped is INamedTypeSymbol { TypeKind: TypeKind.Enum })
 			return true;
 
 		if (unwrapped.ToDisplayString() == "System.Type")
 			return true;
 
-		// Only primitive types and string are supported as attribute properties.
+		// Only primitive types, object and string are supported as attribute properties.
 		return unwrapped.SpecialType
 			is SpecialType.System_Boolean
 				or SpecialType.System_Byte
@@ -826,6 +837,7 @@ static class CustomRuleResolver
 				or SpecialType.System_UInt64
 				or SpecialType.System_Single
 				or SpecialType.System_Double
+				or SpecialType.System_Object
 				or SpecialType.System_String;
 	}
 
@@ -1155,6 +1167,9 @@ static class CustomRuleResolver
 			return CanPassNull(targetType);
 		}
 
+		if (constant.Kind == TypedConstantKind.Array)
+			return TryConvertArrayConstant(constant, targetType, out expression);
+
 		if (constant.Kind == TypedConstantKind.Type)
 		{
 			if (constant.Value is ITypeSymbol typeSymbol)
@@ -1168,6 +1183,45 @@ static class CustomRuleResolver
 		}
 
 		return TryConvertValue(constant.Value, targetType, out expression);
+	}
+
+	/// <summary>
+	/// Converts an array attribute argument (for example the allowed/denied values of
+	/// <c>AllowedValuesRule&lt;T&gt;</c>) into a typed array expression, converting each element to the target
+	/// array's element type so an <c>object[]</c> attribute argument can be closed with the member type.
+	/// </summary>
+	/// <param name="constant">The array constant supplied by the applied attribute.</param>
+	/// <param name="targetType">The rule constructor parameter type the array is passed to.</param>
+	/// <param name="expression">The generated array expression when the conversion succeeds.</param>
+	/// <returns><see langword="true"/> when every element converts to the target element type.</returns>
+	static bool TryConvertArrayConstant(TypedConstant constant, ITypeSymbol targetType, out string expression)
+	{
+		expression = string.Empty;
+
+		if (TypeHelpers.UnwrapNullableType(targetType) is not IArrayTypeSymbol { Rank: 1 } arrayType)
+			return false;
+
+		if (!TypeReference.TryCreate(arrayType.ElementType, out var elementReference))
+			return false;
+
+		var elements = constant.Values;
+		if (elements.IsDefaultOrEmpty)
+		{
+			expression = $"new {elementReference.RenderFullName}[0]";
+			return true;
+		}
+
+		var converted = ImmutableArray.CreateBuilder<string>(elements.Length);
+		foreach (var element in elements)
+		{
+			if (!TryConvertConstant(element, arrayType.ElementType, out var elementExpression))
+				return false;
+
+			converted.Add(elementExpression);
+		}
+
+		expression = $"new {elementReference.RenderFullName}[] {{ {string.Join(", ", converted)} }}";
+		return true;
 	}
 
 	internal static bool TryConvertValue(object? value, ITypeSymbol targetType, out string expression)

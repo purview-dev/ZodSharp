@@ -187,9 +187,16 @@ partial class ZodSchemaGenerator
 
 		if (messageParameter is not null && propertyNames.Add("Message"))
 		{
+			var messageType = TypeReference.TryCreate(
+				TypeHelpers.StripNullableAnnotations(messageParameter.Type),
+				out var messageReference
+			)
+				? messageReference
+				: new TypeIdentity(SpecialType.System_String).AsTypeReference();
+
 			properties.Add(
 				new GeneratedAttributeProperty(
-					new TypeIdentity(TypeHelpers.StripNullableAnnotations(messageParameter.Type)),
+					messageType,
 					"Message",
 					BuildMessageInitializer(messageParameter, ruleType),
 					TypeHelpers.CanBeNull(messageParameter.Type)
@@ -259,11 +266,16 @@ partial class ZodSchemaGenerator
 
 			// A type-parameter constructor argument (for example `MinValueRule<T>(T minValue)`) cannot be
 			// mirrored directly; it is surfaced as a double, the numeric type the schema pipeline uses and the
-			// type a `[MinValue]`-style attribute can carry.
+			// type a `[MinValue]`-style attribute can carry. An array of type parameters (for example the
+			// allowed values of `AllowedValuesRule<T>`) is surfaced as `object[]`, so one attribute serves any
+			// member type and the resolver converts each element back to that type.
 			var propertyType =
 				parameter.Type.TypeKind == TypeKind.TypeParameter
 					? compilation.GetSpecialType(SpecialType.System_Double)
-					: parameter.Type;
+				: parameter.Type is IArrayTypeSymbol { Rank: 1 } array
+				&& array.ElementType.TypeKind == TypeKind.TypeParameter
+					? compilation.CreateArrayTypeSymbol(compilation.GetSpecialType(SpecialType.System_Object))
+				: parameter.Type;
 
 			if (!CustomRuleResolver.IsSupportedAttributePropertyType(propertyType))
 			{
@@ -279,17 +291,38 @@ partial class ZodSchemaGenerator
 				return false;
 			}
 
-			TypeIdentity propertyTypeIdentity = new(TypeHelpers.StripNullableAnnotations(propertyType));
+			if (
+				!TypeReference.TryCreate(
+					TypeHelpers.StripNullableAnnotations(propertyType),
+					out var propertyTypeReference
+				)
+			)
+			{
+				failureDiagnostics =
+				[
+					ReportUnsupportedRuleAttributeGeneration(
+						ruleType,
+						$"constructor parameter '{parameter.Name}' has type '{parameter.Type.ToDisplayString()}', which cannot be represented as an attribute property"
+					),
+					.. identityWarnings,
+				];
+
+				return false;
+			}
+
+			// An array parameter is emitted as a params array and is never nullable, so the generated attribute
+			// stays ergonomic and cannot be handed a null array.
+			var isArray = propertyType is IArrayTypeSymbol;
 			var propertyName = ToPascalCase(parameter.Name);
 			var initializer = BuildPropertyInitializer(parameter, propertyType, ruleType, isIdentityParameter);
-			var isNullable = TypeHelpers.CanBeNull(propertyType);
+			var isNullable = !isArray && TypeHelpers.CanBeNull(propertyType);
 
 			// The widest overload is visited first, so its property type and initializer win when an overload
 			// pair shares a parameter.
 			if (propertyNames.Add(propertyName))
 			{
 				properties.Add(
-					new GeneratedAttributeProperty(propertyTypeIdentity, propertyName, initializer, isNullable)
+					new GeneratedAttributeProperty(propertyTypeReference, propertyName, initializer, isNullable)
 				);
 			}
 
@@ -305,11 +338,12 @@ partial class ZodSchemaGenerator
 
 			constructorParameters.Add(
 				new GeneratedAttributeParameter(
-					propertyTypeIdentity,
+					propertyTypeReference,
 					parameter.Name,
 					propertyName,
 					parameter.HasExplicitDefaultValue ? initializer : null,
-					isNullable
+					isNullable,
+					isArray
 				)
 			);
 		}
@@ -732,9 +766,7 @@ partial class ZodSchemaGenerator
 
 			foreach (var property in model.Properties)
 			{
-				var propertyType = property.IsNullable
-					? property.Type.AsTypeReference().Nullable(writer)
-					: property.Type.AsTypeReference();
+				var propertyType = property.IsNullable ? property.Type.Nullable(writer) : property.Type;
 
 				writer.Property(
 					new PropertyDeclarationOptions(property.Name, propertyType, TypeDeclarationAccessibility.Public)
@@ -769,16 +801,18 @@ partial class ZodSchemaGenerator
 
 		var parameters = ImmutableArray.CreateBuilder<ParameterDeclarationOptions>(constructor.Parameters.Count);
 
-		foreach (var constructorParameter in constructor.Parameters)
+		for (var i = 0; i < constructor.Parameters.Count; i++)
 		{
+			var constructorParameter = constructor.Parameters[i];
 			var parameterType = constructorParameter.IsNullable
-				? constructorParameter.Type.AsTypeReference().Nullable(writer)
-				: constructorParameter.Type.AsTypeReference();
+				? constructorParameter.Type.Nullable(writer)
+				: constructorParameter.Type;
 
 			parameters.Add(
 				new ParameterDeclarationOptions(constructorParameter.Name, parameterType)
 				{
 					DefaultValue = constructorParameter.DefaultValue,
+					IsParams = constructorParameter.IsParams && i == constructor.Parameters.Count - 1,
 				}
 			);
 		}
