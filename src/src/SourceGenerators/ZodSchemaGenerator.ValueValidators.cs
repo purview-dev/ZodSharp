@@ -8,8 +8,17 @@ namespace ZodSharp.SourceGenerators;
 
 partial class ZodSchemaGenerator
 {
-	static void GenerateValueSetValidations(CodeWriter writer, ZodPropertyDescriptor property)
+	static void GenerateValueSetValidations(
+		CodeWriter writer,
+		ZodPropertyDescriptor property,
+		bool emitEnumRule = false
+	)
 	{
+		// The enum rule owns the value set: the values a [DeniedValues] attribute lists are absorbed into the
+		// rule's disallowed set, so the standalone validation is skipped to avoid reporting the value twice.
+		if (emitEnumRule)
+			return;
+
 		var allowedValues = property.ValidationAttributes.AllowedValues;
 		var deniedValues = property.ValidationAttributes.DeniedValues;
 		if (

@@ -24,6 +24,7 @@ enum PropertyValidationKind
 	Comparable,
 	Collection,
 	Complex,
+	Enum,
 	Unsupported,
 }
 
@@ -46,6 +47,10 @@ readonly record struct LengthAccessor(string LengthExpression, string Origin, bo
 /// Rules bound to the target type itself (type-level <c>[ZodRule]</c>-mapped attributes). They are
 /// evaluated against the whole value with an empty path.
 /// </param>
+/// <param name="ValidateEnumValues">
+/// Whether the automatic enum validation is emitted for the schema's enum properties. On by default; the
+/// <c>[ZodSchema]</c> attribute opts out.
+/// </param>
 /// <param name="IsPrimary">True if this is the primary schema for the target type, false if it is a secondary schema.</param>
 readonly record struct ZodSchemaDescriptor(
 	TypeIdentity TargetType,
@@ -62,15 +67,38 @@ readonly record struct ZodSchemaDescriptor(
 	bool GenerateValidateMethod,
 	bool GenerateParseMethod,
 	EquatableArray<CustomRuleDescriptor> TypeRules,
+	bool ValidateEnumValues,
 	bool IsPrimary
 );
 
+/// <param name="PropertyType">The declared type of the property, with a nullable wrapper removed.</param>
+/// <param name="Name">The name of the property.</param>
+/// <param name="DisplayName">The name reported in error messages, honouring a <c>[Display]</c> attribute.</param>
+/// <param name="CanBeNull">Indicates whether the property can be null.</param>
+/// <param name="IsNullableValueType">Indicates whether the property type is a <c>Nullable&lt;T&gt;</c>.</param>
+/// <param name="IsEnum">Indicates whether the property type is an enum.</param>
+/// <param name="IsFlagsEnum">Indicates whether the enum type is declared with the <c>[Flags]</c> attribute.</param>
+/// <param name="IgnoredEnumMembers">
+/// The enum members marked with <c>[ZodIgnore]</c>, rendered as member expressions. Empty for a non-enum or
+/// flags property.
+/// </param>
+/// <param name="ValidationKind">The kind of validation the property supports.</param>
+/// <param name="ElementType">The collection element type, when the property is a collection.</param>
+/// <param name="ElementTypeCanBeNull">Indicates whether a collection element can be null.</param>
+/// <param name="NestedSchemaType">The generated schema type of a nested complex type, when there is one.</param>
+/// <param name="LengthAccessor">The length expression and origin, when the property's length is countable.</param>
+/// <param name="CompareViaCompareTo">Indicates whether ranges compare through <c>IComparable</c>.</param>
+/// <param name="ValidationAttributes">The DataAnnotations attributes declared on the property.</param>
+/// <param name="CustomRules">The rules bound to the property through <c>[ZodRule]</c>-mapped attributes.</param>
 readonly record struct ZodPropertyDescriptor(
 	TypeIdentity PropertyType,
 	string Name,
 	string DisplayName,
 	bool CanBeNull,
+	bool IsNullableValueType,
 	bool IsEnum,
+	bool IsFlagsEnum,
+	EquatableArray<string> IgnoredEnumMembers,
 	PropertyValidationKind ValidationKind,
 	TypeIdentity? ElementType,
 	bool ElementTypeCanBeNull,

@@ -47,6 +47,9 @@ static partial class TypeLibraryGenerator
 	[TypeRef(ZodSharpNamespace)]
 	static readonly TypeIdentity ZodSchemaAttribute = default;
 
+	[TypeRef(ZodSharpNamespace)]
+	static readonly TypeIdentity ZodIgnoreAttribute = default;
+
 	[TypeRef(ZodSharpCoreNamespace)]
 	static readonly TypeIdentity ZodSchemaGeneratedAttribute = default;
 
@@ -65,6 +68,9 @@ static partial class TypeLibraryGenerator
 
 	[TypeRef("System")]
 	static readonly TypeIdentity AttributeUsageAttribute = default;
+
+	[TypeRef(ZodSharpRulesNamespace)]
+	static readonly TypeIdentity EnumRule = default;
 
 	[TypeRef(ZodSharpCoreNamespace)]
 	static readonly TypeIdentity ValidationResult = default;

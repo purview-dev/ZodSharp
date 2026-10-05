@@ -447,6 +447,11 @@ static class CustomRuleResolver
 				if (IsOrImplements(type, substituted))
 					continue;
 
+				// A class-type constraint (for example `where T : struct, Enum`) is satisfied by a type the
+				// interface check above does not cover: an enum implements no interface named Enum.
+				if (SatisfiesBaseTypeConstraint(type, substituted))
+					continue;
+
 				// A constraint can be satisfied by a declaration this generator cannot see: a type declared
 				// partial in this compilation may receive the interface implementation from another generator
 				// (a scalar value object gets IScalarValueObject<TSelf, TValue> from the value object
@@ -461,6 +466,24 @@ static class CustomRuleResolver
 
 		return true;
 	}
+
+	/// <summary>
+	/// Determines whether <paramref name="type"/> satisfies a base-class constraint the interface check does not
+	/// cover. Only the constrained base types a rule can declare are recognised.
+	/// </summary>
+	/// <param name="type">The candidate type the rule is closed with.</param>
+	/// <param name="constraint">The constraint type.</param>
+	/// <returns><see langword="true"/> when the type satisfies the constraint.</returns>
+	[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0072:Add missing cases")]
+	static bool SatisfiesBaseTypeConstraint(ITypeSymbol type, ITypeSymbol constraint) =>
+		constraint.SpecialType switch
+		{
+			SpecialType.System_Enum => type.TypeKind == TypeKind.Enum,
+			SpecialType.System_ValueType => type.IsValueType,
+			SpecialType.System_Delegate => type.TypeKind == TypeKind.Delegate,
+			SpecialType.System_Object => true,
+			_ => false,
+		};
 
 	/// <summary>
 	/// Determines whether <paramref name="type"/> can be completed by another source generator, which means

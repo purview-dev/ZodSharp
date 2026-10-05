@@ -15,11 +15,15 @@ partial class ZodSchemaGenerator
 		if (property.CustomRules.Count == 0)
 			return;
 
+		// The resolver closes a generic rule over the property's underlying type, so a nullable value type is
+		// unwrapped to match. The validation runs inside the non-null guard, so the unwrap cannot throw.
+		var valueExpression = property.IsNullableValueType ? $"value.{property.Name}!.Value" : $"value.{property.Name}";
+
 		GenerateRuleValidations(
 			writer,
 			property.CustomRules,
 			property.Name,
-			$"value.{property.Name}",
+			valueExpression,
 			CodeGenHelpers.GetPathFieldName(property.Name),
 			property.DisplayName,
 			declareValueLocal: true

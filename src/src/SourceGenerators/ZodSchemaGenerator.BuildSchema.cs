@@ -448,7 +448,12 @@ partial class ZodSchemaGenerator
 				foreach (var property in schema.Properties)
 				{
 					if (property.ShouldProcess)
-						GeneratePropertyValidation(writer, property.Value, cancellationToken);
+						GeneratePropertyValidation(
+							writer,
+							property.Value,
+							schema.ValidateEnumValues,
+							cancellationToken
+						);
 				}
 
 				GenerateTypeRuleValidations(writer, schema);
@@ -654,6 +659,7 @@ partial class ZodSchemaGenerator
 	static void GeneratePropertyValidation(
 		CodeWriter writer,
 		ZodPropertyDescriptor property,
+		bool validateEnumValues,
 		CancellationToken cancellationToken
 	)
 	{
@@ -663,6 +669,10 @@ partial class ZodSchemaGenerator
 		var displayName = property.DisplayName;
 		var attributes = property.ValidationAttributes;
 		CodeWriter.BlockScope? block = null;
+
+		// The enum rule owns the property's value set: the values a [DeniedValues] attribute lists are
+		// absorbed into the rule's disallowed set, so the standalone denied-values validation is skipped.
+		var emitEnumRule = IsEnumValidationEmitted(property, validateEnumValues);
 
 		if (property.CanBeNull && attributes.Required.ShouldProcess && attributes.Required.Value.Exists)
 		{
@@ -683,23 +693,23 @@ partial class ZodSchemaGenerator
 
 			writer.Rule(propertyName, comparison, "missing_field", errorMessage);
 			block = writer.ElseScope();
-			GenerateValueSetValidations(writer, property);
+			GenerateValueSetValidations(writer, property, emitEnumRule);
 		}
 		else
 		{
-			GenerateValueSetValidations(writer, property);
+			GenerateValueSetValidations(writer, property, emitEnumRule);
 			if (property.CanBeNull)
 				block = writer.IfBlockScope($"value.{propertyName} != null");
 		}
 
-		GenerateTypeSpecificValidations(writer, property);
+		GenerateTypeSpecificValidations(writer, property, emitEnumRule);
 		block?.Dispose();
 
 		GenerateCompareValidation(writer, property);
 		writer.NewLine();
 	}
 
-	static void GenerateTypeSpecificValidations(CodeWriter writer, ZodPropertyDescriptor property)
+	static void GenerateTypeSpecificValidations(CodeWriter writer, ZodPropertyDescriptor property, bool emitEnumRule)
 	{
 		switch (property.ValidationKind)
 		{
@@ -715,6 +725,10 @@ partial class ZodSchemaGenerator
 				break;
 			case PropertyValidationKind.Complex:
 				GenerateComplexTypeValidation(writer, property);
+				break;
+			case PropertyValidationKind.Enum:
+				if (emitEnumRule)
+					GenerateEnumValidation(writer, property);
 				break;
 			case PropertyValidationKind.Unsupported:
 				break;

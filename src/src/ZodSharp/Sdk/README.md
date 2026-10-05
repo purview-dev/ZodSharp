@@ -91,6 +91,8 @@ var adult = UserSchema.ApplyRefine(user, u => u.Age >= 18, "Must be adult");
 
 DataAnnotations attributes such as `[Required]`, `[Length]`, `[StringLength]`, `[MinLength]`, `[MaxLength]`, `[Range]`, `[RegularExpression]`, `[AllowedValues]`, `[DeniedValues]`, `[EmailAddress]`, and `[Compare]` are validated with direct, typed codegen (no reflection).
 
+Enum properties are validated automatically: a value that is not a defined member of the enum type is rejected with `invalid_enum_value`. Mark an enum member `[ZodIgnore]` to exclude it everywhere the enum is validated, or list it in a property's `[DeniedValues]` to exclude it for that property only. `[Flags]` enums are skipped, and `[ZodSchema(ValidateEnumValues = false)]` opts the type out.
+
 ## Custom rules
 
 A rule is any struct implementing `ZodSharp.Core.IValidationRule<T>`; attach it to a schema with the public `Rule`/`AddRule` API, or expose it as a DataAnnotations-style attribute that the source generator honours exactly like the built-ins.

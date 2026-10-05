@@ -14,7 +14,7 @@ The `[ZodSchema]` generator reads `System.ComponentModel.DataAnnotations` attrib
 | `[Range(...)]` | inclusive (or exclusive) numeric/parsed bounds | `invalid_range` |
 | `[RegularExpression(pattern)]` | compiled `Regex` field, checked on non-empty strings | `invalid_string` |
 | `[AllowedValues(...)]` | typed equality checks against the allowed set | `invalid_value` |
-| `[DeniedValues(...)]` | typed equality checks against the denied set | `invalid_value` |
+| `[DeniedValues(...)]` | typed equality checks against the denied set; for an enum property the values are absorbed into the automatic enum rule instead | `invalid_value` |
 | `[EmailAddress]` | reuses `ZodSharp.Rules.EmailRule` on non-empty strings | `invalid_string` |
 | `[Url]` | reuses `UrlRule` | `invalid_string` |
 | `[Phone]` | reuses `PhoneRule` | `invalid_string` |
@@ -24,6 +24,10 @@ The `[ZodSchema]` generator reads `System.ComponentModel.DataAnnotations` attrib
 | `[Display(Name=...)]` | not validated; `Name` used as the display name in messages and `{0}` placeholders | — |
 
 `[Length]` follows DataAnnotations null semantics: `null` is valid unless `[Required]` is also present.
+
+## Enum properties
+
+Enum properties are validated automatically — the generator rejects a value that is not a defined member of the enum type with `invalid_enum_value`. The check is emitted as `ZodSharp.Rules.EnumRule<TEnum>`. Members can be excluded with `[ZodIgnore]` (on the enum member, for every property of that type) or `[DeniedValues]` (on the property only). `[Flags]` enums and properties with an explicit `[AllowedValues]` allow-list are not auto-validated, and the whole feature is disabled with `[ZodSchema(ValidateEnumValues = false)]`. See [Source Generator](Source-Generator.md#automatic-enum-validation) for the full rules and examples.
 
 ## Size validators and structured issues
 
@@ -90,4 +94,4 @@ See [Source Generator Diagnostics](Source-Generator-Diagnostics.md) for the full
 
 The same pipeline honours custom rules exposed as validation attributes. Mark the attribute with `[ZodRule(typeof(MyRule))]` (or mark the rule itself with `[ZodRule]` to have the attribute generated), and properties annotated with it are validated through the rule. See [Custom Rules](Custom-Rules.md).
 
-Every built-in rule also ships a generated attribute in the `ZodSharp.Rules` namespace, so it can be used directly alongside the attributes above: `[Email]`, `[E164]`, `[Ulid]`, `[Uuid]`, `[Jwt]`, `[IpAddress]`, `[Hex]`, `[Regex]`, `[StartsWith]`, `[EndsWith]`, `[Includes]`, `[MultipleOf]`, `[Finite]`, `[SafeInteger]`, `[Int]`, `[Uri]`, `[Base64Url]`, `[Nanoid]`, `[Cuid2]`, `[DateString]`, `[DatetimeString]`, `[TimeString]`, `[NonSentinel]`, `[MinValue]`, `[MaxValue]`, `[GreaterThan]`, `[LessThan]`, `[GreaterThanOrEqual]`, `[LessThanOrEqual]`, `[Even]`, and `[Odd]`. A value the rule declares without a default is a required constructor argument — `[Regex("…")]`, `[UUID(UuidVersion.V4)]`, `[Uri(UriKind.Absolute)]`, `[MinValue(3)]` — while defaulted values and `Message`/`Code` stay named properties. A rule with overloaded constructors mirrors each overload, so `[Uuid]` uses the versionless UUID rule and `[UUID(UuidVersion.V4)]` the versioned one. The rules whose name collides with a DataAnnotations attribute use a `Zod` suffix (`[MinLengthZod]`, `[MaxLengthZod]`, `[UrlZod]`, `[PhoneZod]`, `[CreditCardZod]`, `[Base64StringZod]`). See [Built-in attributes](Custom-Rules.md#built-in-attributes-shipped-with-purviewzodsharp).
+Every built-in rule also ships a generated attribute in the `ZodSharp.Rules` namespace, so it can be used directly alongside the attributes above: `[Email]`, `[E164]`, `[Ulid]`, `[Uuid]`, `[Jwt]`, `[IpAddress]`, `[Hex]`, `[Regex]`, `[StartsWith]`, `[EndsWith]`, `[Includes]`, `[MultipleOf]`, `[Finite]`, `[SafeInteger]`, `[Int]`, `[Uri]`, `[Base64Url]`, `[Nanoid]`, `[Cuid2]`, `[DateString]`, `[DatetimeString]`, `[TimeString]`, `[NonSentinel]`, `[MinValue]`, `[MaxValue]`, `[GreaterThan]`, `[LessThan]`, `[GreaterThanOrEqual]`, `[LessThanOrEqual]`, `[Even]`, `[Odd]`, and `[Enum]`. A value the rule declares without a default is a required constructor argument — `[Regex("…")]`, `[UUID(UuidVersion.V4)]`, `[Uri(UriKind.Absolute)]`, `[MinValue(3)]` — while defaulted values and `Message`/`Code` stay named properties. A rule with overloaded constructors mirrors each overload, so `[Uuid]` uses the versionless UUID rule and `[UUID(UuidVersion.V4)]` the versioned one. The rules whose name collides with a DataAnnotations attribute use a `Zod` suffix (`[MinLengthZod]`, `[MaxLengthZod]`, `[UrlZod]`, `[PhoneZod]`, `[CreditCardZod]`, `[Base64StringZod]`). See [Built-in attributes](Custom-Rules.md#built-in-attributes-shipped-with-purviewzodsharp).

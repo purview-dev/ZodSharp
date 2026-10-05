@@ -502,6 +502,8 @@ Two adjustments keep every rule addressable:
 
 The numeric parity and inclusive-comparison rules follow the same pattern: `[GreaterThanOrEqual(…)]`, `[LessThanOrEqual(…)]`, `[Even]`, and `[Odd]`.
 
+`[Enum]` mirrors `EnumRule<TEnum>` and closes the open generic with the annotated enum member type. The `[ZodSchema]` generator applies the rule automatically to enum properties; `[ZodIgnore]` on an enum member excludes that member from the rule everywhere the enum is validated, and a property's `[DeniedValues]` excludes values for that property only. See [Enum rules](Validation-Rules-Reference.md#enum-rules).
+
 ## Type-level rules
 
 Rules can also be attached to the **`[ZodSchema]` type itself** instead of a property. They validate the whole value (the value object as a unit) and report an **empty path**, which is what you want for a scalar whose single `Value` *is* the value:

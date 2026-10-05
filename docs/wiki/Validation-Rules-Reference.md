@@ -63,6 +63,7 @@ The built-in rules report one of the following Zod-compatible codes:
 | `not_multiple_of` | A number was not a multiple of the divisor | `MultipleOfRule<T>` |
 | `not_finite` | A number was `NaN` or infinite | `FiniteRule<T>` |
 | `invalid_value` | A value was a rejected sentinel | `NonSentinelRule<T>` |
+| `invalid_enum_value` | A value was not a defined member of the enum type, or was an excluded member | `EnumRule<TEnum>` |
 | `validation_failed` | Fallback for rules that do not declare an identity | any rule without `ErrorCode`/`IZodRule` |
 
 ## String rules
@@ -178,6 +179,45 @@ var chained = Z.String().NonSentinel().Min(3);
 
 The same rule can be attached directly with `AddRule`/`Rule`, or through the shipped `[NonSentinel]` attribute, which closes the open generic with the annotated member/scalar type — see [Custom Rules](Custom-Rules.md#non-sentinel-values-ef-friendly).
 
+## Enum rules
+
+| Rule | Constructor | Fluent method | Code | Message format |
+|---|---|---|---|---|
+| `EnumRule<TEnum>` | `()` or `(TEnum[]? disallowed, string? message, string? code)` | `Enum()` | `invalid_enum_value` | `'{0}' is not a defined member of {1}` |
+
+`EnumRule<TEnum>` is generic over `TEnum : struct, Enum` and rejects a value that is not a defined member of the enum type, or that resolves to a member the rule excludes. It is equivalent to Zod's `z.nativeEnum(Enum)` semantics. The defined members are resolved once per closed generic type, so the validation path performs no reflection.
+
+The `[ZodSchema]` generator emits this rule automatically for every non-flags enum property — see [Source Generator](Source-Generator.md#automatic-enum-validation). The rule is closed with the property's enum type and receives the excluded members as its disallowed set:
+
+- every enum member marked `[ZodIgnore]` (a member that is defined but never a valid value, such as `Unspecified`), and
+- the values the property's `[DeniedValues]` attribute lists.
+
+```csharp
+using System.ComponentModel.DataAnnotations;
+using ZodSharp;
+
+public enum ExampleEnum
+{
+    [ZodIgnore]
+    Unspecified,
+
+    AValidValue,
+
+    AnotherValidValue,
+}
+
+[ZodSchema]
+public class Model
+{
+    public ExampleEnum Status { get; set; }
+
+    [DeniedValues(ExampleEnum.AnotherValidValue)]
+    public ExampleEnum SecondaryStatus { get; set; }
+}
+```
+
+The rule is skipped for a `[Flags]` enum (a combination is valid without being a defined member), for a property that declares an explicit `[AllowedValues]` allow-list (the allow-list governs), and when the schema opts out with `[ZodSchema(ValidateEnumValues = false)]`. A hand-written `ZodNativeEnum<TEnum>` schema already rejects undefined members; its `Enum()` method adds this rule to customise the message/code, and the rule can be attached to any enum-output schema with `AddRule`/`Rule`.
+
 ## Generated attributes
 
 Each built-in rule that can be expressed as an attribute ships a generated `ValidationAttribute` in the `ZodSharp.Rules` namespace (inside the `Purview.ZodSharp` assembly), so a member or a scalar can be annotated directly:
@@ -207,6 +247,7 @@ Each built-in rule that can be expressed as an attribute ships a generated `Vali
 | `[Int]` | `IntRule<T>` | closes the open generic with the member type |
 | `[Uri(UriKind.…)]` | `UriRule` | the `UriKind` is required |
 | `[NonSentinel]` | `NonSentinelRule<T>` | closes the open generic with the member/scalar type |
+| `[Enum]` | `EnumRule<TEnum>` | closes the open generic with the enum member type; excludes only the members the rule receives |
 | `[MinValue(…)]` | `MinValueRule<T>` | the type-parameter bound is a `double`; the rule closes with the member type |
 | `[MaxValue(…)]` | `MaxValueRule<T>` | as above |
 | `[GreaterThan(…)]` | `GreaterThanRule<T>` | as above |

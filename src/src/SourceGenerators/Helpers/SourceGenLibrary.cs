@@ -201,6 +201,7 @@ static partial class SourceGenLibrary
 			// attribute is actually present; ZodSchemaAttributeData.Empty carries default(bool)).
 			var generateValidateMethod = !zodSchemaAttribute.Exists || zodSchemaAttribute.GenerateValidateMethod;
 			var generateParseMethod = !zodSchemaAttribute.Exists || zodSchemaAttribute.GenerateParseMethod;
+			var validateEnumValues = !zodSchemaAttribute.Exists || zodSchemaAttribute.ValidateEnumValues;
 
 			schemas.Add(
 				new(
@@ -218,6 +219,7 @@ static partial class SourceGenLibrary
 					generateValidateMethod,
 					generateParseMethod,
 					typeRules,
+					validateEnumValues,
 					isPrimary
 				)
 			);
@@ -328,6 +330,7 @@ static partial class SourceGenLibrary
 		var propertyType = CreateTypeIdentity(property.Type);
 		var originalPropertyType = property.Type;
 		var propertyCanBeNull = TypeHelpers.CanBeNull(originalPropertyType);
+		var isNullableValueType = false;
 		if (
 			originalPropertyType is INamedTypeSymbol
 			{
@@ -337,6 +340,7 @@ static partial class SourceGenLibrary
 		{
 			propertyType = new(nullableType.TypeArguments[0]);
 			originalPropertyType = nullableType.TypeArguments[0];
+			isNullableValueType = true;
 		}
 
 		var diagnostics = ImmutableArray.CreateBuilder<ReportableDiagnostic>();
@@ -443,8 +447,10 @@ static partial class SourceGenLibrary
 		if (rangeAttribute.Exists)
 			diagnostics.AddRange(rangeAttributeResult.Diagnostics);
 
-		var isEnum =
-			TypeHelpers.UnwrapNullableType(originalPropertyType) is INamedTypeSymbol { TypeKind: TypeKind.Enum };
+		var enumType = TypeHelpers.UnwrapNullableType(originalPropertyType) as INamedTypeSymbol;
+		var isEnum = enumType is { TypeKind: TypeKind.Enum };
+		var isFlagsEnum = isEnum && HasFlagsAttribute(enumType!);
+		var ignoredEnumMembers = isEnum && !isFlagsEnum ? GetIgnoredEnumMembers(enumType!) : default;
 
 		var customRules = CustomRuleResolver.Resolve(property, originalPropertyType, diagnostics);
 
@@ -459,7 +465,10 @@ static partial class SourceGenLibrary
 				property.Name,
 				displayName,
 				propertyCanBeNull,
+				isNullableValueType,
 				isEnum,
+				isFlagsEnum,
+				ignoredEnumMembers,
 				validationKind,
 				elementType,
 				elementTypeCanBeNull,
@@ -532,8 +541,52 @@ static partial class SourceGenLibrary
 		if (originalType is INamedTypeSymbol comparableType && IsComparableRangeType(comparableType))
 			return PropertyValidationKind.Comparable;
 
-		// If the original type is an enum, we can validate it against allowed/denied values.
+		if (originalType is INamedTypeSymbol { TypeKind: TypeKind.Enum })
+			return PropertyValidationKind.Enum;
+
+		// The property type is not a string, numeric, comparable, collection, complex, or enum type that can be validated by the generator.
 		return PropertyValidationKind.Unsupported;
+	}
+
+	/// <summary>
+	/// Determines whether the enum type is declared with the <c>[Flags]</c> attribute. A flags combination is a
+	/// valid value without being a defined member, so the automatic enum validation does not apply.
+	/// </summary>
+	static bool HasFlagsAttribute(INamedTypeSymbol enumType) =>
+		enumType.GetAttributes().Any(static attribute => attribute.AttributeClass?.MetadataName == "FlagsAttribute");
+
+	/// <summary>
+	/// Collects the enum members marked with <c>[ZodIgnore]</c>, rendered as member expressions the generated
+	/// validation passes to the enum rule as its disallowed set.
+	/// </summary>
+	/// <param name="enumType">The enum type to inspect.</param>
+	/// <returns>The ignored member expressions; empty when the enum declares none.</returns>
+	/// <remarks>
+	/// Every field of an enum type is a member, so the constant-value check is what selects them: the
+	/// compiler-generated backing field has no constant value.
+	/// </remarks>
+	static EquatableArray<string> GetIgnoredEnumMembers(INamedTypeSymbol enumType)
+	{
+		ImmutableArray<string>.Builder? ignored = null;
+		var enumTypeReference = new TypeIdentity(enumType).RenderFullName;
+
+		foreach (var member in enumType.GetMembers())
+		{
+			if (member is not IFieldSymbol { HasConstantValue: true } enumMember)
+				continue;
+
+			if (
+				!enumMember
+					.GetAttributes()
+					.Any(attribute => TypeLibrary.ZodSharp.ZodIgnoreAttribute.Equals(attribute.AttributeClass))
+			)
+				continue;
+
+			ignored ??= ImmutableArray.CreateBuilder<string>();
+			ignored.Add($"{enumTypeReference}.{enumMember.Name}");
+		}
+
+		return ignored is null ? new(ImmutableArray<string>.Empty) : new(ignored.ToImmutable());
 	}
 
 	static TypeIdentity? GetCollectionElementTypeIdentity(ITypeSymbol propertyType)
