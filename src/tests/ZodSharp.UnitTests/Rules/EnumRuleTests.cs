@@ -146,10 +146,12 @@ public class EnumRuleTests
 		EnumRule<Color> rule = new(code: "custom_code");
 
 		// Act
-		var code = ((Core.IZodRule)rule).Code;
+		var code = rule.Code;
+		var interfaceCode = ((Core.IZodRule)rule).Code;
 
 		// Assert
 		await Assert.That(code).IsEqualTo("custom_code");
+		await Assert.That(interfaceCode).IsEqualTo("custom_code");
 	}
 
 	[Test]

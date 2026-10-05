@@ -283,17 +283,19 @@ public class NumericRulesTests
 	}
 
 	[Test]
-	public async Task Rule_GivenCodeOverride_ReportsItThroughIZodRule()
+	public async Task Rule_GivenCodeOverride_ReportsItThroughCodeAndIZodRule()
 	{
 		// Arrange
 		MinLengthRule rule = new(3, code: "too_short");
 
 		// Act
-		var code = ((IZodRule)rule).Code;
+		var code = rule.Code;
+		var interfaceCode = ((IZodRule)rule).Code;
 
-		// Assert - the canonical constant is unchanged, the per-usage override is reported at runtime.
-		await Assert.That(rule.Code).IsEqualTo(MinLengthRule.ErrorCode);
+		// Assert - the per-usage override is the effective code on every route; the canonical constant is unchanged.
 		await Assert.That(code).IsEqualTo("too_short");
+		await Assert.That(interfaceCode).IsEqualTo("too_short");
+		await Assert.That(MinLengthRule.ErrorCode).IsEqualTo("too_small");
 	}
 
 	[Test]

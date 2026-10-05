@@ -17,27 +17,26 @@ public readonly record struct RegexRule : Core.IValidationRule<string>, Core.ISt
 
 	readonly Regex _pattern;
 	readonly string _message;
-	readonly string _code;
 
 	/// <summary>
 	/// Initializes a new instance of the RegexRule struct.
 	/// </summary>
 	/// <param name="pattern">The regex pattern</param>
-	/// <param name="message">Optional error message</param>
-	/// <param name="code">Optional error code override</param>
+	/// <param name="message">Optional error message/ message format.</param>
+	/// <param name="code">Optional error code override. If one is not specified then the <see cref="ErrorCode"/> is used.</param>
 	public RegexRule(Regex pattern, string? message = null, string? code = null)
 	{
 		_pattern = pattern ?? throw new ArgumentNullException(nameof(pattern));
 		_message = message.Or(MessageFormat);
-		_code = code.Or(ErrorCode);
+		Code = code.Or(ErrorCode);
 	}
 
 	/// <summary>
 	/// Initializes a new instance of the RegexRule struct.
 	/// </summary>
 	/// <param name="pattern">The regex pattern</param>
-	/// <param name="message">Optional error message</param>
-	/// <param name="code">Optional error code override</param>
+	/// <param name="message">Optional error message/ message format.</param>
+	/// <param name="code">Optional error code override. If one is not specified then the <see cref="ErrorCode"/> is used.</param>
 	public RegexRule(string pattern, string? message = null, string? code = null)
 		: this(new Regex(pattern, RegexOptions.Compiled), message, code) { }
 
@@ -70,9 +69,9 @@ public readonly record struct RegexRule : Core.IValidationRule<string>, Core.ISt
 	public string GetErrorMessage(ReadOnlySpan<char> value) => GetErrorMessage(value.ToString());
 
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
-	public string Code => ErrorCode;
+	public string Code => field.Or(ErrorCode);
 
-	string? Core.IZodRule.Code => _code;
+	string? Core.IZodRule.Code => Code;
 
 	string? Core.IZodRule.Origin => null;
 }

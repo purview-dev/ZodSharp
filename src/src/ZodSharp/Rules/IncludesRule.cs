@@ -15,19 +15,18 @@ public readonly record struct IncludesRule : Core.IValidationRule<string>, Core.
 
 	readonly string _substring;
 	readonly string _message;
-	readonly string _code;
 
 	/// <summary>
 	/// Initializes a new instance of the IncludesRule struct.
 	/// </summary>
 	/// <param name="substring">The required substring</param>
-	/// <param name="message">Optional error message</param>
-	/// <param name="code">Optional error code override</param>
+	/// <param name="message">Optional error message/ message format.</param>
+	/// <param name="code">Optional error code override. If one is not specified then the <see cref="ErrorCode"/> is used.</param>
 	public IncludesRule(string substring, string? message = null, string? code = null)
 	{
 		_substring = substring ?? throw new ArgumentNullException(nameof(substring));
 		_message = message.Or(MessageFormat);
-		_code = code.Or(ErrorCode);
+		Code = code.Or(ErrorCode);
 	}
 
 	/// <summary>
@@ -60,9 +59,9 @@ public readonly record struct IncludesRule : Core.IValidationRule<string>, Core.
 		RuleMessage.Format(_message ?? MessageFormat, _substring, value.ToString());
 
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
-	public string Code => ErrorCode;
+	public string Code => field.Or(ErrorCode);
 
-	string? Core.IZodRule.Code => _code;
+	string? Core.IZodRule.Code => Code;
 
 	string? Core.IZodRule.Origin => null;
 }

@@ -18,12 +18,11 @@ public readonly record struct IntRule<T> : Core.IValidationRule<T>, Core.IZodRul
 	public const string MessageFormat = "Expected integer, but got {0}";
 
 	readonly string _message;
-	readonly string _code;
 
 	public IntRule(string? message = null, string? code = null)
 	{
 		_message = message.Or(MessageFormat);
-		_code = code.Or(ErrorCode);
+		Code = code.Or(ErrorCode);
 	}
 
 	/// <summary>
@@ -45,9 +44,9 @@ public readonly record struct IntRule<T> : Core.IValidationRule<T>, Core.IZodRul
 	public string GetErrorMessage(in T value) => RuleMessage.Format(_message ?? MessageFormat, value);
 
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
-	public string Code => ErrorCode;
+	public string Code => field.Or(ErrorCode);
 
-	string? Core.IZodRule.Code => _code;
+	string? Core.IZodRule.Code => Code;
 
 	string? Core.IZodRule.Origin => null;
 }

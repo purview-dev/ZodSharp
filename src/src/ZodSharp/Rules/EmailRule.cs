@@ -25,12 +25,11 @@ public readonly record struct EmailRule : Core.IValidationRule<string>, Core.ISt
 	);
 
 	readonly string _message;
-	readonly string _code;
 
 	public EmailRule(string? message = null, string? code = null)
 	{
 		_message = message.Or(MessageFormat);
-		_code = code.Or(ErrorCode);
+		Code = code.Or(ErrorCode);
 	}
 
 	/// <summary>
@@ -63,9 +62,9 @@ public readonly record struct EmailRule : Core.IValidationRule<string>, Core.ISt
 		RuleMessage.Format(_message ?? MessageFormat, value.ToString());
 
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
-	public string Code => ErrorCode;
+	public string Code => field.Or(ErrorCode);
 
-	string? Core.IZodRule.Code => _code;
+	string? Core.IZodRule.Code => Code;
 
 	string? Core.IZodRule.Origin => null;
 }

@@ -21,27 +21,26 @@ public readonly record struct UUIDRule : Core.IValidationRule<string>, Core.IStr
 
 	readonly UuidVersion? _version;
 	readonly string? _message;
-	readonly string _code;
 
 	/// <summary>
 	/// Initializes a new instance of the UuidRule struct with Zod-parity semantics
 	/// (version 1-8, variant 8-9/a-b, plus the nil and max UUIDs).
 	/// </summary>
-	/// <param name="message">Optional error message</param>
-	/// <param name="code">Optional error code override</param>
+	/// <param name="message">Optional error message/ message format.</param>
+	/// <param name="code">Optional error code override. If one is not specified then the <see cref="ErrorCode"/> is used.</param>
 	public UUIDRule(string? message = null, string? code = null)
 	{
 		_version = null;
 		_message = message.OrNull();
-		_code = code.Or(ErrorCode);
+		Code = code.Or(ErrorCode);
 	}
 
 	/// <summary>
 	/// Initializes a new instance of the UuidRule struct that requires a specific RFC 9562 version.
 	/// </summary>
 	/// <param name="version">The required UUID version</param>
-	/// <param name="message">Optional error message</param>
-	/// <param name="code">Optional error code override</param>
+	/// <param name="message">Optional error message/ message format.</param>
+	/// <param name="code">Optional error code override. If one is not specified then the <see cref="ErrorCode"/> is used.</param>
 	public UUIDRule(UuidVersion version, string? message = null, string? code = null)
 	{
 		if (version == UuidVersion.None)
@@ -49,7 +48,7 @@ public readonly record struct UUIDRule : Core.IValidationRule<string>, Core.IStr
 
 		_version = version;
 		_message = message.OrNull();
-		_code = code.Or(ErrorCode);
+		Code = code.Or(ErrorCode);
 	}
 
 	/// <summary>
@@ -140,9 +139,9 @@ public readonly record struct UUIDRule : Core.IValidationRule<string>, Core.IStr
 	static bool IsValidVariant(char c) => c is '8' or '9' or 'a' or 'b' or 'A' or 'B';
 
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
-	public string Code => ErrorCode;
+	public string Code => field.Or(ErrorCode);
 
-	string? Core.IZodRule.Code => _code;
+	string? Core.IZodRule.Code => Code;
 
 	string? Core.IZodRule.Origin => null;
 }

@@ -33,14 +33,13 @@ public readonly record struct EnumRule<TEnum> : Core.IValidationRule<TEnum>, Cor
 
 	readonly TEnum[]? _disallowed;
 	readonly string _message;
-	readonly string _code;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="EnumRule{TEnum}"/> struct that accepts every defined
 	/// member of <typeparamref name="TEnum"/>.
 	/// </summary>
-	/// <param name="message">Optional error message</param>
-	/// <param name="code">Optional error code override</param>
+	/// <param name="message">Optional error message/ message format.</param>
+	/// <param name="code">Optional error code override. If one is not specified then the <see cref="ErrorCode"/> is used.</param>
 	public EnumRule(string? message = null, string? code = null)
 		: this(disallowed: null, message, code) { }
 
@@ -49,13 +48,13 @@ public readonly record struct EnumRule<TEnum> : Core.IValidationRule<TEnum>, Cor
 	/// member of <typeparamref name="TEnum"/> except the disallowed values.
 	/// </summary>
 	/// <param name="disallowed">The defined members the rule rejects; <see langword="null"/> or empty accepts every member.</param>
-	/// <param name="message">Optional error message</param>
-	/// <param name="code">Optional error code override</param>
+	/// <param name="message">Optional error message/ message format.</param>
+	/// <param name="code">Optional error code override. If one is not specified then the <see cref="ErrorCode"/> is used.</param>
 	public EnumRule(TEnum[]? disallowed, string? message = null, string? code = null)
 	{
 		_disallowed = disallowed is { Length: > 0 } ? disallowed : null;
 		_message = message.Or(MessageFormat);
-		_code = code.Or(ErrorCode);
+		Code = code.Or(ErrorCode);
 	}
 
 	/// <summary>
@@ -75,9 +74,9 @@ public readonly record struct EnumRule<TEnum> : Core.IValidationRule<TEnum>, Cor
 		RuleMessage.Format(_message ?? MessageFormat, value, typeof(TEnum).Name);
 
 	/// <summary>Gets the error code reported when the rule fails.</summary>
-	public string Code => ErrorCode;
+	public string Code => field.Or(ErrorCode);
 
-	string? Core.IZodRule.Code => _code;
+	string? Core.IZodRule.Code => Code;
 
 	string? Core.IZodRule.Origin => null;
 }

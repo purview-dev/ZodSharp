@@ -17,19 +17,18 @@ public readonly record struct LessThanOrEqualRule<T> : Core.IValidationRule<T>, 
 
 	readonly T _maxValue;
 	readonly string _message;
-	readonly string _code;
 
 	/// <summary>
 	/// Initializes a new instance of the LessThanOrEqualRule struct.
 	/// </summary>
 	/// <param name="maxValue">The inclusive upper bound</param>
-	/// <param name="message">Optional error message</param>
-	/// <param name="code">Optional error code override</param>
+	/// <param name="message">Optional error message/ message format.</param>
+	/// <param name="code">Optional error code override. If one is not specified then the <see cref="ErrorCode"/> is used.</param>
 	public LessThanOrEqualRule(T maxValue, string? message = null, string? code = null)
 	{
 		_maxValue = maxValue;
 		_message = message.Or(MessageFormat);
-		_code = code.Or(ErrorCode);
+		Code = code.Or(ErrorCode);
 	}
 
 	/// <summary>
@@ -47,9 +46,9 @@ public readonly record struct LessThanOrEqualRule<T> : Core.IValidationRule<T>, 
 	public string GetErrorMessage(in T value) => RuleMessage.Format(_message ?? MessageFormat, _maxValue, value);
 
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
-	public string Code => ErrorCode;
+	public string Code => field.Or(ErrorCode);
 
-	string? Core.IZodRule.Code => _code;
+	string? Core.IZodRule.Code => Code;
 
 	string? Core.IZodRule.Origin => null;
 }

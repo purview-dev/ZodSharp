@@ -15,17 +15,16 @@ public readonly record struct Base64StringRule : Core.IValidationRule<string>, C
 	public const string MessageFormat = "Invalid Base64 string format: {0}";
 
 	readonly string _message;
-	readonly string _code;
 
 	/// <summary>
 	/// Initializes a new instance of the Base64StringRule struct.
 	/// </summary>
-	/// <param name="message">Optional error message</param>
-	/// <param name="code">Optional error code override</param>
+	/// <param name="message">Optional error message/ message format.</param>
+	/// <param name="code">Optional error code override. If one is not specified then the <see cref="ErrorCode"/> is used.</param>
 	public Base64StringRule(string? message = null, string? code = null)
 	{
 		_message = message.Or(MessageFormat);
-		_code = code.Or(ErrorCode);
+		Code = code.Or(ErrorCode);
 	}
 
 	/// <summary>
@@ -57,9 +56,9 @@ public readonly record struct Base64StringRule : Core.IValidationRule<string>, C
 	public string GetErrorMessage(in string value) => RuleMessage.Format(_message ?? MessageFormat, value);
 
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
-	public string Code => ErrorCode;
+	public string Code => field.Or(ErrorCode);
 
-	string? Core.IZodRule.Code => _code;
+	string? Core.IZodRule.Code => Code;
 
 	string? Core.IZodRule.Origin => null;
 }

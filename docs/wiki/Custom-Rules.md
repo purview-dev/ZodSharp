@@ -39,7 +39,7 @@ public readonly record struct EmailRule : IValidationRule<string>
 }
 ```
 
-- **`ErrorCode`** is the rule's canonical code — the value a test compares against (`error.Code`). The interface member `IValidationRule<T>.Code` defaults to `"validation_failed"`; built-in rules override it as `public string Code => ErrorCode;`.
+- **`ErrorCode`** is the rule's canonical code — the value a test compares against when no per-usage override is supplied. The interface member `IValidationRule<T>.Code` defaults to `"validation_failed"`; a rule that accepts a per-usage `code` override returns it (falling back to `ErrorCode`) from both `Code` and `IZodRule.Code`, so every route reports the same effective value.
 - **`MessageFormat`** is a `string.Format` template. `{0}` (and `{1}`, …) are the offending value and any rule-specific arguments; format it with `string.Format(System.Globalization.CultureInfo.CurrentCulture, MessageFormat, …)`.
 - The constants may be inherited from a base rule class, and **abstract bases are exempt**, so a shared base can host them for its concrete derivations.
 
