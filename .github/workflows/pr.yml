@@ -34,12 +34,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # global.json pins no sdk.version, so the SDK feed quality has to be named here.
-      # Keep in step with the target frameworks in src/Directory.Build.props.
+      # Installs exactly the SDK global.json pins, which is the only thing the first dotnet command
+      # in the job can resolve against. Naming a floating version and a feed quality instead does
+      # not work: `11.0.x` with quality `preview` resolves the latest *preview*-channel build, and a
+      # preview sorts below the pinned rc, so global.json is left unsatisfiable.
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "11.0.x"
-          dotnet-quality: "preview"
+          global-json-file: global.json
 
       - uses: oven-sh/setup-bun@v2
         with:
@@ -64,10 +65,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Same reason as the cross-platform job: the SDK comes from global.json, not a floating
+      # version plus a feed quality.
       - uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: "11.0.x"
-          dotnet-quality: "preview"
+          global-json-file: global.json
 
       - name: Build and run a consumer against the packed generator
         shell: pwsh
