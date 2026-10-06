@@ -13,6 +13,13 @@ jobs:
     name: Build and test
     uses: purview-dev/build/.github/workflows/purview-build.yml@main
     with:
+      # The shared workflow defaults to the 10.0.x SDK, but this repository targets net11.0 and pins
+      # the .NET 11 SDK in global.json. Without the matching SDK the runner cannot resolve global.json
+      # ("A compatible .NET SDK was not found") and every step fails, starting with `dotnet tool
+      # install`. Before global.json pinned a version the same gap failed later instead, with
+      # NETSDK1045 on the net11.0 target, because the 10.0.x SDK cannot build it.
+      # Keep in sync with `sdk.version` in global.json.
+      dotnet-version: "11.0.100-rc.1.26425.128"
       run-pack: true
       validate-pack: true
     secrets: inherit
