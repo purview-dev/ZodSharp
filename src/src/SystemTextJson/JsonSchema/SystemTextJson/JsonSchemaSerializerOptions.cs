@@ -21,8 +21,9 @@ public static class JsonSchemaSerializerOptions
 	/// <remarks>
 	/// Resolves contracts through the source-generated <see cref="JsonSchemaJsonContext"/>, so JSON Schema
 	/// export is safe under trimming and Native AOT. The <c>$</c>-prefixed keyword names now come from
-	/// <see cref="JsonPropertyNameAttribute"/> on <see cref="JsonSchemaDefinition"/> rather than from a
-	/// runtime naming policy, which the source generator cannot reproduce; the wire format is unchanged.
+	/// <see cref="System.Text.Json.Serialization.JsonPropertyNameAttribute"/> on
+	/// <see cref="JsonSchemaDefinition"/> rather than from a runtime naming policy, which the source
+	/// generator cannot reproduce; the wire format is unchanged.
 	/// </remarks>
 	public static readonly JsonSerializerOptions Default = new()
 	{

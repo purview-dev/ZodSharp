@@ -1,8 +1,9 @@
 <Project>
 	<PropertyGroup>
-		<ZodSharpNetTargetFrameworks>net8.0;net9.0;net10.0;net11.0</ZodSharpNetTargetFrameworks>
+		<!-- Every shipped release plus the newest major, resolved by Purview.BuildSdk rather than listed
+		     here, so a runtime lifecycle change is an SDK bump instead of an edit in this file. -->
+		<PurviewTargetFrameworkSet>All</PurviewTargetFrameworkSet>
 		<LangVersion>preview</LangVersion>
-		<TargetFrameworks>$(ZodSharpNetTargetFrameworks)</TargetFrameworks>
 		<NamespacePrefix>ZodSharp</NamespacePrefix>
 		<!-- Set project-by-project -->
 		<IsPackable>false</IsPackable>
@@ -16,14 +17,11 @@
 
 	<Import Sdk="Purview.BuildSdk" Project="Sdk.props" />
 
-	<ItemGroup>
-		<NamespaceRemoveSuffix Remove="SourceGenerators" />
-		<NamespaceRemoveSuffix Remove="CodeFixes" />
-	</ItemGroup>
-
+	<!-- Test and executable projects follow the same set. The SDK gives a non-Roslyn project the set's
+	     targets already; this re-asserts it for projects where another default got in first. -->
 	<PropertyGroup Condition="'$(IsTestProject)' == 'true' OR '$(OutputType)' == 'Exe'">
 		<TargetFramework></TargetFramework>
-		<TargetFrameworks>$(ZodSharpNetTargetFrameworks)</TargetFrameworks>
+		<TargetFrameworks>$(PurviewTargetFrameworksAll)</TargetFrameworks>
 	</PropertyGroup>
 
 	<PropertyGroup Label="Purview site URL metadata">

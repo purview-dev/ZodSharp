@@ -1,5 +1,4 @@
 using System.Text.RegularExpressions;
-using ZodSharp.Rules;
 
 namespace ZodSharp.Rules;
 
@@ -23,7 +22,7 @@ public class RegexRuleTimeoutTests
 	public async Task StringConstructor_AppliesTheDefaultMatchTimeout()
 	{
 		// Arrange / Act
-		var rule = new RegexRule(CatastrophicPattern);
+		RegexRule rule = new(CatastrophicPattern);
 
 		// Assert — the budget must be positive and finite. Regex.InfiniteMatchTimeout is -1ms, so
 		// comparing against it directly would not express "bounded"; check it is not that value.
@@ -36,7 +35,7 @@ public class RegexRuleTimeoutTests
 	public async Task IsValid_GivenCatastrophicPatternAndInput_ReturnsFalseWithoutHanging()
 	{
 		// Arrange
-		var rule = new RegexRule(CatastrophicPattern);
+		RegexRule rule = new(CatastrophicPattern);
 
 		// Act — without a timeout this does not return in any practical time. With one it must
 		// come back quickly, as a plain validation failure rather than a thrown exception.
@@ -53,7 +52,7 @@ public class RegexRuleTimeoutTests
 	public async Task IsValidSpan_GivenCatastrophicPatternAndInput_ReturnsFalseWithoutHanging()
 	{
 		// Arrange
-		var rule = new RegexRule(CatastrophicPattern);
+		RegexRule rule = new(CatastrophicPattern);
 
 		// Act
 		var started = System.Diagnostics.Stopwatch.StartNew();
@@ -69,7 +68,7 @@ public class RegexRuleTimeoutTests
 	public async Task IsValid_GivenWellBehavedPattern_StillMatches()
 	{
 		// Arrange — the timeout must not change ordinary behaviour.
-		var rule = new RegexRule("^[a-z]+$");
+		RegexRule rule = new("^[a-z]+$");
 
 		// Act / Assert
 		await Assert.That(rule.IsValid("abc")).IsTrue();
@@ -80,8 +79,8 @@ public class RegexRuleTimeoutTests
 	public async Task RegexConstructor_LeavesTheCallerSuppliedTimeoutAlone()
 	{
 		// Arrange — supplying a Regex is the documented escape hatch for a different budget.
-		var supplied = new Regex("^[a-z]+$", RegexOptions.None, TimeSpan.FromSeconds(1));
-		var rule = new RegexRule(supplied);
+		Regex supplied = new("^[a-z]+$", RegexOptions.None, TimeSpan.FromSeconds(1));
+		RegexRule rule = new(supplied);
 
 		// Act / Assert
 		await Assert.That(rule.IsValid("abc")).IsTrue();

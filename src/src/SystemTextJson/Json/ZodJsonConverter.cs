@@ -80,7 +80,13 @@ sealed class ZodJsonConverter<T>(IZodSchema<T, T> schema) : JsonConverter<T>
 
 		var effective = _withoutThisConverter ??= WithoutThisConverter(options);
 		var resolved =
+			// JsonSerializerOptions.GetTypeInfo<T>() returns JsonTypeInfo<T> directly, with no cast, but
+			// it only exists from .NET 11. The older targets resolve through the non-generic overload.
+#if NET11_0_OR_GREATER
+			effective.GetTypeInfo<T>()
+#else
 			effective.GetTypeInfo(typeof(T)) as JsonTypeInfo<T>
+#endif
 			?? throw new JsonException(
 				$"No JsonTypeInfo is available for '{typeof(T)}'. In a trimmed or Native AOT application, "
 					+ "register the type with a source-generated JsonSerializerContext and set it as the "
