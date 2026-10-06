@@ -223,10 +223,12 @@ namespace Testing
 		);
 		var generatedSource = driverResult.GetSource("BackslashPatternModelSchema");
 
+		// The emitted Regex carries a match timeout: the pattern is author-supplied but runs against
+		// untrusted request input, and RegularExpressionAttribute (which this mirrors) defaults to one.
 		await Assert
 			.That(generatedSource)
 			.ContainsGeneratedCode(
-				@"new(""^[\\w\\-.]+$"", global::System.Text.RegularExpressions.RegexOptions.CultureInvariant)"
+				@"new(""^[\\w\\-.]+$"", global::System.Text.RegularExpressions.RegexOptions.CultureInvariant, global::ZodSharp.Rules.RegexRule.DefaultMatchTimeout)"
 			);
 	}
 

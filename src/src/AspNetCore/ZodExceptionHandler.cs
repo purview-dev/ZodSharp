@@ -51,13 +51,28 @@ public sealed class ZodExceptionHandler : IExceptionHandler
 		problem.Extensions["traceId"] = httpContext.TraceIdentifier;
 
 		httpContext.Response.StatusCode = problem.Status!.Value;
-		await httpContext.Response.WriteAsJsonAsync(
-			problem,
-			JsonOptions,
-			"application/problem+json",
-			cancellationToken
-		);
+		await WriteProblemAsync(httpContext, problem, cancellationToken);
 
 		return true;
 	}
+
+	[System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage(
+		"Trimming",
+		"IL2026:RequiresUnreferencedCode",
+		Justification = "The serialized type is the concrete HttpValidationProblemDetails, not object, and is "
+			+ "the same type ASP.NET Core's own problem-details writer emits, so a trimmed or Native AOT host "
+			+ "already roots it. WriteAsJsonAsync carries the requirement unconditionally regardless of T."
+	)]
+	[System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage(
+		"AOT",
+		"IL3050:RequiresDynamicCode",
+		Justification = "The serialized type is the concrete HttpValidationProblemDetails, not object, and is "
+			+ "the same type ASP.NET Core's own problem-details writer emits, so a trimmed or Native AOT host "
+			+ "already roots it. WriteAsJsonAsync carries the requirement unconditionally regardless of T."
+	)]
+	static Task WriteProblemAsync(
+		HttpContext httpContext,
+		HttpValidationProblemDetails problem,
+		CancellationToken cancellationToken
+	) => httpContext.Response.WriteAsJsonAsync(problem, JsonOptions, "application/problem+json", cancellationToken);
 }

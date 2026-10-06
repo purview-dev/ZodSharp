@@ -2,8 +2,12 @@
 	<PropertyGroup>
 		<IsRoslynComponent>true</IsRoslynComponent>
 		<AssemblyName>Purview.ZodSharp.SourceGenerators</AssemblyName>
-		<!-- <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
-		<TreatWarningsAsErrors>true</TreatWarningsAsErrors> -->
+		<!-- EnforceExtendedAnalyzerRules (RS10xx) and TreatWarningsAsErrors are NOT set here on purpose:
+		     Purview.BuildSdk already forces both to true for any IsRoslynComponent project
+		     (Sdk.props "Roslyn Component Project Properties"), and Sdk.targets fails the build if
+		     either is disabled. Verify with:
+		       dotnet msbuild SourceGenerators.csproj -getProperty:EnforceExtendedAnalyzerRules -getProperty:TreatWarningsAsErrors
+		     Setting them here again is redundant and invites the false impression that they are optional. -->
 		<!--<EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>-->
 	</PropertyGroup>
 

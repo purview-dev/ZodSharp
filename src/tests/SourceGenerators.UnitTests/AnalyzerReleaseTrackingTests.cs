@@ -3,11 +3,15 @@ using System.Text.RegularExpressions;
 namespace ZodSharp.SourceGenerators;
 
 /// <summary>
-/// Guards the analyzer release tracking files: every diagnostic that ships in the stable 2.0.0 release is
-/// recorded in <c>AnalyzerReleases.Shipped.md</c>, the unshipped file declares no new rules, and each rule
-/// identifier is tracked exactly once. These files drive the Roslyn release-tracking analyzers
+/// Guards the analyzer release tracking files: every diagnostic is recorded in
+/// <c>AnalyzerReleases.Shipped.md</c>, the unshipped file declares no new rules, and each rule identifier is
+/// tracked exactly once. These files drive the Roslyn release-tracking analyzers
 /// (<c>RS2000</c>/<c>RS2001</c>), which report at build time when a diagnostic is missing from either file.
 /// </summary>
+/// <remarks>
+/// <c>ZODSGEN037</c>–<c>ZODSGEN043</c> moved into a <c>## Release 2.1.0</c> block, so the unshipped file is
+/// now empty. The next diagnostic added goes into the unshipped file and moves across when it ships.
+/// </remarks>
 public partial class AnalyzerReleaseTrackingTests
 {
 	static readonly string ReleaseDirectory = Path.Combine(
@@ -59,14 +63,7 @@ public partial class AnalyzerReleaseTrackingTests
 		"ZODSASP003",
 		"ZODSASP100",
 		"ZODSASP101",
-	];
-
-	/// <summary>
-	/// Rules added since the last stable release. Each identifier must also appear in
-	/// <c>AnalyzerReleases.Unshipped.md</c> so the Roslyn release-tracking analyzers stay satisfied.
-	/// </summary>
-	static readonly string[] ExpectedUnshippedRuleIds =
-	[
+		// Release 2.1.0.
 		"ZODSGEN037",
 		"ZODSGEN038",
 		"ZODSGEN039",
@@ -76,10 +73,14 @@ public partial class AnalyzerReleaseTrackingTests
 		"ZODSGEN043",
 	];
 
+	/// <summary>
+	/// Rules added since the last release. Empty: every rule is recorded as shipped. A new or changed
+	/// diagnostic is added here and moves into <c>AnalyzerReleases.Shipped.md</c> when it ships.
+	/// </summary>
+	static readonly string[] ExpectedUnshippedRuleIds = [];
+
 	[Test]
-	public async Task ShippedReleases_GivenStableRelease_DeclareRelease2_0_0WithEveryDiagnosticId(
-		CancellationToken cancellationToken
-	)
+	public async Task ShippedReleases_GivenEveryRelease_DeclareEveryDiagnosticId(CancellationToken cancellationToken)
 	{
 		// Arrange
 		var markdown = await ReadReleaseFileAsync("AnalyzerReleases.Shipped.md", cancellationToken);
@@ -87,15 +88,14 @@ public partial class AnalyzerReleaseTrackingTests
 		// Act
 		var ruleIds = ReadRuleIds(markdown);
 
-		// Assert
+		// Assert — each release block the catalogue has published, and the full rule set across them.
 		await Assert.That(markdown).Contains("## Release 2.0.0");
+		await Assert.That(markdown).Contains("## Release 2.1.0");
 		await Assert.That(SortedRuleIds(ruleIds)).IsEqualTo(SortedRuleIds(ExpectedShippedRuleIds));
 	}
 
 	[Test]
-	public async Task UnshippedRelease_GivenRulesAddedSinceTheStableRelease_DeclaresOnlyThoseRules(
-		CancellationToken cancellationToken
-	)
+	public async Task UnshippedRelease_GivenEveryRuleHasShipped_DeclaresNoRules(CancellationToken cancellationToken)
 	{
 		// Arrange
 		var markdown = await ReadReleaseFileAsync("AnalyzerReleases.Unshipped.md", cancellationToken);
@@ -103,8 +103,7 @@ public partial class AnalyzerReleaseTrackingTests
 		// Act
 		var ruleIds = ReadRuleIds(markdown);
 
-		// Assert
-		await Assert.That(markdown).Contains("### New Rules");
+		// Assert — the header stays so the file keeps its purpose; it just declares nothing right now.
 		await Assert.That(markdown).Contains("; Unshipped analyzer release");
 		await Assert.That(SortedRuleIds(ruleIds)).IsEqualTo(SortedRuleIds(ExpectedUnshippedRuleIds));
 	}

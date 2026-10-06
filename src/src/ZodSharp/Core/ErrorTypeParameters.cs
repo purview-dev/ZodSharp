@@ -8,6 +8,14 @@ namespace ZodSharp.Core;
 /// through the strongly typed <see cref="Get{T}"/> accessor and format messages with knowledge of
 /// each parameter's type. Implements <see cref="IReadOnlyDictionary{TKey, TValue}"/> so existing
 /// dictionary-based consumers keep working unchanged.
+/// <para>
+/// <b>These values leave the process.</b> They exist to be substituted into a client-facing message, and
+/// the ASP.NET Core integration also copies every one of them into the <c>ProblemDetails</c> extensions of
+/// the response — so whatever you put here is returned to whoever made the request. That is the intended
+/// behaviour for a value the message names, such as an identifier the caller supplied. Do not put internal
+/// context in a parameter: connection details, configuration values, another user's data, or a whole
+/// record fetched while validating. Only <c>issues</c> and <c>traceId</c> are reserved and withheld.
+/// </para>
 /// </summary>
 [System.Diagnostics.CodeAnalysis.SuppressMessage(
 	"Design",

@@ -2,6 +2,12 @@
 	<PropertyGroup>
 		<TargetFrameworks>$(ZodSharpNetTargetFrameworks)</TargetFrameworks>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+		<!--
+			Trimming and Native AOT. Verified clean under both analyzers. Graph-based assembly scanning
+			(ScanAssemblyGraphs) and validator discovery remain reflective by nature; they are documented as
+			the paths a trimmed or AOT host should avoid in favour of explicit registration.
+		-->
+		<IsAotCompatible>true</IsAotCompatible>
 		<IsPackable>true</IsPackable>
 		<PackageId>Purview.ZodSharp.AspNetCore</PackageId>
 		<AssemblyName>Purview.ZodSharp.AspNetCore</AssemblyName>

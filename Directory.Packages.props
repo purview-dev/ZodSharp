@@ -13,15 +13,37 @@
 		<TUnitVersion>1.68.17</TUnitVersion>
 		<PurviewSourceGenFramework>1.0.0-prerelease.54</PurviewSourceGenFramework>
 		<DotnetRuntimeVersion>10.0.12</DotnetRuntimeVersion>
+		<!--
+			Microsoft.Extensions.Options and ...DependencyInjection.Abstractions are real dependencies of
+			the shipped Purview.ZodSharp package, so their version has to track the consumer's target
+			framework: referencing this package must not drag a net8.0 (LTS) application onto .NET 10
+			assemblies. Keep one entry per supported TFM and leave the default as the newest.
+
+			On net10.0 and later the SDK prunes these from the package graph entirely because the
+			targeted framework already supplies them — which is why the net11.0 dependency group in the
+			produced .nuspec is empty. That is expected, not a missing dependency.
+
+			The 8.x line needs two properties, because the packages did not ship in lockstep:
+			Options and DependencyInjection.Abstractions published 8.0.2, DependencyInjection stopped at
+			8.0.1, and DependencyInjection 8.0.1 itself depends on Abstractions >= 8.0.2. So the only
+			self-consistent 8.x set is DependencyInjection 8.0.1 with Options/Abstractions 8.0.2. Pinning
+			all three to one value fails NU1109 in one direction or the other. From 9.x onward the lines
+			are aligned again and both properties collapse to the same value.
+		-->
+		<MicrosoftExtensionsVersion>$(DotnetRuntimeVersion)</MicrosoftExtensionsVersion>
+		<MicrosoftExtensionsVersion Condition="'$(TargetFramework)' == 'net8.0'">8.0.2</MicrosoftExtensionsVersion>
+		<MicrosoftExtensionsVersion Condition="'$(TargetFramework)' == 'net9.0'">9.0.20</MicrosoftExtensionsVersion>
+		<MicrosoftExtensionsDIVersion>$(MicrosoftExtensionsVersion)</MicrosoftExtensionsDIVersion>
+		<MicrosoftExtensionsDIVersion Condition="'$(TargetFramework)' == 'net8.0'">8.0.1</MicrosoftExtensionsDIVersion>
 	</PropertyGroup>
 	<ItemGroup>
 		<PackageVersion Include="Bogus" Version="35.6.5" />
-		<PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="$(DotnetRuntimeVersion)" />
+		<PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="$(MicrosoftExtensionsDIVersion)" />
 		<PackageVersion
 			Include="Microsoft.Extensions.DependencyInjection.Abstractions"
-			Version="$(DotnetRuntimeVersion)"
+			Version="$(MicrosoftExtensionsVersion)"
 		/>
-		<PackageVersion Include="Microsoft.Extensions.Options" Version="$(DotnetRuntimeVersion)" />
+		<PackageVersion Include="Microsoft.Extensions.Options" Version="$(MicrosoftExtensionsVersion)" />
 		<PackageVersion Include="Microsoft.SourceLink.GitHub" Version="10.0.401" />
 		<PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="$(RoslynCompilerVersion)" />
 		<PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="$(RoslynCompilerVersion)" />

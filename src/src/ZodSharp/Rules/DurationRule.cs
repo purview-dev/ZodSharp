@@ -22,7 +22,7 @@ public readonly record struct DurationRule : Core.IValidationRule<string>, Core.
 	public static readonly Regex DurationRegex = new(
 		@"^P(?:(\d+W)|(?!.*W)(?=\d|T\d)(\d+Y)?(\d+M)?(\d+D)?(T(?=\d)(\d+H)?(\d+M)?(\d+([.,]\d+)?S)?)?)$",
 		RegexOptions.Compiled,
-		TimeSpan.FromMilliseconds(100)
+		RegexRule.DefaultMatchTimeout
 	);
 
 	readonly string _message;
@@ -43,14 +43,39 @@ public readonly record struct DurationRule : Core.IValidationRule<string>, Core.
 	/// </summary>
 	/// <param name="value">The value to validate</param>
 	/// <returns>True if valid, false otherwise</returns>
-	public bool IsValid(in string value) => value is not null && DurationRegex.IsMatch(value);
+	public bool IsValid(in string value)
+	{
+		if (value is null)
+			return false;
+
+		try
+		{
+			return DurationRegex.IsMatch(value);
+		}
+		catch (RegexMatchTimeoutException)
+		{
+			// Report as invalid rather than letting the exception escape into the host. See
+			// RegexRule.DefaultMatchTimeout.
+			return false;
+		}
+	}
 
 	/// <summary>
 	/// Validates that the span is an ISO 8601 duration without materialising a string.
 	/// </summary>
 	/// <param name="value">The value to validate</param>
 	/// <returns>True if valid, false otherwise</returns>
-	public bool IsValid(ReadOnlySpan<char> value) => DurationRegex.IsMatch(value);
+	public bool IsValid(ReadOnlySpan<char> value)
+	{
+		try
+		{
+			return DurationRegex.IsMatch(value);
+		}
+		catch (RegexMatchTimeoutException)
+		{
+			return false;
+		}
+	}
 
 	/// <summary>
 	/// Gets the error message for a failed validation.

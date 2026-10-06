@@ -15,8 +15,33 @@ public readonly record struct RegexRule : Core.IValidationRule<string>, Core.ISt
 	/// <summary>Gets the message format; <c>{0}</c> is the required pattern.</summary>
 	public const string MessageFormat = "String does not match the required pattern: {0}";
 
+	/// <summary>
+	/// The match timeout applied to every pattern this library compiles itself.
+	/// </summary>
+	/// <remarks>
+	/// <para>
+	/// A pattern is attacker-adjacent: it reaches the library from a <c>[Regex]</c>/
+	/// <c>[RegularExpression]</c> attribute, a fluent call, or an imported JSON Schema, and is then run
+	/// against untrusted input. Without a timeout a catastrophically backtracking pattern hangs the
+	/// calling thread, so every pattern the library builds carries this budget, and exceeding it is
+	/// reported as a validation failure rather than an escaping exception.
+	/// </para>
+	/// <para>
+	/// Two seconds matches the default of <c>System.ComponentModel.DataAnnotations</c>'
+	/// <c>RegularExpressionAttribute</c>, which the generated attribute support mirrors. A much tighter
+	/// budget is counter-productive for a validation library: on a loaded machine a thread-starved match
+	/// can exceed it and reject input that is actually valid, which is a correctness bug rather than a
+	/// security win. Bounding the work is what defeats ReDoS; the exact bound is not the control.
+	/// Supply a <see cref="Regex"/> yourself if you need a different budget.
+	/// </para>
+	/// </remarks>
+	public static readonly TimeSpan DefaultMatchTimeout = TimeSpan.FromSeconds(2);
+
 	readonly Regex _pattern;
 	readonly string _message;
+
+	// Read by the JSON Schema exporter, which previously reached this by reflecting on the field name.
+	internal Regex Pattern => _pattern;
 
 	/// <summary>
 	/// Initializes a new instance of the RegexRule struct.
@@ -38,21 +63,44 @@ public readonly record struct RegexRule : Core.IValidationRule<string>, Core.ISt
 	/// <param name="message">Optional error message/ message format.</param>
 	/// <param name="code">Optional error code override. If one is not specified then the <see cref="ErrorCode"/> is used.</param>
 	public RegexRule(string pattern, string? message = null, string? code = null)
-		: this(new Regex(pattern, RegexOptions.Compiled), message, code) { }
+		: this(new Regex(pattern, RegexOptions.Compiled, DefaultMatchTimeout), message, code) { }
 
 	/// <summary>
 	/// Validates that the value matches the regex pattern.
 	/// </summary>
 	/// <param name="value">The value to validate</param>
-	/// <returns>True if valid, false otherwise</returns>
-	public bool IsValid(in string value) => _pattern.IsMatch(value);
+	/// <returns>True if valid, false otherwise. A pattern that exceeds its match timeout is invalid.</returns>
+	public bool IsValid(in string value)
+	{
+		try
+		{
+			return _pattern.IsMatch(value);
+		}
+		catch (RegexMatchTimeoutException)
+		{
+			// Input the pattern cannot decide within its budget is treated as not matching. Letting
+			// this escape would turn a slow input into an unhandled exception (a 500 under ASP.NET
+			// Core) rather than the validation failure the caller is equipped to handle.
+			return false;
+		}
+	}
 
 	/// <summary>
 	/// Validates that the span matches the regex pattern without materialising a string.
 	/// </summary>
 	/// <param name="value">The value to validate</param>
-	/// <returns>True if valid, false otherwise</returns>
-	public bool IsValid(ReadOnlySpan<char> value) => _pattern.IsMatch(value);
+	/// <returns>True if valid, false otherwise. A pattern that exceeds its match timeout is invalid.</returns>
+	public bool IsValid(ReadOnlySpan<char> value)
+	{
+		try
+		{
+			return _pattern.IsMatch(value);
+		}
+		catch (RegexMatchTimeoutException)
+		{
+			return false;
+		}
+	}
 
 	/// <summary>
 	/// Gets the error message for a failed validation.

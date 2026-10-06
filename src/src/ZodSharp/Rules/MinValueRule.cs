@@ -16,6 +16,9 @@ public readonly record struct MinValueRule<T> : Core.IValidationRule<T>, Core.IZ
 	public const string MessageFormat = "Value must be at least {0}, but got {1}";
 
 	readonly T _minValue;
+
+	// Read by the JSON Schema exporter, which previously reached this by reflecting on the field name.
+	internal T MinValue => _minValue;
 	readonly string _message;
 
 	/// <summary>

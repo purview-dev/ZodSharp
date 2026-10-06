@@ -1,51 +1,105 @@
 using ZodSharp.Core;
+using ZodSharp.Expressions;
 
 namespace ZodSharp.Expressions;
 
+/// <summary>
+/// Pins the caching contract of <see cref="CompiledValidator"/>.
+/// </summary>
+/// <remarks>
+/// The original implementation called <c>LambdaExpression.Compile</c> on every invocation, emitting a
+/// <c>DynamicMethod</c> that is never reclaimed. These tests assert the delegate is now cached per
+/// schema instance, so the documented inline usage cannot leak.
+/// </remarks>
 public class CompiledValidatorTests
 {
 	[Test]
-	public async Task Compile_GivenSchema_ResultMatchesValidateForValidInput()
+	public async Task Compile_GivenSameSchemaInstance_ReturnsTheSameDelegate()
 	{
-		var schema = Z.String().Min(3).Max(50).Email();
-		var compiled = CompiledValidator.Compile(schema);
+		// Arrange
+		var schema = Z.String().Min(3);
 
-		var regularResult = schema.Validate("user@example.com");
-		var compiledResult = compiled("user@example.com");
+		// Act
+		var first = CompiledValidator.Compile(schema);
+		var second = CompiledValidator.Compile(schema);
 
-		await Assert.That(compiledResult.IsSuccess).IsEqualTo(regularResult.IsSuccess);
-		await Assert.That(compiledResult.Value).IsEqualTo(regularResult.Value);
+		// Assert — reference equality is the point: a fresh delegate per call is what leaked.
+		await Assert.That(ReferenceEquals(first, second)).IsTrue();
 	}
 
 	[Test]
-	public async Task Compile_GivenSchema_ResultMatchesValidateForInvalidInput()
+	public async Task Compile_GivenDifferentSchemaInstances_ReturnsDifferentDelegates()
 	{
-		var schema = Z.String().Min(3).Max(50).Email();
-		var compiled = CompiledValidator.Compile(schema);
+		// Arrange
+		var first = Z.String().Min(3);
+		var second = Z.String().Min(3);
 
-		var regularResult = schema.Validate("no");
-		var compiledResult = compiled("no");
-
-		await Assert.That(compiledResult.IsSuccess).IsEqualTo(regularResult.IsSuccess);
+		// Act / Assert
+		await Assert
+			.That(ReferenceEquals(CompiledValidator.Compile(first), CompiledValidator.Compile(second)))
+			.IsFalse();
 	}
 
 	[Test]
-	public async Task CompileParser_GivenValidInput_ReturnsValue()
+	public async Task Compile_RepeatedManyTimes_DoesNotGrowUnbounded()
 	{
-		var parser = CompiledValidator.CompileParser(Z.String().Min(3));
+		// Arrange — the previous implementation emitted a DynamicMethod per iteration.
+		var schema = Z.String().Min(3);
+		var expected = CompiledValidator.Compile(schema);
 
-		var value = parser("John");
+		// Act
+		for (var i = 0; i < 1_000; i++)
+			_ = CompiledValidator.Compile(schema);
 
-		await Assert.That(value).IsEqualTo("John");
+		// Assert
+		await Assert.That(ReferenceEquals(CompiledValidator.Compile(schema), expected)).IsTrue();
+	}
+
+	[Test]
+	public async Task Compile_ProducesDelegateEquivalentToValidate()
+	{
+		// Arrange
+		var schema = Z.String().Min(3);
+		var validator = CompiledValidator.Compile(schema);
+
+		// Act / Assert — behaviour must be identical to calling Validate directly.
+		await Assert.That(validator("abcd").IsSuccess).IsEqualTo(schema.Validate("abcd").IsSuccess);
+		await Assert.That(validator("ab").IsSuccess).IsEqualTo(schema.Validate("ab").IsSuccess);
+		await Assert.That(validator("ab").IsSuccess).IsFalse();
+	}
+
+	[Test]
+	public async Task Compile_GivenNullSchema_Throws()
+	{
+		await Assert.That(() => CompiledValidator.Compile<string>(null!)).Throws<ArgumentNullException>();
+	}
+
+	[Test]
+	public async Task CompileParser_GivenSameSchemaInstance_ReturnsTheSameDelegate()
+	{
+		// Arrange
+		var schema = Z.String().Min(3);
+
+		// Act / Assert
+		await Assert
+			.That(ReferenceEquals(CompiledValidator.CompileParser(schema), CompiledValidator.CompileParser(schema)))
+			.IsTrue();
 	}
 
 	[Test]
 	public async Task CompileParser_GivenInvalidInput_ThrowsZodException()
 	{
+		// Arrange
 		var parser = CompiledValidator.CompileParser(Z.String().Min(3));
 
-		var exception = Assert.Throws<ZodException>(() => parser("AB"));
+		// Act / Assert
+		await Assert.That(parser("abcd")).IsEqualTo("abcd");
+		await Assert.That(() => parser("ab")).Throws<ZodException>();
+	}
 
-		await Assert.That(exception).IsNotNull();
+	[Test]
+	public async Task CompileParser_GivenNullSchema_Throws()
+	{
+		await Assert.That(() => CompiledValidator.CompileParser<string>(null!)).Throws<ArgumentNullException>();
 	}
 }

@@ -1,20 +1,34 @@
+using System.Text.Json.Serialization;
+
 namespace ZodSharp.JsonSchema;
 
 /// <summary>
 /// Represents a JSON Schema definition.
 /// Based on Draft 2020-12 specification.
 /// </summary>
+/// <remarks>
+/// The four JSON Schema keyword members carry an explicit <see cref="JsonPropertyNameAttribute"/> rather
+/// than relying on a custom <c>JsonNamingPolicy</c>. A naming policy is a runtime object, so the
+/// System.Text.Json source generator cannot reproduce it, and a context-based (trim- and AOT-safe)
+/// contract would have emitted <c>schema</c>/<c>id</c>/<c>ref</c>/<c>defs</c> instead of the specification's
+/// <c>$</c>-prefixed names. Declaring the names here keeps the wire format identical on both the
+/// reflection and source-generated paths. Newtonsoft.Json ignores these attributes and keeps using its own
+/// resolver.
+/// </remarks>
 [System.Diagnostics.CodeAnalysis.SuppressMessage("Design", "CA1002:Do not expose generic lists")]
 [System.Diagnostics.CodeAnalysis.SuppressMessage("Usage", "CA2227:Collection properties should be read only")]
 public class JsonSchemaDefinition
 {
 	/// <summary>$schema - The JSON Schema version URI</summary>
+	[JsonPropertyName("$schema")]
 	public string? Schema { get; set; }
 
 	/// <summary>$id - Schema identifier</summary>
+	[JsonPropertyName("$id")]
 	public string? Id { get; set; }
 
 	/// <summary>$ref - Reference to another schema</summary>
+	[JsonPropertyName("$ref")]
 	public string? Ref { get; set; }
 
 	/// <summary>type - The data type (string, number, integer, boolean, object, array, null)</summary>
@@ -107,6 +121,7 @@ public class JsonSchemaDefinition
 	// ========== Definitions ==========
 
 	/// <summary>$defs - Schema definitions (Draft 2020-12)</summary>
+	[JsonPropertyName("$defs")]
 	public Dictionary<string, JsonSchemaDefinition>? Defs { get; set; }
 
 	/// <summary>definitions - Schema definitions (Draft 07 and earlier)</summary>

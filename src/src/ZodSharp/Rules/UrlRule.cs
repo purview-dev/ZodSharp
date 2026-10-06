@@ -23,7 +23,7 @@ public readonly record struct UrlRule : Core.IValidationRule<string>, Core.IZodR
 	static readonly Regex UrlRegex = new(
 		@"^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$",
 		RegexOptions.Compiled | RegexOptions.IgnoreCase,
-		TimeSpan.FromMilliseconds(100)
+		RegexRule.DefaultMatchTimeout
 	);
 
 	readonly string _message;

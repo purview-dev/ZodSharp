@@ -16,6 +16,9 @@ public readonly record struct LessThanOrEqualRule<T> : Core.IValidationRule<T>, 
 	public const string MessageFormat = "Value must be less than or equal to {0}, but got {1}";
 
 	readonly T _maxValue;
+
+	// Read by the JSON Schema exporter, which previously reached this by reflecting on the field name.
+	internal T MaxValue => _maxValue;
 	readonly string _message;
 
 	/// <summary>

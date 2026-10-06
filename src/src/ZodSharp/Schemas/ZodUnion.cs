@@ -11,6 +11,11 @@ namespace ZodSharp.Schemas;
 /// <param name="options">The union options</param>
 public class ZodUnion(IReadOnlyList<IZodSchema<object, object>> options) : ZodType<object, object>
 {
+	// Exposed to the JSON Schema exporter, which previously reflected a field named "_options" and cast it
+	// to an array. Neither matched: the options are a primary-constructor parameter typed IReadOnlyList, so
+	// the lookup always failed and every union exported with an empty "anyOf".
+	internal IReadOnlyList<IZodSchema<object, object>> Options => options;
+
 	/// <summary>
 	/// Parses and validates the value against union options.
 	/// </summary>

@@ -13,6 +13,21 @@
 		<PackageTags>zod;validation;schema;json</PackageTags>
 	</PropertyGroup>
 
+	<!--
+		Trimming and Native AOT. Verified clean under both analyzers.
+
+		The validating JsonConverter resolves a JsonTypeInfo<T> from the serializer options instead of using
+		the reflection-based JsonSerializer overloads, so it defers to whatever resolver the host configured
+		— a source-generated JsonSerializerContext in a trimmed or AOT application. JSON Schema import and
+		export use this package's own source-generated JsonSchemaJsonContext, so they need nothing from the
+		consumer. The extension methods come in pairs: a JsonTypeInfo<T> overload that is safe everywhere,
+		and a JsonSerializerOptions overload annotated [RequiresUnreferencedCode]/[RequiresDynamicCode] —
+		the same shape JsonSerializer itself uses.
+	-->
+	<PropertyGroup Label="Trimming and Native AOT">
+		<IsAotCompatible>true</IsAotCompatible>
+	</PropertyGroup>
+
 	<ItemGroup>
 		<ProjectReference Include="..\ZodSharp\ZodSharp.csproj" />
 	</ItemGroup>

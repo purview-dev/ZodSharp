@@ -10,9 +10,18 @@ namespace ZodSharp.Schemas;
 /// Initializes a new instance of the ZodOptional class.
 /// </remarks>
 /// <param name="innerSchema">The inner schema</param>
-public class ZodOptional<T>(IZodSchema<T, T> innerSchema) : ZodType<T?, T?>, IAcceptsNull
+public class ZodOptional<T>(IZodSchema<T, T> innerSchema)
+	: ZodType<T?, T?>,
+		IAcceptsNull,
+		JsonSchema.IJsonSchemaInnerSchema
 	where T : class
 {
+	// In JSON Schema, optionality is expressed by omitting the property from "required", not by changing its
+	// type — so the exporter unwraps to the inner schema. It previously tried to reach it by reflecting a
+	// field named "_innerSchema", which does not exist (it is a primary-constructor parameter), so every
+	// optional property exported as an empty "any" schema. See IJsonSchemaInnerSchema.
+	object JsonSchema.IJsonSchemaInnerSchema.InnerSchema => innerSchema;
+
 	/// <inheritdoc/>
 	public override bool IsOptional => true;
 

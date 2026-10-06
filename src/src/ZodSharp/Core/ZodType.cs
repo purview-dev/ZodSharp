@@ -16,6 +16,10 @@ public abstract class ZodType<TOutput, TInput> : IZodSchema<TOutput, TInput>, IO
 
 	ImmutableArray<IValidationRule<TOutput>> _rules = [];
 
+	// Read by the JSON Schema exporter, which previously reached this by walking BaseType.BaseType and
+	// reflecting on the field name — fragile, and invisible to the trimmer.
+	internal ImmutableArray<IValidationRule<TOutput>> AppliedRules => _rules;
+
 	/// <inheritdoc/>
 	public virtual bool IsOptional => false;
 

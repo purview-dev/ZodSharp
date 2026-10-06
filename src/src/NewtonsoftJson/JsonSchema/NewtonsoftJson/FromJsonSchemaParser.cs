@@ -157,7 +157,11 @@ public static class FromJsonSchemaParser
 
 		if (schema.Pattern != null)
 		{
-			stringSchema = stringSchema.Regex(new Regex(schema.Pattern));
+			// Both the pattern and the values later validated against it come from outside the
+			// application, so this is the most exposed regex path in the library. Bound it.
+			stringSchema = stringSchema.Regex(
+				new Regex(schema.Pattern, RegexOptions.None, Rules.RegexRule.DefaultMatchTimeout)
+			);
 		}
 
 		// Apply format

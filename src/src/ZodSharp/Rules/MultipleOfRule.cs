@@ -23,6 +23,9 @@ public readonly record struct MultipleOfRule<T> : Core.IValidationRule<T>, Core.
 	const double RelativeTolerance = 1e-12;
 
 	readonly T _divisor;
+
+	// Read by the JSON Schema exporter, which previously reached this by reflecting on the field name.
+	internal T Divisor => _divisor;
 	readonly string _message;
 
 	/// <summary>

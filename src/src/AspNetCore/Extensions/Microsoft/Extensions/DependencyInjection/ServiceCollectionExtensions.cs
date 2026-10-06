@@ -142,6 +142,13 @@ public static class ServiceCollectionExtensions
 		}
 	}
 
+	[System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage(
+		"Trimming",
+		"IL2026:RequiresUnreferencedCode",
+		Justification = "Assembly scanning for generated validators cannot be followed by a trimmer. The "
+			+ "requirement is surfaced on the public AddZodSharp* registration methods, which is where a "
+			+ "host opts into scanning; a trimmed or Native AOT host registers validators explicitly."
+	)]
 	static ZodSchemaFactory CreateFactory(IServiceProvider serviceProvider)
 	{
 		ZodSchemaFactory factory = new();
@@ -196,6 +203,19 @@ public static class ServiceCollectionExtensions
 					yield return assembly;
 	}
 
+	/// <remarks>
+	/// Walking an assembly's reference graph cannot be followed by a trimmer, which may also have removed
+	/// the references entirely. Prefer <c>ScanAssemblies</c> with an explicit assembly, or register
+	/// validators directly, in a trimmed or Native AOT host — the graph walk also loads the whole
+	/// transitive closure at container-build time, which is a measurable startup cost in a large solution.
+	/// </remarks>
+	[System.Diagnostics.CodeAnalysis.UnconditionalSuppressMessage(
+		"Trimming",
+		"IL2026:RequiresUnreferencedCode",
+		Justification = "Only reached when a host opts into graph scanning via ScanAssemblyGraphs. The "
+			+ "alternative — naming assemblies explicitly, or registering validators directly — is "
+			+ "documented on the option and is what a trimmed or Native AOT host should use."
+	)]
 	static IEnumerable<Assembly> GetAssembliesFromGraphs(
 		IEnumerable<Assembly> rootAssemblies,
 		HashSet<string> seenAssemblyNames

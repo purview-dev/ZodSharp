@@ -14,6 +14,9 @@ public readonly record struct MaxLengthRule : Core.IValidationRule<string>, Core
 	public const string MessageFormat = "String must be at most {0} characters long, but got {1}";
 
 	readonly int _maxLength;
+
+	// Read by the JSON Schema exporter, which previously reached this by reflecting on the field name.
+	internal int MaxLength => _maxLength;
 	readonly string _message;
 
 	/// <summary>

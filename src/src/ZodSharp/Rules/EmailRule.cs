@@ -21,7 +21,7 @@ public readonly record struct EmailRule : Core.IValidationRule<string>, Core.ISt
 	public static readonly Regex EmailRegex = new(
 		@"^[^@\s]+@[^@\s]+\.[^@\s]+$",
 		RegexOptions.Compiled | RegexOptions.IgnoreCase,
-		TimeSpan.FromMilliseconds(100)
+		RegexRule.DefaultMatchTimeout
 	);
 
 	readonly string _message;

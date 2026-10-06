@@ -49,6 +49,16 @@ pipeline-pack-validate *args:
     echo "Running pack + validate pipeline..."
     "{{ pipeline_tool }}" --Build:RunPack=true --Build:ValidatePack=true --Release:Mode=None {{ args }}
 
+# Build and run a throwaway consumer against the packed generator.
+#
+# The in-repo generator tests run against the unmerged generator, and pack validation only checks the
+# IL-merged assembly is present in the .nupkg - not that it loads and generates. That merge has regressed
+# twice (#36, #38), both times silently breaking consumers while this repository's tests stayed green.
+[group('Pipeline')]
+smoke-packed-generator *args:
+    echo "Running the packed generator smoke test..."
+    pwsh -NoProfile -File scripts/test-packed-generator.ps1 {{ args }}
+
 # Run the release pipeline (restore, build, lint, tests, pack, local nuget publish)
 # Note: `just` runs recipes through the shell, which strips backslashes from unquoted arguments.
 # Use the LOCAL_NUGET_FEED_PATH environment variable or forward slashes, e.g.

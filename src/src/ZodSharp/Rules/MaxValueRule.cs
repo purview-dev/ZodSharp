@@ -16,6 +16,9 @@ public readonly record struct MaxValueRule<T> : Core.IValidationRule<T>, Core.IZ
 	public const string MessageFormat = "Value must be at most {0}, but got {1}";
 
 	readonly T _maxValue;
+
+	// Read by the JSON Schema exporter, which previously reached this by reflecting on the field name.
+	internal T MaxValue => _maxValue;
 	readonly string _message;
 
 	/// <summary>

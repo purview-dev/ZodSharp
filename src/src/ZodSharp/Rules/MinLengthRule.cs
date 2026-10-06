@@ -14,6 +14,9 @@ public readonly record struct MinLengthRule : Core.IValidationRule<string>, Core
 	public const string MessageFormat = "String must be at least {0} characters long, but got {1}";
 
 	readonly int _minLength;
+
+	// Read by the JSON Schema exporter, which previously reached this by reflecting on the field name.
+	internal int MinLength => _minLength;
 	readonly string _message;
 
 	/// <summary>

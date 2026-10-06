@@ -9,8 +9,16 @@ namespace ZodSharp.Schemas;
 /// Used by <see cref="ZodObject.Extend{T}(string, IZodSchema{T, T})"/> and the object/union builders.
 /// </summary>
 /// <typeparam name="T">The inner schema's type.</typeparam>
-public sealed class FieldSchemaWrapper<T>(IZodSchema<T, T> inner) : IZodSchema<object, object>, IOptionalSchema
+public sealed class FieldSchemaWrapper<T>(IZodSchema<T, T> inner)
+	: IZodSchema<object, object>,
+		IOptionalSchema,
+		JsonSchema.IJsonSchemaInnerSchema
 {
+	// The wrapper only adapts the input type; it does not change the exported JSON Schema shape. Exposing
+	// the inner schema lets the exporter unwrap to the schema that does. Without this, every wrapped field
+	// hit the exporter's generic fallback and exported with no type.
+	object JsonSchema.IJsonSchemaInnerSchema.InnerSchema => inner;
+
 	/// <inheritdoc/>
 	public bool IsOptional => inner is IOptionalSchema o && o.IsOptional;
 

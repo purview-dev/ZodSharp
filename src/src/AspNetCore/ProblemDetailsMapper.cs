@@ -115,6 +115,13 @@ static class ProblemDetailsMapper
 		return builder.ToString();
 	}
 
+	/// <remarks>
+	/// Every declared error parameter is copied into the response. That is deliberate — the parameters exist
+	/// to be substituted into a client-facing message, so the values are already destined for the caller —
+	/// but it does mean a rule that stores internal context in a parameter discloses it. The constraint is
+	/// documented on <see cref="ErrorTypeParameters"/>, where an author populates them. <c>issues</c> and
+	/// <c>traceId</c> are reserved by this mapper and are never overwritten from parameters.
+	/// </remarks>
 	static void MergeParameters(HttpValidationProblemDetails details, ImmutableArray<ValidationError> errors)
 	{
 		foreach (var error in errors.IsDefault ? [] : errors)
