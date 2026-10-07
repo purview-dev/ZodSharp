@@ -20,6 +20,11 @@ namespace ZodSharp.SourceGenerators.Models;
 /// Whether the rule implements <c>IZodRule</c> and therefore supplies its own code/origin at runtime. When
 /// the rule is adapted, this reflects the wrapped rule, which is what supplies the identity.
 /// </param>
+/// <param name="IsRequired">
+/// Whether the rule implements <c>IRequiredRule</c> and therefore rejects an absent value. Such a rule is
+/// emitted outside the generator's non-null guard so a missing value fails exactly as
+/// <c>[Required]</c> fails.
+/// </param>
 readonly record struct CustomRuleDescriptor(
 	TypeIdentity RuleType,
 	TypeIdentity? AdaptedFrom,
@@ -27,5 +32,6 @@ readonly record struct CustomRuleDescriptor(
 	string? Origin,
 	ValidationAttributeData Message,
 	EquatableArray<string> Arguments,
-	bool RuleOwnsIdentity
+	bool RuleOwnsIdentity,
+	bool IsRequired
 );

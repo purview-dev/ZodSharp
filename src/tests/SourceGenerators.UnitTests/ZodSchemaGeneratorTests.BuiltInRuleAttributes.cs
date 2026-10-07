@@ -701,7 +701,7 @@ partial class ZodSchemaGeneratorTests
 				[ZodSchema]
 				public partial class Account
 				{
-					[RequiredZod(AllowEmptyString = false, TrimWhitespace = true)]
+					[RequiredZod(AllowEmptyStrings = false, TrimWhitespace = true)]
 					public string Name { get; set; } = string.Empty;
 				}
 			}
@@ -715,6 +715,59 @@ partial class ZodSchemaGeneratorTests
 		await Assert
 			.That(generated)
 			.ContainsGeneratedCode("new global::ZodSharp.Rules.RequiredRule<string>(false, true, null!, null!)");
+	}
+
+	[Test]
+	public async Task GeneratedValidate_GivenRequiredZodOnMissingValue_ReportsMissingFieldLikeRequired(
+		CancellationToken cancellationToken
+	)
+	{
+		// Arrange - [RequiredZod] must reject an absent value exactly as [Required] does, so the rule is
+		// emitted outside the generator's non-null guard instead of being skipped.
+		const string source = """
+			using System.ComponentModel.DataAnnotations;
+			using ZodSharp;
+			using ZodSharp.Rules;
+
+			namespace Testing
+			{
+				[ZodSchema]
+				public sealed class RequiredParityModel
+				{
+					[RequiredZod(AllowEmptyStrings = false, TrimWhitespace = true)]
+					public string ZodName { get; set; }
+
+					[Required(AllowEmptyStrings = false)]
+					public string DataAnnotationName { get; set; }
+				}
+			}
+			""";
+
+		var driverResult = await GenerateAsync(
+			source,
+			new ZodSourceGeneratorTestOptions().Compile(),
+			cancellationToken
+		);
+		var assembly = await Assert.That(driverResult.CompilationResult.Assembly).IsNotNull();
+
+		var modelType = assembly.GetType("Testing.RequiredParityModel")!;
+		var model = Activator.CreateInstance(modelType)!;
+
+		// Act
+		var result = InvokeValidate(assembly, model, "Testing.RequiredParityModelSchema");
+		var errors = (System.Collections.Immutable.ImmutableArray<Core.ValidationError>)
+			result.GetType().GetProperty("Errors")!.GetValue(result)!;
+
+		// Assert
+		await Assert.That((bool)result.GetType().GetProperty("IsSuccess")!.GetValue(result)!).IsFalse();
+		await Assert
+			.That(errors.Any(static error => error.Path.Contains("ZodName") && error.Code == "missing_field"))
+			.IsTrue();
+		await Assert
+			.That(
+				errors.Any(static error => error.Path.Contains("DataAnnotationName") && error.Code == "missing_field")
+			)
+			.IsTrue();
 	}
 
 	[Test]

@@ -38,7 +38,7 @@ public class RequiredRuleTests
 		cancellationToken.ThrowIfCancellationRequested();
 
 		// Arrange
-		RequiredRule<string> rule = new(allowEmptyString: true);
+		RequiredRule<string> rule = new(allowEmptyStrings: true);
 
 		// Act
 		var isValid = rule.IsValid(string.Empty);

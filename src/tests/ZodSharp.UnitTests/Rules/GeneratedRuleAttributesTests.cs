@@ -218,7 +218,7 @@ public class GeneratedRuleAttributesTests
 		// Assert
 		await Assert.That(attributeType).IsNotNull();
 		await Assert.That(attributeType!.Name).IsEqualTo("RequiredZodAttribute");
-		await Assert.That(attributeType.GetProperty("AllowEmptyString")).IsNotNull();
+		await Assert.That(attributeType.GetProperty("AllowEmptyStrings")).IsNotNull();
 		await Assert.That(attributeType.GetProperty("TrimWhitespace")).IsNotNull();
 		await Assert.That(attributeType.GetProperty("Message")).IsNotNull();
 		await Assert.That(attributeType.GetProperty("Code")).IsNotNull();

@@ -78,6 +78,108 @@ partial class ZodSchemaGeneratorTests
 		}
 		""";
 
+	/// <summary>
+	/// A scalar whose underlying value is a nullable reference. The adapter's <c>TValue</c> has to keep the
+	/// annotation, because the wrapped rule is closed over <c>string?</c> and the value object implements
+	/// <c>IScalarValueObject&lt;TSelf, string?&gt;</c>: an adapter closed over <c>string</c> satisfies
+	/// neither constraint and the generated schema reports CS8631.
+	/// </summary>
+	const string NullableScalarAdaptationSource = """
+		using System;
+		using System.ComponentModel.DataAnnotations;
+		using ZodSharp;
+		using ZodSharp.Core;
+
+		namespace Purview.ValueObjects.Serialization
+		{
+			[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct)]
+			public sealed class ScalarAttribute : Attribute
+			{
+				public ScalarAttribute(string propertyName = "Value") => PropertyName = propertyName;
+
+				public string PropertyName { get; }
+			}
+		}
+
+		namespace Purview.ValueObjects
+		{
+			public interface IScalarValueObject<TSelf, TValue>
+				where TSelf : IScalarValueObject<TSelf, TValue>
+			{
+				TValue Value { get; }
+			}
+
+			// Stands in for the adapter the value-object generator emits into a real consumer.
+			public readonly record struct ScalarRuleAdapter<TSelf, TValue, TRule>(TRule Rule)
+				: IValidationRule<TSelf>
+				where TSelf : IScalarValueObject<TSelf, TValue>
+				where TRule : IValidationRule<TValue>
+			{
+				public bool IsValid(in TSelf value) => Rule.IsValid(value.Value);
+
+				public string GetErrorMessage(in TSelf value) => Rule.GetErrorMessage(value.Value);
+			}
+		}
+
+		namespace Testing
+		{
+			public readonly record struct NotNullRule<T>(string? Message = null)
+				: IValidationRule<T>, IZodRule
+			{
+				public bool IsValid(in T value) => value is not null;
+
+				public string GetErrorMessage(in T value) => Message ?? "Value must not be null.";
+
+				string? IZodRule.Code => "null_value";
+
+				string? IZodRule.Origin => "value_object";
+			}
+
+			[ZodRule(typeof(NotNullRule<>))]
+			[AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Property)]
+			public sealed class NotNullAttribute : ValidationAttribute
+			{
+				public string? Message { get; set; }
+			}
+
+			[Purview.ValueObjects.Serialization.Scalar]
+			[NotNull(Message = "TenantKey must not be null.")]
+			[ZodSchema]
+			public partial record struct TenantKey : Purview.ValueObjects.IScalarValueObject<TenantKey, string?>
+			{
+				public string? Value { get; init; }
+			}
+		}
+		""";
+
+	[Test]
+	public async Task ScalarAdaptation_GivenNullableReferenceScalarValue_KeepsTheNullableAnnotation(
+		CancellationToken cancellationToken
+	)
+	{
+		// Act
+		var driverResult = await GenerateAsync(
+			NullableScalarAdaptationSource,
+			ZodSourceGeneratorTestOptions.NoValidation,
+			cancellationToken
+		);
+		var generated = driverResult.GetSource("TenantKeySchema");
+
+		// Assert — the wrapped rule and the adapter's TValue are both closed over string?, matching the
+		// rule's IValidationRule<string?> and the scalar's IScalarValueObject<TenantKey, string?>.
+		await Assert.That(generated).ContainsGeneratedCode("new global::Testing.NotNullRule<string?>(");
+		await Assert
+			.That(generated)
+			.ContainsGeneratedCode(
+				"new global::Purview.ValueObjects.ScalarRuleAdapter<global::Testing.TenantKey, string?, global::Testing.NotNullRule<string?>>("
+			);
+
+		// The generated schema is in a #nullable enable context, so an adapter closed over the wrong
+		// nullability would surface here as CS8631 rather than at a consumer's build.
+		var diagnostics = driverResult.CompilationResult.Compilation.GetDiagnostics(cancellationToken);
+		await Assert.That(diagnostics).DoesNotContain(d => d.Id == "CS8631");
+	}
+
 	[Test]
 	public async Task ScalarAdaptation_GivenRuleWrittenAgainstTheUnderlyingValue_EmitsAdapter(
 		CancellationToken cancellationToken

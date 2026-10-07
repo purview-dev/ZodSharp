@@ -11,20 +11,22 @@ namespace ZodSharp.Rules;
 /// <remarks>
 /// <para>
 /// For a string value the rule always rejects <see langword="null"/>. When
-/// <see cref="RequiredRule{T}(bool, bool, string?, string?)">allowEmptyString</see> is <see langword="false"/>
+/// <see cref="RequiredRule{T}(bool, bool, string?, string?)">allowEmptyStrings</see> is <see langword="false"/>
 /// an empty string is rejected as well; when it is <see langword="true"/> an empty string is accepted. The
 /// <c>trimWhitespace</c> option additionally treats a whitespace-only string as empty, so <c>"   "</c> fails
 /// unless empty strings are allowed. Leading/trailing whitespace on a non-empty value is preserved, matching a
 /// trim-then-check reading of the option.
 /// </para>
 /// <para>
-/// The generated <c>[RequiredZod]</c> attribute surfaces both options as constructor/property arguments; the
-/// name is suffixed with <c>Zod</c> because <c>RequiredAttribute</c> is already declared by
+/// The generated <c>[RequiredZod]</c> attribute surfaces both options as constructor/property arguments and
+/// mirrors <c>System.ComponentModel.DataAnnotations.RequiredAttribute</c>: it is emitted outside the
+/// generator's non-null guard, so an absent value fails exactly as <c>[Required]</c> fails. The name is
+/// suffixed with <c>Zod</c> because <c>RequiredAttribute</c> is already declared by
 /// <c>System.ComponentModel.DataAnnotations</c>.
 /// </para>
 /// </remarks>
 [Core.ZodRule]
-public readonly record struct RequiredRule<T> : Core.IValidationRule<T>, Core.IZodRule
+public readonly record struct RequiredRule<T> : Core.IValidationRule<T>, Core.IZodRule, Core.IRequiredRule
 {
 	/// <summary>Gets the error code reported when the rule fails.</summary>
 	public const string ErrorCode = "missing_field";
@@ -32,25 +34,25 @@ public readonly record struct RequiredRule<T> : Core.IValidationRule<T>, Core.IZ
 	/// <summary>Gets the message format; <c>{0}</c> is the offending value.</summary>
 	public const string MessageFormat = "Field is required";
 
-	readonly bool _allowEmptyString;
+	readonly bool _allowEmptyStrings;
 	readonly bool _trimWhitespace;
 	readonly string _message;
 
 	/// <summary>
 	/// Initializes a new instance of the <see cref="RequiredRule{T}"/> struct.
 	/// </summary>
-	/// <param name="allowEmptyString">Whether an empty string satisfies the rule. Defaults to <see langword="false"/>.</param>
+	/// <param name="allowEmptyStrings">Whether an empty string satisfies the rule. Defaults to <see langword="false"/>.</param>
 	/// <param name="trimWhitespace">Whether a whitespace-only string counts as empty. Defaults to <see langword="false"/>.</param>
 	/// <param name="message">Optional error message/ message format.</param>
 	/// <param name="code">Optional error code override. If one is not specified then the <see cref="ErrorCode"/> is used.</param>
 	public RequiredRule(
-		bool allowEmptyString = false,
+		bool allowEmptyStrings = false,
 		bool trimWhitespace = false,
 		string? message = null,
 		string? code = null
 	)
 	{
-		_allowEmptyString = allowEmptyString;
+		_allowEmptyStrings = allowEmptyStrings;
 		_trimWhitespace = trimWhitespace;
 		_message = message.Or(MessageFormat);
 		Code = code.Or(ErrorCode);
@@ -69,7 +71,7 @@ public readonly record struct RequiredRule<T> : Core.IValidationRule<T>, Core.IZ
 			if (text is null)
 				return false;
 
-			if (_allowEmptyString)
+			if (_allowEmptyStrings)
 				return true;
 
 			// If we get here, the string is not null and empty strings are not allowed. Check for whitespace if needed.
