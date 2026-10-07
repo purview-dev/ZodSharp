@@ -128,7 +128,8 @@ static class CustomRuleResolver
 					GetAttributeString(attribute, "Origin") ?? mapping.Origin,
 					ValidationAttributeData.FromAttributeData(attribute),
 					arguments,
-					IsZodRule(ruleType)
+					IsZodRule(ruleType),
+					TypeHelpers.IsOrImplements(ruleType, TypeLibrary.ZodSharp.Core.IRequiredRule)
 				)
 			);
 
@@ -320,6 +321,14 @@ static class CustomRuleResolver
 		return null;
 	}
 
+	/// <summary>
+	/// Builds the <c>Purview.ValueObjects.ScalarRuleAdapter&lt;TSelf, TValue, TRule&gt;</c> identity the
+	/// adapted rule is emitted as. The value argument is carried as a <c>TypeReference</c> rather than a
+	/// <c>TypeIdentity</c> because an identity drops nullable reference annotations: a
+	/// scalar backed by <c>string?</c> would otherwise be closed over <c>NonSentinelRule&lt;string?&gt;</c>
+	/// but constrained by <c>IValidationRule&lt;string&gt;</c>, which the invariant contract rejects
+	/// (CS8631).
+	/// </summary>
 	static TypeIdentity BuildScalarAdapterIdentity(
 		INamedTypeSymbol scalar,
 		ITypeSymbol valueType,
@@ -329,7 +338,11 @@ static class CustomRuleResolver
 			TypeLibraryGenerator.ScalarRuleAdapterName,
 			TypeLibraryGenerator.ValueObjectsNamespace,
 			3
-		).MakeGeneric(new TypeIdentity(scalar), new TypeIdentity(valueType), new TypeIdentity(underlyingRule));
+		).MakeGeneric(
+			new TypeIdentity(scalar).AsTypeReference(),
+			TypeReference.Create(valueType),
+			new TypeIdentity(underlyingRule).AsTypeReference()
+		);
 
 	/// <summary>
 	/// Resolves the rule type to instantiate: a plain type is used as-is, an unbound generic

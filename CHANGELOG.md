@@ -117,6 +117,13 @@ been published to NuGet.
 
 ### Fixed
 
+- **`[RequiredZod]` now rejects an absent value exactly like `[Required]`.** A custom rule bound to a
+  reference-type member was emitted inside the generator's non-null guard, so a missing value never reached
+  `RequiredRule<T>` and options/schema validation passed. The rule now implements the new `IRequiredRule`
+  marker and the generator emits it before the guard, reporting `missing_field` for `null` (and, unless
+  allowed, empty or whitespace-only strings). The attribute's `AllowEmptyString` property was renamed to
+  `AllowEmptyStrings` to match `RequiredAttribute.AllowEmptyStrings`, so `[RequiredZod]` is a drop-in
+  replacement for `[Required]`.
 - **`ZodArray` built corrupt error paths for nested element failures.** It used the two-argument
   `ImmutableArray.CopyTo(destination, destinationIndex)` — which copies *into* that index — and then
   overwrote the copied element with the index segment. For an element error at path `["email"]` the result
@@ -155,6 +162,13 @@ been published to NuGet.
 - Scalar schema generation, which had regressed.
 - The `uuid` attribute rule required both constructors to be present to generate.
 - Nullability annotations on `IZodRule` properties.
+- **A scalar rule adapted over a nullable reference value no longer emits a nullability-mismatched adapter.**
+  `CustomRuleResolver` built the `ScalarRuleAdapter<TSelf, TValue, TRule>` identity from a `TypeIdentity`,
+  which drops nullable reference annotations, while the wrapped rule was closed over a `TypeReference` that
+  keeps them. A scalar backed by `string?` therefore emitted
+  `ScalarRuleAdapter<T, string, NonSentinelRule<string?>>`, whose `TValue` satisfied neither the adapter's
+  `IValidationRule<TValue>` constraint nor the value object's `IScalarValueObject<TSelf, TValue>` — reporting
+  CS8631 at every consumer. The value argument is now carried as a `TypeReference`, so both sides stay in step.
 
 ### Added — packed generator smoke test
 

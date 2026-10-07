@@ -533,19 +533,19 @@ public class ZodString : ZodType<string>
 	/// Adds a required validation that rejects <see langword="null"/> (and, unless allowed, empty or
 	/// whitespace-only) strings.
 	/// </summary>
-	/// <param name="allowEmptyString">Whether an empty string satisfies the rule.</param>
+	/// <param name="allowEmptyStrings">Whether an empty string satisfies the rule.</param>
 	/// <param name="trimWhitespace">Whether a whitespace-only string counts as empty.</param>
 	/// <param name="message">Optional error message</param>
 	/// <param name="code">Optional error code override</param>
 	/// <returns>This schema for method chaining</returns>
 	public ZodString Required(
-		bool allowEmptyString = false,
+		bool allowEmptyStrings = false,
 		bool trimWhitespace = false,
 		string? message = null,
 		string? code = null
 	)
 	{
-		AddRule(new RequiredRule<string>(allowEmptyString, trimWhitespace, message, code));
+		AddRule(new RequiredRule<string>(allowEmptyStrings, trimWhitespace, message, code));
 		return this;
 	}
 

@@ -200,7 +200,7 @@ These rules mirror `System.ComponentModel.DataAnnotations` attributes as first-c
 
 | Rule | Constructor | Fluent method | Code | Message format |
 |---|---|---|---|---|
-| `RequiredRule<T>` | `(bool allowEmptyString = false, bool trimWhitespace = false, string? message, string? code)` | `ZodString.Required(...)` | `missing_field` | `Field is required` |
+| `RequiredRule<T>` | `(bool allowEmptyStrings = false, bool trimWhitespace = false, string? message, string? code)` | `ZodString.Required(...)` | `missing_field` | `Field is required` |
 | `RangeRule<T>` | `(T minimum, T maximum, bool minimumIsExclusive = false, bool maximumIsExclusive = false, string? message, string? code)` | `ZodNumber.Range(...)`, `ZodBigInt.Range(...)`, `ZodDate.Range(...)` | `invalid_range` | `Value must be between {0} and {1}, but got {2}` |
 | `LengthRule` | `(int minimum, int maximum, string? message, string? code)` | `ZodString.Length(min, max)` | `invalid_length` | `String length must be between {0} and {1} characters, but got {2}` |
 | `StringLengthRule` | `(int maximumLength, int minimumLength = 0, string? message, string? code)` | `ZodString.StringLength(max, min)` | `invalid_length` | `String must be at most {0} characters long and at least {1}, but got {2}` |
@@ -208,7 +208,7 @@ These rules mirror `System.ComponentModel.DataAnnotations` attributes as first-c
 | `AllowedValuesRule<T>` | `(T[] values, string? message, string? code)` | `AllowedValues(values)` | `invalid_value` | `Value '{0}' is not one of the allowed values` |
 | `DeniedValuesRule<T>` | `(T[] values, string? message, string? code)` | `DeniedValues(values)` | `invalid_value` | `Value '{0}' is one of the denied values` |
 
-`RequiredRule<T>` always rejects `null`. When `allowEmptyString` is `false` an empty string is rejected as well; `trimWhitespace` additionally treats a whitespace-only string as empty (leading/trailing whitespace on a non-empty value is preserved). The `ZodString.Required` fluent method is a covariant convenience over the generic rule.
+`RequiredRule<T>` always rejects `null`. When `allowEmptyStrings` is `false` an empty string is rejected as well; `trimWhitespace` additionally treats a whitespace-only string as empty (leading/trailing whitespace on a non-empty value is preserved). The `ZodString.Required` fluent method is a covariant convenience over the generic rule.
 
 `AllowedValuesRule<T>` and `DeniedValuesRule<T>` accept both a single value (`new AllowedValuesRule<int>(5)`) and an array. The generated `[AllowedValuesZod]` / `[DeniedValuesZod]` attributes surface the array as a `params object[]` (plus a single-value overload), so `[AllowedValuesZod("a", "b", "c")]` works on a `string` member and `[DeniedValuesZod(1, 2, 3)]` on an `int` member; the resolver converts each element to the member type.
 
@@ -301,7 +301,7 @@ Each built-in rule that can be expressed as an attribute ships a generated `Vali
 | `[Duration]` | `DurationRule` | |
 | `[Guid]` | `GuidRule` | accepts any 8-4-4-4-12 hex identifier |
 | `[Cidr]` / `[Cidr(CidrRuleType.…)]` | `CidrRule` | defaults to `Any`; pass a type to require IPv4/IPv6 |
-| `[RequiredZod(…)]` | `RequiredRule<T>` | suffixed; exposes `AllowEmptyString`/`TrimWhitespace` |
+| `[RequiredZod(…)]` | `RequiredRule<T>` | suffixed; exposes `AllowEmptyStrings`/`TrimWhitespace` and rejects an absent value exactly like `[Required]` |
 | `[RangeZod(…)]` | `RangeRule<T>` | the type-parameter bounds are doubles; the rule closes with the member type |
 | `[LengthZod(…)]` | `LengthRule` | suffixed to avoid the DataAnnotations name |
 | `[StringLengthZod(…)]` | `StringLengthRule` | as above |

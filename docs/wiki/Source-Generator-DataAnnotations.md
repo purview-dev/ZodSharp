@@ -25,6 +25,8 @@ The `[ZodSchema]` generator reads `System.ComponentModel.DataAnnotations` attrib
 
 `[Length]` follows DataAnnotations null semantics: `null` is valid unless `[Required]` is also present.
 
+`[RequiredZod]` (the generated `RequiredRule<T>` attribute) mirrors `[Required]`: it is emitted outside the generator's non-null guard, so an absent value is reported as `missing_field` even though every other rule bound to the member is skipped for `null`. Its `AllowEmptyStrings` property has the same name and meaning as `RequiredAttribute.AllowEmptyStrings`, and it additionally exposes `TrimWhitespace`, so it is a drop-in replacement for `[Required]`.
+
 ## Enum properties
 
 Enum properties are validated automatically — the generator rejects a value that is not a defined member of the enum type with `invalid_enum_value`. The check is emitted as `ZodSharp.Rules.EnumRule<TEnum>`. Members can be excluded with `[ZodIgnore]` (on the enum member, for every property of that type) or `[DeniedValues]` (on the property only). `[Flags]` enums and properties with an explicit `[AllowedValues]` allow-list are not auto-validated, and the whole feature is disabled with `[ZodSchema(ValidateEnumValues = false)]`. See [Source Generator](Source-Generator.md#automatic-enum-validation) for the full rules and examples.

@@ -64,6 +64,9 @@ static partial class TypeLibraryGenerator
 	static readonly TypeIdentity IZodRule = default;
 
 	[TypeRef(ZodSharpCoreNamespace)]
+	static readonly TypeIdentity IRequiredRule = default;
+
+	[TypeRef(ZodSharpCoreNamespace)]
 	static readonly TypeIdentity ZodRuleAttribute = default;
 
 	[TypeRef("System")]

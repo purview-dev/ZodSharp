@@ -683,6 +683,10 @@ partial class ZodSchemaGenerator
 		// absorbed into the rule's disallowed set, so the standalone denied-values validation is skipped.
 		var emitEnumRule = IsEnumValidationEmitted(property, validateEnumValues);
 
+		// A rule that rejects an absent value (IRequiredRule) stands in for [Required]: it is emitted outside
+		// the non-null guard, so a missing value fails instead of being skipped.
+		var hasRequiredRule = TryGetRequiredRule(property, out var requiredRule);
+
 		if (property.CanBeNull && attributes.Required.ShouldProcess && attributes.Required.Value.Exists)
 		{
 			var required = attributes.Required.Value;
@@ -704,6 +708,12 @@ partial class ZodSchemaGenerator
 			block = writer.ElseScope();
 			GenerateValueSetValidations(writer, property, emitEnumRule);
 		}
+		else if (hasRequiredRule)
+		{
+			GenerateRequiredRuleValidation(writer, property, requiredRule);
+			block = writer.ElseScope();
+			GenerateValueSetValidations(writer, property, emitEnumRule);
+		}
 		else
 		{
 			GenerateValueSetValidations(writer, property, emitEnumRule);
@@ -711,14 +721,45 @@ partial class ZodSchemaGenerator
 				block = writer.IfBlockScope($"value.{propertyName} != null");
 		}
 
-		GenerateTypeSpecificValidations(writer, property, emitEnumRule);
+		GenerateTypeSpecificValidations(writer, property, emitEnumRule, skipRequiredRule: hasRequiredRule);
 		block?.Dispose();
 
 		GenerateCompareValidation(writer, property);
 		writer.NewLine();
 	}
 
-	static void GenerateTypeSpecificValidations(CodeWriter writer, ZodPropertyDescriptor property, bool emitEnumRule)
+	/// <summary>
+	/// Finds the rule that rejects an absent value (<c>IRequiredRule</c>) among the property's custom rules,
+	/// when the property can be null.
+	/// </summary>
+	/// <param name="property">The property to inspect.</param>
+	/// <param name="requiredRule">The required rule, when one is bound to the property.</param>
+	/// <returns><see langword="true"/> when a required rule is bound to a nullable property.</returns>
+	static bool TryGetRequiredRule(ZodPropertyDescriptor property, out CustomRuleDescriptor requiredRule)
+	{
+		requiredRule = default;
+
+		if (!property.CanBeNull)
+			return false;
+
+		foreach (var rule in property.CustomRules)
+		{
+			if (!rule.IsRequired)
+				continue;
+
+			requiredRule = rule;
+			return true;
+		}
+
+		return false;
+	}
+
+	static void GenerateTypeSpecificValidations(
+		CodeWriter writer,
+		ZodPropertyDescriptor property,
+		bool emitEnumRule,
+		bool skipRequiredRule
+	)
 	{
 		switch (property.ValidationKind)
 		{
@@ -745,7 +786,7 @@ partial class ZodSchemaGenerator
 				break;
 		}
 
-		GenerateCustomRuleValidations(writer, property);
+		GenerateCustomRuleValidations(writer, property, skipRequiredRule);
 	}
 
 	static void GenerateCompareValidation(CodeWriter writer, ZodPropertyDescriptor property)
