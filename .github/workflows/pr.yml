@@ -32,13 +32,13 @@ jobs:
     name: Cross-platform (C# to Zod)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Installs exactly the SDK global.json pins, which is the only thing the first dotnet command
       # in the job can resolve against. Naming a floating version and a feed quality instead does
       # not work: `11.0.x` with quality `preview` resolves the latest *preview*-channel build, and a
       # preview sorts below the pinned rc, so global.json is left unsatisfiable.
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
 
@@ -63,11 +63,11 @@ jobs:
     name: Packed generator smoke test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       # Same reason as the cross-platform job: the SDK comes from global.json, not a floating
       # version plus a feed quality.
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
 
