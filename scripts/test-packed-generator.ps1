@@ -42,6 +42,18 @@ $consumer = Join-Path $workspace 'consumer'
 
 New-Item -ItemType Directory -Path $feed, $packages, $consumer -Force | Out-Null
 
+# Restore the whole solution before packing, which is what the shared pipeline does.
+#
+# Packing ZodSharp.csproj alone is not enough on a clean checkout: PackZodSharpCodeFixes reaches
+# CodeFixes.csproj through the MSBuild *task*, not a ProjectReference, so `dotnet pack` never
+# restores it and the pack fails with NETSDK1004 ("Assets file ... project.assets.json not found").
+# Locally it appeared to work only because an earlier solution build had left assets behind; CI
+# starts cold, so it failed there and nowhere else.
+Write-Host 'Restoring the solution so every project the pack reaches has assets...' -ForegroundColor Cyan
+
+& dotnet restore (Join-Path $repositoryRoot 'src/ZodSharp.slnx')
+if ($LASTEXITCODE -ne 0) { throw "dotnet restore failed with exit code $LASTEXITCODE." }
+
 Write-Host "Packing Purview.ZodSharp $version ($Configuration) to an isolated feed..." -ForegroundColor Cyan
 
 & dotnet pack (Join-Path $repositoryRoot 'src/src/ZodSharp/ZodSharp.csproj') `
