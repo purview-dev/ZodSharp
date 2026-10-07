@@ -12,7 +12,18 @@ static partial class TypeLibraryGenerator
 
 	public const string ZodSharpCoreNamespace = ZodSharpNamespace + ".Core";
 
+	public const string ZodSharpRulesNamespace = ZodSharpNamespace + ".Rules";
+
 	public const string ZodSharpSchemasNamespace = ZodSharpNamespace + ".Schemas";
+
+	// The Purview.ValueObjects scalar contracts. A scalar value object is validated through its underlying
+	// value, so a rule written against that value is adapted by the ScalarRuleAdapter the value-object
+	// generator emits into the consuming compilation; the adapter is referenced by name, not by a package.
+	public const string ValueObjectsNamespace = "Purview.ValueObjects";
+
+	public const string ScalarAttributeFullName = ValueObjectsNamespace + ".Serialization.ScalarAttribute";
+
+	public const string ScalarRuleAdapterName = "ScalarRuleAdapter";
 
 	// Simple name of the refinement context type declared in ZodSharpSchemasNamespace.
 	public const string ZodRefineContextName = "RefineCtx";
@@ -36,6 +47,9 @@ static partial class TypeLibraryGenerator
 	[TypeRef(ZodSharpNamespace)]
 	static readonly TypeIdentity ZodSchemaAttribute = default;
 
+	[TypeRef(ZodSharpNamespace)]
+	static readonly TypeIdentity ZodIgnoreAttribute = default;
+
 	[TypeRef(ZodSharpCoreNamespace)]
 	static readonly TypeIdentity ZodSchemaGeneratedAttribute = default;
 
@@ -54,6 +68,9 @@ static partial class TypeLibraryGenerator
 
 	[TypeRef("System")]
 	static readonly TypeIdentity AttributeUsageAttribute = default;
+
+	[TypeRef(ZodSharpRulesNamespace)]
+	static readonly TypeIdentity EnumRule = default;
 
 	[TypeRef(ZodSharpCoreNamespace)]
 	static readonly TypeIdentity ValidationResult = default;

@@ -6,16 +6,31 @@ namespace ZodSharp.Rules;
 /// Validation rule for email format.
 /// Uses struct to avoid allocations.
 /// </summary>
-public readonly record struct EmailRule : Core.IValidationRule<string>, Core.IStringValidationRule
+[Core.ZodRule]
+public readonly record struct EmailRule : Core.IValidationRule<string>, Core.IStringValidationRule, Core.IZodRule
 {
+	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
+	public const string ErrorCode = "invalid_string";
+
+	/// <summary>Gets the message format; <c>{0}</c> is the offending value.</summary>
+	public const string MessageFormat = "Invalid email format: {0}";
+
 	/// <summary>
 	/// Regular expression for validating email format.
 	/// </summary>
 	public static readonly Regex EmailRegex = new(
 		@"^[^@\s]+@[^@\s]+\.[^@\s]+$",
 		RegexOptions.Compiled | RegexOptions.IgnoreCase,
-		TimeSpan.FromMilliseconds(100)
+		RegexRule.DefaultMatchTimeout
 	);
+
+	readonly string _message;
+
+	public EmailRule(string? message = null, string? code = null)
+	{
+		_message = message.Or(MessageFormat);
+		Code = code.Or(ErrorCode);
+	}
 
 	/// <summary>
 	/// Validates that the value matches the email format.
@@ -36,12 +51,20 @@ public readonly record struct EmailRule : Core.IValidationRule<string>, Core.ISt
 	/// </summary>
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
-	public string GetErrorMessage(in string value) => $"Invalid email format: {value}";
+	public string GetErrorMessage(in string value) => RuleMessage.Format(_message ?? MessageFormat, value);
 
 	/// <summary>
 	/// Gets the error message for a failed span validation.
 	/// </summary>
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
-	public string GetErrorMessage(ReadOnlySpan<char> value) => $"Invalid email format: {value}";
+	public string GetErrorMessage(ReadOnlySpan<char> value) =>
+		RuleMessage.Format(_message ?? MessageFormat, value.ToString());
+
+	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
+	public string Code => field.Or(ErrorCode);
+
+	string? Core.IZodRule.Code => Code;
+
+	string? Core.IZodRule.Origin => null;
 }

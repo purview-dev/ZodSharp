@@ -19,4 +19,11 @@ public interface IStringValidationRule
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
 	string GetErrorMessage(ReadOnlySpan<char> value);
+
+	/// <summary>
+	/// Gets the Zod-compatible error code reported when the rule fails. A rule that accepts a per-usage
+	/// override returns it; otherwise the rule's canonical default is returned. Defaults to
+	/// <c>"validation_failed"</c> when the rule does not declare a code.
+	/// </summary>
+	string Code => "validation_failed";
 }

@@ -20,7 +20,7 @@ sealed class User
 
 partial class UserSchemaValidator
 {
-	public bool WasCalled;
+	public bool WasCalled { get; set; }
 
 	[System.Diagnostics.CodeAnalysis.SuppressMessage(
 		"Style",

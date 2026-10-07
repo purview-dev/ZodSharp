@@ -22,13 +22,13 @@ public sealed class ErrorTypePartialClassAnalyzer : DiagnosticAnalyzer
 
 	const string ErrorTypeAttributeMetadataName = "ZodSharp.Core.ErrorTypeAttribute";
 
-	static readonly ImmutableArray<DiagnosticDescriptor> s_supportedDiagnostics =
+	static readonly ImmutableArray<DiagnosticDescriptor> SupportedDiagnosticsList =
 	[
 		DiagnosticLibrary.ErrorTypeContainingTypeNotPartial,
 		DiagnosticLibrary.ErrorTypeFieldInvalid,
 	];
 
-	public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => s_supportedDiagnostics;
+	public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => SupportedDiagnosticsList;
 
 	public override void Initialize(AnalysisContext context)
 	{

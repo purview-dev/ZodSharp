@@ -87,18 +87,31 @@ public class FromJsonSchemaParserTests
 	[Test]
 	public async Task JsonSchemaSerializerOptions_Default_UsesJsonSchemaKeywordAndCamelCaseNames()
 	{
-		// Arrange
-		var namingPolicy = JsonSchemaSerializerOptions.Default.PropertyNamingPolicy;
+		// Arrange — asserts the emitted wire format rather than the naming mechanism. Contracts now come
+		// from the source-generated JsonSchemaJsonContext so export is trim- and AOT-safe, and a source
+		// generator cannot reproduce a runtime JsonNamingPolicy. The $-prefixed keyword names therefore
+		// come from [JsonPropertyName] on JsonSchemaDefinition; the output must be identical either way.
+		JsonSchemaDefinition definition = new()
+		{
+			Schema = "https://json-schema.org/draft/2020-12/schema",
+			Id = "https://example.com/person",
+			Ref = "#/$defs/person",
+			MinLength = 3,
+			Defs = new Dictionary<string, JsonSchemaDefinition> { ["person"] = new() { Type = "object" } },
+		};
 
 		// Act
-		var refName = namingPolicy!.ConvertName(nameof(JsonSchemaDefinition.Ref));
-		var defsName = namingPolicy.ConvertName(nameof(JsonSchemaDefinition.Defs));
-		var minLengthName = namingPolicy.ConvertName(nameof(JsonSchemaDefinition.MinLength));
+		var json = System.Text.Json.JsonSerializer.Serialize(definition, JsonSchemaSerializerOptions.Default);
 
 		// Assert
-		await Assert.That(refName).IsEqualTo("$ref");
-		await Assert.That(defsName).IsEqualTo("$defs");
-		await Assert.That(minLengthName).IsEqualTo("minLength");
+		await Assert.That(json).Contains("\"$schema\"");
+		await Assert.That(json).Contains("\"$id\"");
+		await Assert.That(json).Contains("\"$ref\"");
+		await Assert.That(json).Contains("\"$defs\"");
+		await Assert.That(json).Contains("\"minLength\"");
+
+		// Null members stay out of the payload.
+		await Assert.That(json).DoesNotContain("\"title\"");
 	}
 
 	[Test]

@@ -10,10 +10,14 @@ namespace ZodSharp.Schemas;
 /// Initializes a new instance of the ZodLiteral class.
 /// </remarks>
 /// <param name="value">The literal value</param>
-public class ZodLiteral<T>(T value) : ZodType<T, T>
+public class ZodLiteral<T>(T value) : ZodType<T, T>, JsonSchema.IJsonSchemaLiteralInfo
 	where T : IEquatable<T>
 {
 	readonly T _value = value;
+
+	// Read by the JSON Schema exporter, which previously matched this type by name and read the value by
+	// private field name. See IJsonSchemaLiteralInfo.
+	object? JsonSchema.IJsonSchemaLiteralInfo.LiteralValue => _value;
 
 	/// <summary>
 	/// Parses and validates the value against the literal.

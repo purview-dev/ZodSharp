@@ -1,0 +1,138 @@
+using System.Net;
+using System.Net.Sockets;
+
+namespace ZodSharp.Rules;
+
+/// <summary>
+/// Specifies the type of IP address to validate against.
+/// </summary>
+public enum IPAddressRuleType
+{
+	/// <summary>
+	/// Validates that the value is an IPv4 address.
+	/// </summary>
+	IPv4,
+
+	/// <summary>
+	/// Validates that the value is an IPv6 address.
+	/// </summary>
+	IPv6,
+
+	/// <summary>
+	/// Validates that the value is either an IPv4 or IPv6 address.
+	/// </summary>
+	Any,
+}
+
+/// <summary>
+/// Validation rule for IPv4 and IPv6 address format.
+/// Uses struct to avoid allocations.
+/// </summary>
+[Core.ZodRule]
+public readonly record struct IPAddressRule : Core.IValidationRule<string>, Core.IStringValidationRule, Core.IZodRule
+{
+	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
+	public const string ErrorCode = "invalid_string";
+
+	/// <summary>Gets the message format; <c>{0}</c> is the offending value.</summary>
+	public const string MessageFormat = "Invalid {1} address: {0}";
+
+	readonly IPAddressRuleType _ruleType;
+	readonly string _message;
+
+	/// <summary>
+	/// Initializes a new instance of the <see cref="IPAddressRule"/> struct with the default rule type (Any).
+	/// </summary>
+	/// <remarks>
+	/// A struct always has a parameterless constructor; declaring it explicitly stops <c>new IPAddressRule()</c>
+	/// from defaulting to the first enum member (<see cref="IPAddressRuleType.IPv4"/>).
+	/// </remarks>
+	public IPAddressRule()
+	{
+		_ruleType = IPAddressRuleType.Any;
+		_message = MessageFormat;
+	}
+
+	/// <summary>
+	/// Initializes a new instance of the <see cref="IPAddressRule"/> struct with default rule type (Any).
+	/// </summary>
+	/// <param name="message">Optional error message/ message format.</param>
+	/// <param name="code">Optional error code override. If one is not specified then the <see cref="ErrorCode"/> is used.</param>
+	public IPAddressRule(string? message = null, string? code = null)
+		: this(IPAddressRuleType.Any, message, code) { }
+
+	/// <summary>
+	/// Initializes a new instance of the IPAddressRule struct.
+	/// </summary>
+	/// <param name="ruleType">The type of IP address to validate against (defaults to <see cref="IPAddressRuleType.Any"/>)</param>
+	/// <param name="message">Optional error message/ message format.</param>
+	/// <param name="code">Optional error code override. If one is not specified then the <see cref="ErrorCode"/> is used.</param>
+	public IPAddressRule(
+		IPAddressRuleType ruleType = IPAddressRuleType.Any,
+		string? message = null,
+		string? code = null
+	)
+	{
+		_ruleType = ruleType;
+		_message = message.Or(MessageFormat);
+		Code = code.Or(ErrorCode);
+	}
+
+	/// <summary>
+	/// Validates that the value is an IPv4 or IPv6 address.
+	/// </summary>
+	/// <param name="value">The value to validate</param>
+	/// <returns>True if valid, false otherwise</returns>
+	public bool IsValid(in string value) => value is not null && IsValid(value.AsSpan());
+
+	/// <summary>
+	/// Validates that the span is an IPv4 or IPv6 address without materialising a string.
+	/// </summary>
+	/// <param name="value">The value to validate</param>
+	/// <returns>True if valid, false otherwise</returns>
+	public bool IsValid(ReadOnlySpan<char> value)
+	{
+		if (value.IsEmpty || value.IsWhiteSpace())
+			return false;
+
+		// Use IPAddress.TryParse to validate the IP address format without throwing exceptions
+		if (IPAddress.TryParse(value, out var address))
+		{
+			if (_ruleType == IPAddressRuleType.Any)
+				return address.AddressFamily is AddressFamily.InterNetwork or AddressFamily.InterNetworkV6;
+			else if (_ruleType == IPAddressRuleType.IPv4)
+				return address.AddressFamily == AddressFamily.InterNetwork;
+			else if (_ruleType == IPAddressRuleType.IPv6)
+				return address.AddressFamily == AddressFamily.InterNetworkV6;
+		}
+
+		return false;
+	}
+
+	/// <summary>
+	/// Gets the error message for a failed validation.
+	/// </summary>
+	/// <param name="value">The value that failed validation</param>
+	/// <returns>The error message</returns>
+	public string GetErrorMessage(in string value) =>
+		RuleMessage.Format(_message, value, _ruleType == IPAddressRuleType.Any ? "IPv4/IPv6" : _ruleType.ToString());
+
+	/// <summary>
+	/// Gets the error message for a failed span validation.
+	/// </summary>
+	/// <param name="value">The value that failed validation</param>
+	/// <returns>The error message</returns>
+	public string GetErrorMessage(ReadOnlySpan<char> value) =>
+		RuleMessage.Format(
+			_message,
+			value.ToString(),
+			_ruleType == IPAddressRuleType.Any ? "IPv4/IPv6" : _ruleType.ToString()
+		);
+
+	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
+	public string Code => field.Or(ErrorCode);
+
+	string? Core.IZodRule.Code => Code;
+
+	string? Core.IZodRule.Origin => null;
+}

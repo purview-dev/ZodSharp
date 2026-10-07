@@ -142,6 +142,25 @@ static class AttributeGenHelper
 								Initializer = "false",
 							}
 						);
+
+					body.XmlSummary(
+							"Whether enum properties are validated automatically: the generated validator rejects a",
+							"value that is not a defined member of the enum type, or that resolves to a member",
+							"excluded from the allowed set (an enum member marked [ZodIgnore], or a value the",
+							"property's [DeniedValues] attribute lists). [Flags] enums are never validated.",
+							"Default is true."
+						)
+						.Property(
+							new(
+								nameof(ZodSchemaAttributeData.ValidateEnumValues),
+								PurviewTypeLibrary.System.Boolean,
+								TypeDeclarationAccessibility.Public
+							)
+							{
+								IsInitOnly = true,
+								Initializer = "true",
+							}
+						);
 				}
 			);
 

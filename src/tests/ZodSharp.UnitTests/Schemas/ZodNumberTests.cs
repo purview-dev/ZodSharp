@@ -15,6 +15,16 @@ public class ZodNumberTests
 	}
 
 	[Test]
+	public async Task NumberMin_GivenCustomMessageAndCode_ReportsThem()
+	{
+		var result = Z.Number().Min(5, "Too small.", "custom_too_small").Validate(3);
+
+		await Assert.That(result.IsSuccess).IsFalse();
+		await Assert.That(result.Errors[0].Code).IsEqualTo("custom_too_small");
+		await Assert.That(result.Errors[0].Message).IsEqualTo("Too small.");
+	}
+
+	[Test]
 	[Arguments(25.0, true)]
 	[Arguments(121.0, false)]
 	[Arguments(120.0, true)]
@@ -153,6 +163,50 @@ public class ZodNumberTests
 	public async Task NumberSafe_GivenValue_ReturnsExpectedResult(double value, bool expected)
 	{
 		var result = Z.Number().Safe().Validate(value);
+
+		await Assert.That(result.IsSuccess).IsEqualTo(expected);
+	}
+
+	[Test]
+	[Arguments(10.0, true)]
+	[Arguments(5.0, false)]
+	[Arguments(5.1, true)]
+	public async Task NumberGt_GivenValue_ReturnsExpectedResult(double value, bool expected)
+	{
+		var result = Z.Number().Gt(5).Validate(value);
+
+		await Assert.That(result.IsSuccess).IsEqualTo(expected);
+	}
+
+	[Test]
+	[Arguments(5.0, true)]
+	[Arguments(5.1, true)]
+	[Arguments(4.9, false)]
+	public async Task NumberGte_GivenValue_ReturnsExpectedResult(double value, bool expected)
+	{
+		var result = Z.Number().Gte(5).Validate(value);
+
+		await Assert.That(result.IsSuccess).IsEqualTo(expected);
+	}
+
+	[Test]
+	[Arguments(5.0, false)]
+	[Arguments(5.1, false)]
+	[Arguments(4.9, true)]
+	public async Task NumberLt_GivenValue_ReturnsExpectedResult(double value, bool expected)
+	{
+		var result = Z.Number().Lt(5).Validate(value);
+
+		await Assert.That(result.IsSuccess).IsEqualTo(expected);
+	}
+
+	[Test]
+	[Arguments(5.0, true)]
+	[Arguments(5.1, false)]
+	[Arguments(4.9, true)]
+	public async Task NumberLte_GivenValue_ReturnsExpectedResult(double value, bool expected)
+	{
+		var result = Z.Number().Lte(5).Validate(value);
 
 		await Assert.That(result.IsSuccess).IsEqualTo(expected);
 	}

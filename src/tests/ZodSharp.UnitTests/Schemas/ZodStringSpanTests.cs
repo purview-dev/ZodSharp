@@ -22,7 +22,7 @@ public class ZodStringSpanTests
 
 		await Assert.That(isValid).IsFalse();
 		await Assert.That(errors).HasSingleItem();
-		await Assert.That(errors[0].Code).IsEqualTo("validation_failed");
+		await Assert.That(errors[0].Code).IsEqualTo("too_small");
 	}
 
 	[Test]
@@ -81,6 +81,42 @@ public class ZodStringSpanTests
 
 		var valid = schema.IsValidSpan("550e8400-e29b-41d4-a716-446655440000".AsSpan(), out _);
 		var invalid = schema.IsValidSpan("not-a-uuid".AsSpan(), out _);
+
+		await Assert.That(valid).IsTrue();
+		await Assert.That(invalid).IsFalse();
+	}
+
+	[Test]
+	public async Task IsValidSpan_GivenIpRule_ValidatesWithoutString()
+	{
+		var schema = Z.String().IP();
+
+		var valid = schema.IsValidSpan("192.168.1.1".AsSpan(), out _);
+		var invalid = schema.IsValidSpan("999.1.1.1".AsSpan(), out _);
+
+		await Assert.That(valid).IsTrue();
+		await Assert.That(invalid).IsFalse();
+	}
+
+	[Test]
+	public async Task IsValidSpan_GivenHexRule_ValidatesWithoutString()
+	{
+		var schema = Z.String().Hex();
+
+		var valid = schema.IsValidSpan("deadBEEF".AsSpan(), out _);
+		var invalid = schema.IsValidSpan("zz".AsSpan(), out _);
+
+		await Assert.That(valid).IsTrue();
+		await Assert.That(invalid).IsFalse();
+	}
+
+	[Test]
+	public async Task IsValidSpan_GivenDatetimeRule_ValidatesWithoutString()
+	{
+		var schema = Z.String().Datetime();
+
+		var valid = schema.IsValidSpan("2022-10-13T09:52:31.816Z".AsSpan(), out _);
+		var invalid = schema.IsValidSpan("2020-10-14T17:42:29+00:00".AsSpan(), out _);
 
 		await Assert.That(valid).IsTrue();
 		await Assert.That(invalid).IsFalse();

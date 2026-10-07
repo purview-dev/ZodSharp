@@ -5,17 +5,26 @@ namespace ZodSharp.Rules;
 /// Mirrors the behavior of System.ComponentModel.DataAnnotations.CreditCardAttribute.
 /// Uses struct to avoid allocations.
 /// </summary>
-public readonly record struct CreditCardRule : Core.IValidationRule<string>, Core.IStringValidationRule
+[Core.ZodRule]
+public readonly record struct CreditCardRule : Core.IValidationRule<string>, Core.IStringValidationRule, Core.IZodRule
 {
-	readonly string? _message;
+	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
+	public const string ErrorCode = "invalid_string";
+
+	/// <summary>Gets the message format; <c>{0}</c> is the offending value.</summary>
+	public const string MessageFormat = "Invalid credit card number format: {0}";
+
+	readonly string _message;
 
 	/// <summary>
 	/// Initializes a new instance of the CreditCardRule struct.
 	/// </summary>
-	/// <param name="message">Optional error message</param>
-	public CreditCardRule(string? message = null)
+	/// <param name="message">Optional error message/ message format.</param>
+	/// <param name="code">Optional error code override. If one is not specified then the <see cref="ErrorCode"/> is used.</param>
+	public CreditCardRule(string? message = null, string? code = null)
 	{
-		_message = message.OrNull();
+		_message = message.Or(MessageFormat);
+		Code = code.Or(ErrorCode);
 	}
 
 	/// <summary>
@@ -74,7 +83,7 @@ public readonly record struct CreditCardRule : Core.IValidationRule<string>, Cor
 	/// </summary>
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
-	public string GetErrorMessage(in string value) => _message ?? $"Invalid credit card number format: {value}";
+	public string GetErrorMessage(in string value) => RuleMessage.Format(_message ?? MessageFormat, value);
 
 	/// <summary>
 	/// Gets the error message for a failed span validation.
@@ -82,5 +91,12 @@ public readonly record struct CreditCardRule : Core.IValidationRule<string>, Cor
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
 	public string GetErrorMessage(ReadOnlySpan<char> value) =>
-		_message ?? $"Invalid credit card number format: {value}";
+		RuleMessage.Format(_message ?? MessageFormat, value.ToString());
+
+	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
+	public string Code => field.Or(ErrorCode);
+
+	string? Core.IZodRule.Code => Code;
+
+	string? Core.IZodRule.Origin => null;
 }

@@ -5,18 +5,33 @@ namespace ZodSharp.Rules;
 /// Uses struct to avoid allocations.
 /// </summary>
 /// <typeparam name="T">The numeric type</typeparam>
-public readonly record struct MaxValueRule<T> : Core.IValidationRule<T>
+[Core.ZodRule]
+public readonly record struct MaxValueRule<T> : Core.IValidationRule<T>, Core.IZodRule
 	where T : IComparable<T>
 {
+	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
+	public const string ErrorCode = "too_big";
+
+	/// <summary>Gets the message format; <c>{0}</c> is the bound and <c>{1}</c> the offending value.</summary>
+	public const string MessageFormat = "Value must be at most {0}, but got {1}";
+
 	readonly T _maxValue;
+
+	// Read by the JSON Schema exporter, which previously reached this by reflecting on the field name.
+	internal T MaxValue => _maxValue;
+	readonly string _message;
 
 	/// <summary>
 	/// Initializes a new instance of the MaxValueRule struct.
 	/// </summary>
 	/// <param name="maxValue">The maximum value</param>
-	public MaxValueRule(T maxValue)
+	/// <param name="message">Optional error message/ message format.</param>
+	/// <param name="code">Optional error code override. If one is not specified then the <see cref="ErrorCode"/> is used.</param>
+	public MaxValueRule(T maxValue, string? message = null, string? code = null)
 	{
 		_maxValue = maxValue;
+		_message = message.Or(MessageFormat);
+		Code = code.Or(ErrorCode);
 	}
 
 	/// <summary>
@@ -31,5 +46,12 @@ public readonly record struct MaxValueRule<T> : Core.IValidationRule<T>
 	/// </summary>
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
-	public string GetErrorMessage(in T value) => $"Value must be at most {_maxValue}, but got {value}";
+	public string GetErrorMessage(in T value) => RuleMessage.Format(_message ?? MessageFormat, _maxValue, value);
+
+	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
+	public string Code => field.Or(ErrorCode);
+
+	string? Core.IZodRule.Code => Code;
+
+	string? Core.IZodRule.Origin => null;
 }

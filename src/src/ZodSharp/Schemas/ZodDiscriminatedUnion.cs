@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -104,6 +105,20 @@ public class ZodDiscriminatedUnion(
 	/// <param name="type">The runtime type of the value being validated.</param>
 	/// <param name="discriminator">The discriminator property name.</param>
 	/// <returns>The compiled accessor, or <see langword="null"/> when no readable property exists.</returns>
+	/// <remarks>
+	/// The expression-compiled fast path needs runtime code generation, which Native AOT does not provide.
+	/// When it is unavailable this falls back to plain reflection: slower per call, but correct, and still
+	/// built once per type because the result is cached by the caller. The discriminator property belongs to
+	/// the consumer's own type, so a trimmed application has to preserve it — which it already does if that
+	/// type is serialized.
+	/// </remarks>
+	[UnconditionalSuppressMessage(
+		"Trimming",
+		"IL2070:UnrecognizedReflectionPattern",
+		Justification = "The discriminator is a property of the consumer's own validated type, resolved from "
+			+ "its runtime type. A trimmed application must preserve that type's properties; it is the "
+			+ "consumer's model, not library-internal state."
+	)]
 	static Func<object, string?>? BuildDiscriminatorAccessor(Type type, string discriminator)
 	{
 		var property = type.GetProperty(
@@ -113,6 +128,10 @@ public class ZodDiscriminatedUnion(
 
 		if (property is null || !property.CanRead || property.GetMethod is not { IsStatic: false })
 			return null;
+
+		// Native AOT has no runtime code generation, so do not build an expression tree there.
+		if (!RuntimeFeature.IsDynamicCodeSupported)
+			return value => property.GetValue(value)?.ToString();
 
 		var parameter = Expression.Parameter(typeof(object), "value");
 		Expression access = Expression.Property(Expression.Convert(parameter, type), property);

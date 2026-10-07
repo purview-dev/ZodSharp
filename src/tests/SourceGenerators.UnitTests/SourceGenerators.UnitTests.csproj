@@ -10,6 +10,12 @@
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\src\ZodSharp\ZodSharp.csproj" />
+		<!-- Reference the code-fix assembly normally so code-fix tests can instantiate the provider. -->
+		<ProjectReference
+			Include="..\..\src\CodeFixes\CodeFixes.csproj"
+			ReferenceOutputAssembly="true"
+			PrivateAssets="all"
+		/>
 		<!-- Reference the generator assembly normally so the test code can use ZodSchemaGenerator. -->
 		<ProjectReference
 			Include="..\..\src\SourceGenerators\SourceGenerators.csproj"

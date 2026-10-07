@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>netstandard2.0</TargetFramework>
+		<AssemblyName>Purview.ZodSharp.CodeFixes</AssemblyName>
+		<!--
+			The code fix lives in its own assembly because RS1038 forbids an assembly that contains
+			analyzers/generators (which run in csc) from referencing Microsoft.CodeAnalysis.Workspaces
+			(which is only present in the IDE). The merged generator assembly must stay Workspaces-free.
+		-->
+		<IsRoslynComponent>true</IsRoslynComponent>
+		<PurviewEmbedSourceGeneratorFramework>false</PurviewEmbedSourceGeneratorFramework>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" PrivateAssets="all" />
+	</ItemGroup>
+</Project>

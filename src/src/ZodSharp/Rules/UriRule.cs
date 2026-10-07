@@ -4,20 +4,29 @@ namespace ZodSharp.Rules;
 /// Validation rule for a Uri.
 /// <strong>This will allocate by utilising <see cref="Uri.TryCreate(string?, UriKind, out Uri?)"/></strong>
 /// </summary>
-public readonly record struct UriRule : Core.IValidationRule<string>
+[Core.ZodRule]
+public readonly record struct UriRule : Core.IValidationRule<string>, Core.IZodRule
 {
-	readonly string? _message;
+	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
+	public const string ErrorCode = "invalid_string";
+
+	/// <summary>Gets the message format; <c>{0}</c> is the <see cref="UriKind"/> and <c>{1}</c> the value.</summary>
+	public const string MessageFormat = "Invalid Uri, kind: {0}, format: {1}";
+
 	readonly UriKind _uriKind;
+	readonly string _message;
 
 	/// <summary>
-	/// Initializes a new instance of the UrlRule struct.
+	/// Initializes a new instance of the UriRule struct.
 	/// </summary>
 	/// <param name="uriKind">The uri kind to validate against</param>
-	/// <param name="message">Optional error message</param>
-	public UriRule(UriKind uriKind, string? message = null)
+	/// <param name="message">Optional error message/ message format.</param>
+	/// <param name="code">Optional error code override. If one is not specified then the <see cref="ErrorCode"/> is used.</param>
+	public UriRule(UriKind uriKind, string? message = null, string? code = null)
 	{
 		_uriKind = uriKind;
-		_message = message.OrNull();
+		_message = message.Or(MessageFormat);
+		Code = code.Or(ErrorCode);
 	}
 
 	/// <summary>
@@ -33,5 +42,12 @@ public readonly record struct UriRule : Core.IValidationRule<string>
 	/// </summary>
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
-	public string GetErrorMessage(in string value) => _message ?? $"Invalid Uri, kind: {_uriKind}), format: {value}";
+	public string GetErrorMessage(in string value) => RuleMessage.Format(_message ?? MessageFormat, _uriKind, value);
+
+	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
+	public string Code => field.Or(ErrorCode);
+
+	string? Core.IZodRule.Code => Code;
+
+	string? Core.IZodRule.Origin => null;
 }

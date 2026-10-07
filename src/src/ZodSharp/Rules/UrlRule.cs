@@ -11,23 +11,32 @@ namespace ZodSharp.Rules;
 	"PDS0004:Use correct acronym capitalization",
 	Justification = "Name is real"
 )]
-public readonly record struct UrlRule : Core.IValidationRule<string>
+[Core.ZodRule]
+public readonly record struct UrlRule : Core.IValidationRule<string>, Core.IZodRule
 {
+	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
+	public const string ErrorCode = "invalid_string";
+
+	/// <summary>Gets the message format; <c>{0}</c> is the offending value.</summary>
+	public const string MessageFormat = "Invalid URL format: {0}";
+
 	static readonly Regex UrlRegex = new(
 		@"^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$",
 		RegexOptions.Compiled | RegexOptions.IgnoreCase,
-		TimeSpan.FromMilliseconds(100)
+		RegexRule.DefaultMatchTimeout
 	);
 
-	readonly string? _message;
+	readonly string _message;
 
 	/// <summary>
 	/// Initializes a new instance of the UrlRule struct.
 	/// </summary>
-	/// <param name="message">Optional error message</param>
-	public UrlRule(string? message = null)
+	/// <param name="message">Optional error message/ message format.</param>
+	/// <param name="code">Optional error code override. If one is not specified then the <see cref="ErrorCode"/> is used.</param>
+	public UrlRule(string? message = null, string? code = null)
 	{
-		_message = message.OrNull();
+		_message = message.Or(MessageFormat);
+		Code = code.Or(ErrorCode);
 	}
 
 	/// <summary>
@@ -50,5 +59,12 @@ public readonly record struct UrlRule : Core.IValidationRule<string>
 	/// </summary>
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
-	public string GetErrorMessage(in string value) => _message ?? $"Invalid URL format: {value}";
+	public string GetErrorMessage(in string value) => RuleMessage.Format(_message ?? MessageFormat, value);
+
+	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
+	public string Code => field.Or(ErrorCode);
+
+	string? Core.IZodRule.Code => Code;
+
+	string? Core.IZodRule.Origin => null;
 }

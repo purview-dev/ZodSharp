@@ -19,6 +19,10 @@ Results are written to `BenchmarkDotNet.Artifacts/` (HTML, Markdown, logs) in th
 ## Measurement environment
 
 - BenchmarkDotNet 0.15.8, .NET 10.0.12, Windows 11 (10.0.28020.2991).
+- **These figures are stale in one respect:** the repository now pins BenchmarkDotNet
+  0.16.0-preview.2 (`Directory.Packages.props`), so the numbers below were produced by a different version
+  than the suite currently builds against. They are also from one machine. Re-run the suite before relying
+  on absolute values; use them for relative comparison between scenarios.
 - 13th Gen Intel Core i9-13900KF 3.00 GHz (24 physical / 32 logical cores), X64 RyuJIT x86-64-v3.
 
 Numbers are indicative; re-run on your own hardware for local planning.

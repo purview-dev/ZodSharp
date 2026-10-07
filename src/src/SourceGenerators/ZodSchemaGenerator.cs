@@ -21,8 +21,8 @@ public sealed partial class ZodSchemaGenerator : IIncrementalGenerator
 			.RegisterEmbeddedAttribute<ZodSchemaGenerator>()
 			.RegisterPostInitializationOutput(static ctx =>
 			{
-				foreach (var (HintName, SourceText) in AttributeGenHelper.GenerateMarkers())
-					ctx.AddSource($"{HintName}.g.cs", SourceText);
+				foreach (var (hintName, sourceText) in AttributeGenHelper.GenerateMarkers())
+					ctx.AddSource($"{hintName}.g.cs", sourceText);
 			});
 
 		var generationValueProviders = SourceGenLibrary.GetGeneratorValueProviders(context);

@@ -5,28 +5,6 @@ using ZodSharp.Schemas;
 namespace ZodSharp.JsonSchema;
 
 /// <summary>
-/// Options for converting ZodSharp schemas to JSON Schema.
-/// </summary>
-public class ToJsonSchemaOptions
-{
-	/// <summary>
-	/// Whether to include the $schema property in the output.
-	/// Default: true
-	/// </summary>
-	public bool IncludeSchema { get; set; } = true;
-
-	/// <summary>
-	/// Custom $id for the schema.
-	/// </summary>
-	public string? Id { get; set; }
-
-	/// <summary>
-	/// Custom title for the schema.
-	/// </summary>
-	public string? Title { get; set; }
-}
-
-/// <summary>
 /// Converts ZodSharp schemas to JSON Schema (Draft 2020-12).
 /// </summary>
 public static class ToJsonSchemaConverter
@@ -77,6 +55,12 @@ public static class ToJsonSchemaConverter
 
 	static JsonSchemaDefinition ConvertSchema(object schema, ConversionContext ctx)
 	{
+		// Unwrap adapters that do not affect the exported shape, so the switch below sees the schema that
+		// determines it. The object builder wraps every field schema to present it untyped, and before this
+		// the wrapper fell through to the generic fallback and exported with no type.
+		while (schema is IJsonSchemaInnerSchema wrapper)
+			schema = wrapper.InnerSchema;
+
 		// Handle circular references
 		if (ctx.Seen.Contains(schema))
 		{
@@ -92,7 +76,8 @@ public static class ToJsonSchemaConverter
 			ZodBoolean => new JsonSchemaDefinition { Type = "boolean" },
 			ZodNull => new JsonSchemaDefinition { Type = "null" },
 			ZodObject zodObject => ConvertObject(zodObject, ctx),
-			ZodOptional<object> zodOptional => ConvertOptional(zodOptional, ctx),
+			// ZodOptional is handled by the unwrap loop above: in JSON Schema optionality lives in the
+			// parent's "required" list, not in the property's own type.
 			ZodUnion zodUnion => ConvertUnion(zodUnion, ctx),
 			_ => ConvertGeneric(schema, ctx),
 		};
@@ -107,67 +92,44 @@ public static class ToJsonSchemaConverter
 		return result;
 	}
 
-	[System.Diagnostics.CodeAnalysis.SuppressMessage("Style", "IDE0010:Add missing cases")]
 	static JsonSchemaDefinition ConvertString(ZodString schema)
 	{
 		JsonSchemaDefinition result = new() { Type = "string" };
 
-		// Extract rules from the schema using reflection (since rules are private)
-		// We'll use the built-in rule inspection if available
-		var schemaType = schema.GetType();
-		var rulesField = schemaType.BaseType?.BaseType?.GetField(
-			"_rules",
-			System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
-		);
-
-		if (rulesField?.GetValue(schema) is System.Collections.IEnumerable rules)
+		// Rules are matched by type and read through internal members. This used to walk
+		// BaseType.BaseType to find a field called "_rules" and then read each rule's value by field name —
+		// name-based reflection into the library's own private state, which the trimmer cannot see and which
+		// fails silently the moment a field is renamed.
+		foreach (var rule in schema.AppliedRules)
 		{
-			foreach (var rule in rules)
+			switch (rule)
 			{
-				var ruleType = rule.GetType();
-				var ruleName = ruleType.Name;
+				case MinLengthRule minLength:
+					result.MinLength = minLength.MinLength;
+					break;
 
-				switch (ruleName)
-				{
-					case nameof(MinLengthRule):
-						var minLengthField = ruleType.GetField(
-							"_minLength",
-							System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
-						);
-						if (minLengthField?.GetValue(rule) is int minLength)
-							result.MinLength = minLength;
-						break;
+				case MaxLengthRule maxLength:
+					result.MaxLength = maxLength.MaxLength;
+					break;
 
-					case nameof(MaxLengthRule):
-						var maxLengthField = ruleType.GetField(
-							"_maxLength",
-							System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
-						);
-						if (maxLengthField?.GetValue(rule) is int maxLength)
-							result.MaxLength = maxLength;
-						break;
+				case EmailRule:
+					result.Format = "email";
+					break;
 
-					case nameof(EmailRule):
-						result.Format = "email";
-						break;
+				case UrlRule:
+					result.Format = "uri";
+					break;
 
-					case nameof(UrlRule):
-						result.Format = "uri";
-						break;
+				case UUIDRule:
+					result.Format = "uuid";
+					break;
 
-					case nameof(UUIDRule):
-						result.Format = "uuid";
-						break;
+				case RegexRule regex:
+					result.Pattern = regex.Pattern.ToString();
+					break;
 
-					case nameof(RegexRule):
-						var patternField = ruleType.GetField(
-							"_pattern",
-							System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
-						);
-						if (patternField?.GetValue(rule) is System.Text.RegularExpressions.Regex regex)
-							result.Pattern = regex.ToString();
-						break;
-				}
+				default:
+					break;
 			}
 		}
 
@@ -184,51 +146,39 @@ public static class ToJsonSchemaConverter
 	{
 		JsonSchemaDefinition result = new() { Type = "number" };
 
-		// Extract rules from the schema
-		var schemaType = schema.GetType();
-		var rulesField = schemaType.BaseType?.BaseType?.GetField(
-			"_rules",
-			System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
-		);
-
-		if (rulesField?.GetValue(schema) is System.Collections.IEnumerable rules)
+		// ZodNumber closes the generic numeric rules with double, so they can be matched as closed types and
+		// read through internal members. This previously matched rule type names with StartsWith (to cope
+		// with the `1 arity suffix) and read each value by field name.
+		foreach (var rule in schema.AppliedRules)
 		{
-			foreach (var rule in rules)
+			switch (rule)
 			{
-				var ruleType = rule.GetType();
-				var ruleName = ruleType.Name;
+				case MinValueRule<double> minValue:
+					result.Minimum = minValue.MinValue;
+					break;
 
-				if (ruleName.StartsWith("MinValueRule", StringComparison.Ordinal))
-				{
-					var minValueField = ruleType.GetField(
-						"_minValue",
-						System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
-					);
-					if (minValueField?.GetValue(rule) is double minValue)
-						result.Minimum = minValue;
-				}
-				else if (ruleName.StartsWith("MaxValueRule", StringComparison.Ordinal))
-				{
-					var maxValueField = ruleType.GetField(
-						"_maxValue",
-						System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
-					);
-					if (maxValueField?.GetValue(rule) is double maxValue)
-						result.Maximum = maxValue;
-				}
-				else if (ruleName == "IntRule")
-				{
+				case MaxValueRule<double> maxValue:
+					result.Maximum = maxValue.MaxValue;
+					break;
+
+				case GreaterThanOrEqualRule<double> greaterThanOrEqual:
+					result.Minimum = greaterThanOrEqual.MinValue;
+					break;
+
+				case LessThanOrEqualRule<double> lessThanOrEqual:
+					result.Maximum = lessThanOrEqual.MaxValue;
+					break;
+
+				case IntRule<double>:
 					result.Type = "integer";
-				}
-				else if (ruleName == "MultipleOfRule")
-				{
-					var divisorField = ruleType.GetField(
-						"_divisor",
-						System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
-					);
-					if (divisorField?.GetValue(rule) is double divisor)
-						result.MultipleOf = divisor;
-				}
+					break;
+
+				case MultipleOfRule<double> multipleOf:
+					result.MultipleOf = multipleOf.Divisor;
+					break;
+
+				default:
+					break;
 			}
 		}
 
@@ -250,28 +200,19 @@ public static class ToJsonSchemaConverter
 			AdditionalProperties = false,
 		};
 
-		// Get the shape from ZodObject using reflection
-		var shapeField = typeof(ZodObject).GetField(
-			"_shape",
-			System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
-		);
-
-		if (
-			shapeField?.GetValue(schema)
-			is System.Collections.Immutable.ImmutableDictionary<string, IZodSchema<object, object>> shape
-		)
+		// ZodObject.Shape is public, so read it directly. This previously reflected a private field named
+		// "_shape", which does not exist — the shape is a primary-constructor parameter — so GetField
+		// returned null and every exported object schema came back with no properties at all.
+		foreach (var (key, propSchema) in schema.Shape)
 		{
-			foreach (var (key, propSchema) in shape)
-			{
-				result.Properties[key] = ConvertSchema(propSchema, ctx);
+			result.Properties[key] = ConvertSchema(propSchema, ctx);
 
-				// Check if the property is optional
-				var propSchemaType = propSchema.GetType();
-				if (!propSchemaType.Name.StartsWith("ZodOptional", StringComparison.Ordinal))
-				{
-					result.Required.Add(key);
-				}
-			}
+			// An optional property is not required. Asked through IOptionalSchema rather than by matching the
+			// type name: the builders store each field in a wrapper to present it untyped, so a name check
+			// sees the wrapper instead of ZodOptional and marks every optional field required. The wrappers
+			// forward IsOptional to the schema they wrap.
+			if (propSchema is not IOptionalSchema { IsOptional: true })
+				result.Required.Add(key);
 		}
 
 		// Remove required array if empty
@@ -283,37 +224,15 @@ public static class ToJsonSchemaConverter
 		return result;
 	}
 
-	static JsonSchemaDefinition ConvertOptional<T>(ZodOptional<T> schema, ConversionContext ctx)
-		where T : class
-	{
-		// Get inner schema
-		var innerField = typeof(ZodOptional<T>).GetField(
-			"_innerSchema",
-			System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
-		);
-
-		if (innerField?.GetValue(schema) is object innerSchema)
-		{
-			return ConvertSchema(innerSchema, ctx);
-		}
-
-		// Fallback: return an empty schema (any)
-		return new JsonSchemaDefinition();
-	}
-
 	static JsonSchemaDefinition ConvertUnion(ZodUnion schema, ConversionContext ctx)
 	{
 		JsonSchemaDefinition result = new() { AnyOf = [] };
 
-		// Get options from ZodUnion
-		var optionsField = typeof(ZodUnion).GetField(
-			"_options",
-			System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
-		);
-
-		if (optionsField?.GetValue(schema) is IZodSchema<object, object>[] options)
+		// ZodUnion.Options is read directly. This previously reflected a field named "_options" and cast it
+		// to an array; the options are a primary-constructor parameter typed IReadOnlyList, so neither the
+		// name nor the cast matched and every union exported with an empty "anyOf".
 		{
-			foreach (var option in options)
+			foreach (var option in schema.Options)
 			{
 				result.AnyOf.Add(ConvertSchema(option, ctx));
 			}
@@ -327,98 +246,43 @@ public static class ToJsonSchemaConverter
 		var schemaType = schema.GetType();
 		var typeName = schemaType.Name;
 
-		// Handle ZodArray<T>
-		if (typeName.StartsWith("ZodArray", StringComparison.Ordinal))
+		// Handle ZodArray<T>. Matched through the internal IJsonSchemaArrayInfo seam rather than by type
+		// name plus private-field reflection: the old lookups named fields and rule types that do not
+		// exist, so element schemas and bounds never reached the exported schema. See IJsonSchemaArrayInfo.
+		if (schema is IJsonSchemaArrayInfo arrayInfo)
 		{
-			JsonSchemaDefinition result = new() { Type = "array" };
-
-			// Get element schema
-			var elementField = schemaType.GetField(
-				"_elementSchema",
-				System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
-			);
-
-			if (elementField?.GetValue(schema) is object elementSchema)
+			return new JsonSchemaDefinition
 			{
-				result.Items = ConvertSchema(elementSchema, ctx);
-			}
-
-			// Get min/max from rules
-			var rulesField = schemaType.BaseType?.BaseType?.GetField(
-				"_rules",
-				System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
-			);
-
-			if (rulesField?.GetValue(schema) is System.Collections.IEnumerable rules)
-			{
-				foreach (var rule in rules)
-				{
-					var ruleType = rule.GetType();
-					var ruleName = ruleType.Name;
-
-					if (ruleName == "MinItemsRule")
-					{
-						var minField = ruleType.GetField(
-							"_minItems",
-							System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
-						);
-						if (minField?.GetValue(rule) is int min)
-							result.MinItems = min;
-					}
-					else if (ruleName == "MaxItemsRule")
-					{
-						var maxField = ruleType.GetField(
-							"_maxItems",
-							System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
-						);
-						if (maxField?.GetValue(rule) is int max)
-							result.MaxItems = max;
-					}
-				}
-			}
-
-			return result;
+				Type = "array",
+				Items = ConvertSchema(arrayInfo.ElementSchema, ctx),
+				MinItems = arrayInfo.MinItems,
+				MaxItems = arrayInfo.MaxItems,
+			};
 		}
 
-		// Handle ZodLiteral<T>
-		if (typeName.StartsWith("ZodLiteral", StringComparison.Ordinal))
+		// Handle ZodLiteral<T> through its introspection seam rather than by type name and field name.
+		if (schema is IJsonSchemaLiteralInfo literalInfo && literalInfo.LiteralValue is { } value)
 		{
-			var valueField = schemaType.GetField(
-				"_value",
-				System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
-			);
-
-			if (valueField?.GetValue(schema) is object value)
+			return new JsonSchemaDefinition
 			{
-				JsonSchemaDefinition result = new()
+				Const = value,
+				Type = value switch
 				{
-					Const = value, // Set type based on value type
-					Type = value switch
-					{
-						string => "string",
-						int or long or double or float => "number",
-						bool => "boolean",
-						_ => null,
-					},
-				};
-
-				return result;
-			}
+					string => "string",
+					int or long or double or float => "number",
+					bool => "boolean",
+					_ => null,
+				},
+			};
 		}
 
-		// Handle ZodNullable<T>
-		if (typeName.StartsWith("ZodNullable", StringComparison.Ordinal))
+		// Handle ZodNullable<T>. Unlike an optional schema this is not unwrapped: null permission changes
+		// the exported shape rather than living in the parent's "required" list.
+		if (schema is IJsonSchemaNullableInfo nullableInfo)
 		{
-			var innerField = schemaType.GetField(
-				"_innerSchema",
-				System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
-			);
+			var inner = ConvertSchema(nullableInfo.NullableInnerSchema, ctx);
 
-			if (innerField?.GetValue(schema) is object innerSchema)
-			{
-				var inner = ConvertSchema(innerSchema, ctx);
-				return new JsonSchemaDefinition { AnyOf = [inner, new JsonSchemaDefinition { Type = "null" }] };
-			}
+			return new JsonSchemaDefinition { AnyOf = [inner, new JsonSchemaDefinition { Type = "null" }] };
 		}
 
 		// Handle ZodLazy<T>

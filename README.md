@@ -13,8 +13,8 @@ The library is developed and maintained at [github.com/purview-dev/zodsharp](htt
 - **Struct-based rules** - Validation rules implemented as structs to avoid GC
 - **Fluent API** - Fluent and extensible API similar to original Zod
 - **Type-safe** - Strong typing with advanced C# generics
-- **High performance** - Sub-microsecond validation times, 10x faster than reflection-based validation
-- **Cross-platform** - Works on .NET 8.0, .NET 9.0 and .NET 10.0
+- **High performance** - Sub-microsecond validation times; see [the measurements](#performance)
+- **Cross-platform** - Works on .NET 8.0, .NET 9.0, .NET 10.0 and .NET 11.0
 - **Source Generators** - Compile-time validator generation with `[ZodSchema]` attribute
 - **DataAnnotations Support** - Automatic validation from `[Required]`, `[StringLength]`, `[Length]`, `[MinLength]`, `[MaxLength]`, `[Range]`, `[RegularExpression]`, `[AllowedValues]`, `[DeniedValues]`, `[EmailAddress]`, etc.  
 
@@ -69,7 +69,7 @@ The fixture generator script is intentionally run via Bun rather than `npx tsx` 
 ## What's new in v2
 
 - **Packages are published under the `Purview.*` IDs.** The core `Purview.ZodSharp` package ships the validator and the source generator, with optional `Purview.ZodSharp.SystemTextJson`, `Purview.ZodSharp.NewtonsoftJson`, and `Purview.ZodSharp.AspNetCore` integration packages.
-- **Targets `net8.0`, `net9.0`, and `net10.0`.** The source generator remains on `netstandard2.0` so it can run in any compiler host.
+- **Targets `net8.0`, `net9.0`, `net10.0`, and `net11.0`.** The source generator remains on `netstandard2.0` so it can run in any compiler host.
 - **System.Text.Json integration.** JSON deserialize-and-validate is available for both major JSON libraries, including validating `JsonConverter<T>` instances.
 - **JSON Schema interoperability.** Schemas can be exported via `Z.ToJsonSchema` and imported via `Z.FromJsonSchema`, enabling cross-language reuse with TypeScript/Zod. The import API lives in the JSON integration package's namespace (`ZodSharp.JsonSchema.SystemTextJson` or `ZodSharp.JsonSchema.NewtonsoftJson`); export stays in the core package.
 - **ASP.NET Core ProblemDetails integration.** Failed validation results convert directly to `HttpValidationProblemDetails` via `result.ToHttpValidationProblemDetails()`.
@@ -240,8 +240,8 @@ Purview.ZodSharp implements several optimizations for maximum performance:
 #### 1. Zero-allocation Validation
 
 - Validation rules implemented as `struct` to avoid allocations
-- Use of `Span<T>` and `ReadOnlySpan<T>` when appropriate
-- Array pooling via `ArrayPool<T>` for zero-allocation helpers
+- Use of `Span<T>` and `ReadOnlySpan<T>` when appropriate — specifically `IStringValidationRule` with
+  `ZodString.ValidateSpan`/`IsValidSpan`, and `EmojiRule`
 
 #### 2. Struct-based Rules
 
@@ -250,9 +250,14 @@ All validation rules are structs:
 ```csharp
 public readonly struct MinLengthRule : IValidationRule<string>
 {
+    public const string ErrorCode = "too_small";
+    public const string MessageFormat = "String must be at least {0} characters long, but got {1}";
+
     // Zero allocation validation
 }
 ```
+
+Every rule exposes its reported code and message template as public `ErrorCode`/`MessageFormat` constants so tests can assert against the rule instead of duplicating literals (`ZODSGEN042` enforces this convention — see the [Validation Rules Reference](docs/wiki/Validation-Rules-Reference.md) for the catalogue of built-in rules, [Custom Rules](docs/wiki/Custom-Rules.md) for the rule contract and [Value Objects Integration](docs/wiki/Value-Objects-Integration.md) for scalar value objects).
 
 #### 3. Compiled Validators
 
@@ -291,11 +296,14 @@ dotnet run --project src/src/Benchmarks/Benchmarks.csproj -c Release -- --filter
 
 **Key performance highlights**:
 
-- **10x faster** than reflection-based validation libraries
 - **Zero allocations** for primitive validations
 - **Sub-microsecond** validation for simple types
 - **Minimal GC pressure** with struct-based architecture
 - **Scalable** performance even with complex nested schemas
+
+> The benchmark suite measures this library against itself across scenarios; it does not benchmark against
+> other validation libraries, so no comparative claim is made here. If a comparison matters to your
+> decision, measure it against your own schemas and payloads.
 
 See the [performance README](src/src/Benchmarks/README.md) for detailed benchmark results and optimization tips.
 
@@ -549,6 +557,7 @@ var either = UserSchema.ApplyOr(user, u => u.Age < 18, "Must be an adult or a mi
 - Zero-reflection, zero-allocation validators
 - Value-first composition methods (`.ApplyAnd()`, `.ApplyOr()`, `.ApplyRefine()`) plus instance schema-composing composition (`.Refine()`, `.SuperRefine()`, `.Pipe()`, `.Catch()`, `.Prefault()`, `.Default()`)
 - Supports classes, structs, and records
+- Validates `Purview.ValueObjects` `[Scalar]` types as a unit, adapting a rule written against the underlying value automatically ([Value Objects Integration](docs/wiki/Value-Objects-Integration.md))
 
 #### Supported DataAnnotations size validators
 
@@ -634,7 +643,11 @@ Package versions are declared centrally in `Directory.Packages.props`. No `packa
 
 ## License
 
-MIT — the license is declared in the NuGet package metadata (`PackageLicenseExpression`) and in `package.json`.
+MIT — see [`LICENSE.md`](LICENSE.md). The license is also declared in the NuGet package metadata
+(`PackageLicenseExpression`) and in `package.json`.
+
+This repository is a fork of [ZodSharp](https://github.com/guinhx/ZodSharp); see
+[Acknowledgments](#acknowledgments).
 
 ## Contributing
 

@@ -35,8 +35,15 @@ public sealed class ZodObjectBuilder
 	public ZodObject Build() => new(_shape.ToImmutableDictionary());
 
 	/// <typeparam name="T">The inner type</typeparam>
-	sealed class SchemaWrapper<T>(IZodSchema<T, T> inner) : IZodSchema<object, object>, IOptionalSchema
+	sealed class SchemaWrapper<T>(IZodSchema<T, T> inner)
+		: IZodSchema<object, object>,
+			IOptionalSchema,
+			JsonSchema.IJsonSchemaInnerSchema
 	{
+		// Lets the JSON Schema exporter unwrap to the schema that determines the exported shape. Without it
+		// every field of an exported object schema came back with no type. See IJsonSchemaInnerSchema.
+		object JsonSchema.IJsonSchemaInnerSchema.InnerSchema => inner;
+
 		public bool IsOptional => inner is IOptionalSchema o && o.IsOptional;
 
 		public bool ProvidesValueOnMissing => inner is IOptionalSchema o && o.ProvidesValueOnMissing;

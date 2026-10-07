@@ -55,6 +55,7 @@ All options are optional.
 | `CustomValidationMethodName` | `null` | Name of an async custom validation method; default lookup name `CustomValidationAsync`. Mutually exclusive with the synchronous `OnZodValidate` refinement hook. |
 | `GenerateIValidateOptions` | `false` | Force `IValidateOptions<T>` generation. |
 | `SuppressIValidateOptions` | `false` | Opt out even when auto-detection would enable it. |
+| `ValidateEnumValues` | `true` | Set to `false` to skip the automatic enum validation for the type's enum properties. |
 
 > [!NOTE]
 > `Parse`, the value-first composition methods (`ApplyAnd`/`ApplyOr`/`ApplyRefine`), the `IZodSchemaValidator` adapter and the `IValidateOptions` validator all depend on `Validate`. Setting `GenerateValidateMethod = false` omits them together.
@@ -147,12 +148,55 @@ MSBuild switches:
 | `ZodSharpAutoGenerateOptionsValidators` | `true` | auto-detect `IValidateOptions` (only explicit `false` disables) |
 | `ZodSharpAutoGenerateOptionsValidatorSuffixes` | `Options;Settings` | semicolon/comma-separated suffix list |
 
+## Automatic enum validation
+
+Every non-flags enum property is validated automatically: the generated validator rejects a value that is not a defined member of the enum type. The check is emitted as an `EnumRule<TEnum>` (see [Validation Rules Reference](Validation-Rules-Reference.md#enum-rules)) and reports `invalid_enum_value`.
+
+A member that is defined but never a valid value can be excluded globally by marking it `[ZodIgnore]`, and excluded for a single property with `[DeniedValues]`:
+
+```csharp
+using System.ComponentModel.DataAnnotations;
+using ZodSharp;
+
+public enum ExampleEnum
+{
+    [ZodIgnore]
+    Unspecified,
+
+    AValidValue,
+
+    AnotherValidValue,
+}
+
+[ZodSchema]
+public class Model
+{
+    // Rejects anything that is not AValidValue or AnotherValidValue.
+    public ExampleEnum Status { get; set; }
+
+    // Also rejects AnotherValidValue for this property only.
+    [DeniedValues(ExampleEnum.AnotherValidValue)]
+    public ExampleEnum SecondaryStatus { get; set; }
+}
+```
+
+The automatic validation is skipped when:
+
+- the enum is declared `[Flags]` — a combination is a valid value without being a defined member;
+- the property declares an explicit `[AllowedValues]` allow-list, which governs the property instead;
+- the schema opts out with `[ZodSchema(ValidateEnumValues = false)]`.
+
+A nullable enum property is validated only when it is not `null`.
+
 ## What is validated
 
 - Properties must be public, non-static, non-indexer.
-- A property is included when it carries any DataAnnotations attribute or its type is a source-defined complex type with a nested schema.
+- Validation is emitted for a property when it carries any DataAnnotations attribute, its type is a source-defined complex type with a nested schema, or its type is an enum (see [Automatic enum validation](#automatic-enum-validation)).
 - Classes, structs, and records are supported; structs do not receive `IValidateOptions` (ZODSGEN028 if requested).
 - Nested complex types are discovered recursively and get their own generated `{TypeName}Schema`, even when the nested type does not itself carry `[ZodSchema]`.
 - Nullable properties are null-guarded before value-set/type validation; a nullable target rejects `null` with `invalid_type`.
+
+- A `Purview.ValueObjects` scalar marked with `[Scalar]` can carry `[ZodSchema]` on the same type; the generated validator validates the scalar as a unit and reports an empty path. A rule written against the scalar's underlying value is adapted automatically — see [Value Objects Integration](Value-Objects-Integration.md).
+- A rule marked with the parameterless `[ZodRule]` generates a matching validation attribute. Every built-in rule ships its attribute inside `Purview.ZodSharp` (in the `ZodSharp.Rules` namespace — `[Email]`, `[E164]`, `[Regex]`, `[NonSentinel]`, `[MinValue]`, `[Even]`, …; names that collide with `System.ComponentModel.DataAnnotations` use a `Zod` suffix such as `[MinLengthZod]`), so they can annotate a member or a scalar value object directly — see [Built-in attributes](Custom-Rules.md#built-in-attributes-shipped-with-purviewzodsharp).
 
 See [Source Generator DataAnnotations](Source-Generator-DataAnnotations.md) for the attribute coverage and structured issue shape, [Custom Rules](Custom-Rules.md) for extending validation with your own rules and attributes, and [Source Generator Diagnostics](Source-Generator-Diagnostics.md) for the `ZODSGEN*` diagnostics.

@@ -288,6 +288,64 @@ static class DiagnosticLibrary
 		isEnabledByDefault: true
 	);
 
+	/// <summary>
+	/// ZODSGEN037: a rule marked with <c>[ZodRule]</c> derives the validation attribute name from its own
+	/// name (<c>XRule</c> → <c>XAttribute</c>), which is the same name for both halves of a generic /
+	/// non-generic rule pair. When the compilation already declares a type with that name the generated
+	/// attribute is suppressed, so the hand-authored declaration's own mapping governs every usage.
+	/// </summary>
+	public static readonly DiagnosticDescriptor RuleAttributeNameAlreadyDeclared = new(
+		id: "ZODSGEN037",
+		title: "Rule attribute name is already declared",
+		messageFormat: "The rule '{0}' maps to validation attribute '{1}', but '{2}' already declares that name, so no attribute is generated and the existing declaration's own [ZodRule] mapping is used instead",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Warning,
+		isEnabledByDefault: true
+	);
+
+	/// <summary>
+	/// ZODSGEN038: a hand-authored rule attribute whose name encodes a rule name (<c>XAttribute</c> →
+	/// <c>XRule</c>) must map to a rule that addresses every rule declared under that name. A mapping to a
+	/// single non-generic rule while an arity-1 generic sibling also exists (or to a rule outside the family)
+	/// leaves some usages of the attribute unresolved.
+	/// </summary>
+	public static readonly DiagnosticDescriptor RuleAttributeMappingIncomplete = new(
+		id: "ZODSGEN038",
+		title: "Rule attribute mapping does not cover the whole rule family",
+		messageFormat: "The attribute '{0}' maps to rule '{1}', which does not cover every rule declared as '{2}'; map the attribute to '{3}' so that every usage of '{0}' resolves",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Warning,
+		isEnabledByDefault: true
+	);
+
+	/// <summary>
+	/// ZODSGEN039: a rule accepts an identity constructor parameter (<c>code</c>/<c>origin</c>) but does not
+	/// implement <c>IZodRule</c>. The value is passed by the generated validation but never surfaced, so the
+	/// parameter is inert: implement <c>IZodRule</c> to report it, or remove the parameter.
+	/// </summary>
+	public static readonly DiagnosticDescriptor RuleIdentityParameterNotImplemented = new(
+		id: "ZODSGEN039",
+		title: "Rule identity parameter is never surfaced",
+		messageFormat: "The rule '{0}' accepts a '{1}' constructor parameter but does not implement 'ZodSharp.Core.IZodRule', so the value never reaches the reported error identity; implement 'IZodRule' or remove the parameter",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Warning,
+		isEnabledByDefault: true
+	);
+
+	/// <summary>
+	/// ZODSGEN040: an attribute supplies an argument that the resolved rule never consumes — it is neither a
+	/// constructor parameter nor part of the error identity declared by <c>IZodRuleAttribute</c>, so the value
+	/// has no effect on validation.
+	/// </summary>
+	public static readonly DiagnosticDescriptor UnusedRuleAttributeArgument = new(
+		id: "ZODSGEN040",
+		title: "Rule attribute argument has no effect",
+		messageFormat: "'{0}' on attribute '{1}' has no effect: rule '{2}' has no matching constructor parameter and the value is not part of the reported error identity",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Warning,
+		isEnabledByDefault: true
+	);
+
 	public static readonly DiagnosticDescriptor MessageFormatPlaceholderNotDeclared = new(
 		id: "ZODSASP001",
 		title: "MessageFormat placeholder is not declared in Parameters",
@@ -330,6 +388,51 @@ static class DiagnosticLibrary
 		messageFormat: "The Parameters of ErrorType field '{0}' in '{1}' could not be extracted; only ErrorTypeParameter collection literals with a constant name and typeof, or ErrorType.Param<T> invocations, are supported",
 		category: Category,
 		defaultSeverity: DiagnosticSeverity.Error,
+		isEnabledByDefault: true
+	);
+
+	/// <summary>
+	/// ZODSGEN041: a typed union whose case types are all reference types can use the native C# 15
+	/// union returned by <c>Z.NativeUnion</c> on net11+, which is allocation-free and supports
+	/// exhaustive pattern matching. Value-type cases are excluded because they box.
+	/// </summary>
+	public static readonly DiagnosticDescriptor NativeUnionRecommended = new(
+		id: "ZODSGEN041",
+		title: "Consider a native C# 15 union",
+		messageFormat: "'{0}' has only reference-type cases ({1}); on .NET 11+ 'Z.NativeUnion' returns a native union that is allocation-free and supports exhaustive pattern matching",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Info,
+		isEnabledByDefault: true
+	);
+
+	/// <summary>
+	/// ZODSGEN042: a validation rule (a type implementing <c>ZodSharp.Core.IValidationRule&lt;T&gt;</c>) does not
+	/// expose its error identity as public constants. Every rule should declare <c>public const string ErrorCode</c>
+	/// and <c>public const string MessageFormat</c> so its code and message can be asserted in tests without
+	/// duplicating literals.
+	/// </summary>
+	public static readonly DiagnosticDescriptor RuleMissingErrorIdentityConstants = new(
+		id: "ZODSGEN042",
+		title: "Validation rule should expose public error identity constants",
+		messageFormat: "Rule '{0}' should declare {1}: expose 'public const string ErrorCode' and 'public const string MessageFormat' so tests can assert against the rule instead of duplicating literals",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Warning,
+		isEnabledByDefault: true
+	);
+
+	/// <summary>
+	/// ZODSGEN043: a built-in rule (one declared in the runtime assembly, under <c>ZodSharp.Rules</c>) is marked
+	/// with <c>[ZodRule]</c> but cannot produce a validation attribute because a constructor parameter cannot be
+	/// represented as an attribute property, so the rule is only reachable through the runtime/fluent API.
+	/// Reported as informational so the gap stays visible rather than silent; a derived name that collides with
+	/// a <c>System.ComponentModel.DataAnnotations</c> attribute is emitted under a "Zod" suffix instead.
+	/// </summary>
+	public static readonly DiagnosticDescriptor BuiltInRuleAttributeNotGenerated = new(
+		id: "ZODSGEN043",
+		title: "Built-in rule does not generate a validation attribute",
+		messageFormat: "The built-in rule '{0}' does not generate a validation attribute: {1}",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Info,
 		isEnabledByDefault: true
 	);
 }

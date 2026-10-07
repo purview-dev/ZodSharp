@@ -36,7 +36,9 @@ public static class FromJsonSchemaParser
 	/// <returns>A ZodSharp schema that validates according to the JSON Schema</returns>
 	public static IZodSchema<object, object> Parse(string jsonSchema)
 	{
-		var schema = JsonSerializer.Deserialize<JsonSchemaDefinition>(jsonSchema, JsonSchemaSerializerOptions.Reading);
+		// Uses the source-generated contract rather than the reflection-based overload, so JSON Schema
+		// import works under trimming and Native AOT without the consumer registering our type.
+		var schema = JsonSerializer.Deserialize(jsonSchema, JsonSchemaJsonContext.Default.JsonSchemaDefinition);
 
 		return schema == null
 			? throw new ArgumentException("Invalid JSON Schema: could not parse JSON", nameof(jsonSchema))
@@ -153,7 +155,11 @@ public static class FromJsonSchemaParser
 
 		if (schema.Pattern != null)
 		{
-			stringSchema = stringSchema.Regex(new Regex(schema.Pattern));
+			// Both the pattern and the values later validated against it come from outside the
+			// application, so this is the most exposed regex path in the library. Bound it.
+			stringSchema = stringSchema.Regex(
+				new Regex(schema.Pattern, RegexOptions.None, Rules.RegexRule.DefaultMatchTimeout)
+			);
 		}
 
 		// Apply format

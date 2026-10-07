@@ -4,17 +4,32 @@ namespace ZodSharp.Rules;
 /// Validation rule for maximum string length.
 /// Uses struct to avoid allocations.
 /// </summary>
-public readonly record struct MaxLengthRule : Core.IValidationRule<string>, Core.IStringValidationRule
+[Core.ZodRule]
+public readonly record struct MaxLengthRule : Core.IValidationRule<string>, Core.IStringValidationRule, Core.IZodRule
 {
+	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
+	public const string ErrorCode = "too_big";
+
+	/// <summary>Gets the message format; <c>{0}</c> is the maximum length and <c>{1}</c> the actual length.</summary>
+	public const string MessageFormat = "String must be at most {0} characters long, but got {1}";
+
 	readonly int _maxLength;
+
+	// Read by the JSON Schema exporter, which previously reached this by reflecting on the field name.
+	internal int MaxLength => _maxLength;
+	readonly string _message;
 
 	/// <summary>
 	/// Initializes a new instance of the MaxLengthRule struct.
 	/// </summary>
 	/// <param name="maxLength">The maximum length</param>
-	public MaxLengthRule(int maxLength)
+	/// <param name="message">Optional error message/ message format.</param>
+	/// <param name="code">Optional error code override. If one is not specified then the <see cref="ErrorCode"/> is used.</param>
+	public MaxLengthRule(int maxLength, string? message = null, string? code = null)
 	{
 		_maxLength = maxLength;
+		_message = message.Or(MessageFormat);
+		Code = code.Or(ErrorCode);
 	}
 
 	/// <summary>
@@ -37,7 +52,7 @@ public readonly record struct MaxLengthRule : Core.IValidationRule<string>, Core
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
 	public string GetErrorMessage(in string value) =>
-		$"String must be at most {_maxLength} characters long, but got {value.LengthOrDefault()}";
+		RuleMessage.Format(_message ?? MessageFormat, _maxLength, value.LengthOrDefault());
 
 	/// <summary>
 	/// Gets the error message for a failed span validation.
@@ -45,5 +60,12 @@ public readonly record struct MaxLengthRule : Core.IValidationRule<string>, Core
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
 	public string GetErrorMessage(ReadOnlySpan<char> value) =>
-		$"String must be at most {_maxLength} characters long, but got {value.Length}";
+		RuleMessage.Format(_message ?? MessageFormat, _maxLength, value.Length);
+
+	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
+	public string Code => field.Or(ErrorCode);
+
+	string? Core.IZodRule.Code => Code;
+
+	string? Core.IZodRule.Origin => null;
 }

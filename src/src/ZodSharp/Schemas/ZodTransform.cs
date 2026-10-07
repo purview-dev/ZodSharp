@@ -32,11 +32,27 @@ public class ZodTransform<TInput, TOutput>(IZodSchema<TInput, TInput> inputSchem
 			var transformedValue = transform(validationResult.Value);
 			return ValidationResult<TOutput>.Success(transformedValue);
 		}
-		catch (Exception ex)
+		catch (Exception ex) when (IsTransformFailure(ex))
 		{
-			return ValidationResult<TOutput>.Failure(
-				new ValidationError("transform_error", $"Transform failed: {ex.Message}", [])
-			);
+			// The exception message is deliberately NOT part of the validation error. A transform is
+			// arbitrary caller code — it may reach a database or a service — and a validation error flows
+			// into ProblemDetails and out to the HTTP client, so putting the message there discloses
+			// internal detail to whoever made the request. Only the fixed code and message are reported.
+			_ = ex;
+
+			return ValidationResult<TOutput>.Failure(new ValidationError("transform_error", "Transform failed.", []));
 		}
 	}
+
+	/// <summary>
+	/// Whether <paramref name="exception"/> is a transform failure rather than something that must not be
+	/// turned into a validation error.
+	/// </summary>
+	/// <remarks>
+	/// The previous blanket <c>catch (Exception)</c> also swallowed cancellation — breaking a caller's
+	/// <see cref="OperationCanceledException"/> contract — and conditions the process cannot continue
+	/// through, such as <see cref="OutOfMemoryException"/>. Those propagate.
+	/// </remarks>
+	static bool IsTransformFailure(Exception exception) =>
+		exception is not (OperationCanceledException or OutOfMemoryException or StackOverflowException);
 }

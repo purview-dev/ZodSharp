@@ -4,17 +4,26 @@ namespace ZodSharp.Rules;
 /// Validation rule for safe integer check.
 /// Uses struct to avoid allocations.
 /// </summary>
-public readonly record struct SafeIntegerRule : Core.IValidationRule<double>
+[Core.ZodRule]
+public readonly record struct SafeIntegerRule : Core.IValidationRule<double>, Core.IZodRule
 {
-	readonly string? _message;
+	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
+	public const string ErrorCode = "too_big";
+
+	/// <summary>Gets the message format; <c>{0}</c> is the offending value.</summary>
+	public const string MessageFormat = "Number must be a safe integer, but got {0}";
+
+	readonly string _message;
 
 	/// <summary>
 	/// Initializes a new instance of the SafeIntegerRule struct.
 	/// </summary>
-	/// <param name="message">Optional error message</param>
-	public SafeIntegerRule(string? message = null)
+	/// <param name="message">Optional error message/ message format.</param>
+	/// <param name="code">Optional error code override. If one is not specified then the <see cref="ErrorCode"/> is used.</param>
+	public SafeIntegerRule(string? message = null, string? code = null)
 	{
-		_message = message.OrNull();
+		_message = message.Or(MessageFormat);
+		Code = code.Or(ErrorCode);
 	}
 
 	/// <summary>
@@ -30,5 +39,12 @@ public readonly record struct SafeIntegerRule : Core.IValidationRule<double>
 	/// </summary>
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
-	public string GetErrorMessage(in double value) => _message ?? $"Number must be a safe integer, but got {value}";
+	public string GetErrorMessage(in double value) => RuleMessage.Format(_message ?? MessageFormat, value);
+
+	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
+	public string Code => field.Or(ErrorCode);
+
+	string? Core.IZodRule.Code => Code;
+
+	string? Core.IZodRule.Origin => null;
 }

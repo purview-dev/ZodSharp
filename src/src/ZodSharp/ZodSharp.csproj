@@ -10,6 +10,23 @@
 		</Description>
 		<GenerateDocumentationFile>true</GenerateDocumentationFile>
 		<PackageTags>zod;validation;schema</PackageTags>
+		<!--
+			Trimming and Native AOT. IsAotCompatible turns on IsTrimmable plus both analyzers, so a regression
+			is a build warning here rather than a runtime failure in a consumer's published application.
+
+			This package is clean under both. Getting there removed the JSON Schema exporter's reflection into
+			its own private fields, which was not only untrimmable but silently wrong: it looked up field and
+			rule-type names that did not exist, so object properties, array bounds and element schemas,
+			optional inner schemas and union options were all missing from exported schemas.
+
+			RegisterFromAssembly stays reflective by nature and declares [RequiresUnreferencedCode]; the
+			discriminated-union accessor falls back to plain reflection when dynamic code is unavailable.
+
+			The integration packages are NOT marked: Purview.ZodSharp.NewtonsoftJson cannot be, because
+			Newtonsoft.Json is reflection-based throughout, and Purview.ZodSharp.SystemTextJson needs
+			JsonTypeInfo/JsonSerializerContext overloads first.
+		-->
+		<IsAotCompatible>true</IsAotCompatible>
 		<NoWarn>$(NoWarn);NU5118</NoWarn>
 		<!--
 			The source generator is packed as a self-contained (merged) assembly through
@@ -17,7 +34,7 @@
 			GASF-based analyzer packing (which would also ship the loose framework DLL) is disabled.
 		-->
 		<PackProjectReferencedSourceGenerators>false</PackProjectReferencedSourceGenerators>
-		<TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackZodSchemaGenerator</TargetsForTfmSpecificContentInPackage>
+		<TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackZodSchemaGenerator;PackZodSharpCodeFixes</TargetsForTfmSpecificContentInPackage>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -52,6 +69,27 @@
 		</MSBuild>
 		<ItemGroup>
 			<TfmSpecificPackageFile Include="@(_PurviewZodSharpMergedGenerator)">
+				<PackagePath>analyzers/dotnet/cs/</PackagePath>
+			</TfmSpecificPackageFile>
+		</ItemGroup>
+	</Target>
+
+	<!--
+		Packs the code-fix assembly (which must live outside the generator/analyzer assembly because
+		RS1038 forbids an assembly containing Roslyn analyzers/generators from referencing
+		Microsoft.CodeAnalysis.Workspaces) alongside the merged generator under analyzers/dotnet/cs.
+	-->
+	<Target Name="PackZodSharpCodeFixes" Label="Packs the ZodSharp code-fix assembly.">
+		<MSBuild
+			Projects="../CodeFixes/CodeFixes.csproj"
+			Targets="Build;GetTargetPath"
+			Properties="Configuration=$(Configuration)"
+			RemoveProperties="TargetFramework;TargetFrameworks;RuntimeIdentifier;SelfContained"
+		>
+			<Output TaskParameter="TargetOutputs" ItemName="_PurviewZodSharpCodeFixes" />
+		</MSBuild>
+		<ItemGroup>
+			<TfmSpecificPackageFile Include="@(_PurviewZodSharpCodeFixes)">
 				<PackagePath>analyzers/dotnet/cs/</PackagePath>
 			</TfmSpecificPackageFile>
 		</ItemGroup>

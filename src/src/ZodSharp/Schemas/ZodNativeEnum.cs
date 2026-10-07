@@ -20,7 +20,7 @@ public class ZodNativeEnum<TEnum>() : ZodType<TEnum>
 
 	// Resolving the defined members once per closed generic type avoids the per-validation
 	// Enum.IsDefined reflection path.
-	static readonly HashSet<TEnum> DefinedValues = [.. Enum.GetValues<TEnum>()];
+	static readonly HashSet<TEnum> DefinedValues = [.. System.Enum.GetValues<TEnum>()];
 
 	/// <summary>
 	/// Validates that the value is a defined enum member.
@@ -37,4 +37,21 @@ public class ZodNativeEnum<TEnum>() : ZodType<TEnum>
 					EmptyPath
 				)
 			);
+
+	/// <summary>
+	/// Adds an <see cref="Rules.EnumRule{TEnum}"/> that validates the value is a defined member of
+	/// <typeparamref name="TEnum"/>, rejecting any member the rule excludes.
+	/// </summary>
+	/// <param name="message">Optional error message.</param>
+	/// <param name="code">Optional error code override.</param>
+	/// <returns>This schema for method chaining.</returns>
+	/// <remarks>
+	/// The schema already rejects undefined members; this method mirrors the <c>[Enum]</c> attribute the
+	/// source generator emits for enum properties and lets the error message and code be customised.
+	/// </remarks>
+	public ZodNativeEnum<TEnum> Enum(string? message = null, string? code = null)
+	{
+		AddRule(new Rules.EnumRule<TEnum>(message, code));
+		return this;
+	}
 }

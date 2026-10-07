@@ -45,4 +45,38 @@ public class ZodTransformTests
 		await Assert.That(result.IsSuccess).IsFalse();
 		await Assert.That(result.Errors[0].Code).IsEqualTo("transform_error");
 	}
+
+	[Test]
+	public async Task Transform_GivenTransformThrows_DoesNotLeakTheExceptionMessage()
+	{
+		// Arrange — a transform is arbitrary caller code that may reach a database or a service, and a
+		// validation error flows into ProblemDetails and out to the HTTP client. The exception message
+		// must not travel with it.
+		const string internalDetail = "Login failed for user 'svc_billing' on server 'sql-prod-03'";
+
+		// Act
+		var result = Z.String()
+			.Transform<string>(static _ => throw new InvalidOperationException(internalDetail))
+			.Validate("hello");
+
+		// Assert
+		await Assert.That(result.IsSuccess).IsFalse();
+		await Assert.That(result.Errors[0].Message).DoesNotContain(internalDetail);
+		await Assert.That(result.Errors[0].Message).DoesNotContain("svc_billing");
+		await Assert.That(result.Errors[0].Message).DoesNotContain("sql-prod-03");
+	}
+
+	[Test]
+	public async Task Transform_GivenCancellation_PropagatesInsteadOfBecomingAValidationError()
+	{
+		// Arrange — the previous blanket catch turned cancellation into a validation failure, which breaks
+		// the caller's cancellation contract.
+		using CancellationTokenSource cts = new();
+		cts.Cancel();
+
+		var schema = Z.String().Transform<string>(_ => throw new OperationCanceledException(cts.Token));
+
+		// Act / Assert
+		await Assert.That(() => schema.Validate("hello")).Throws<OperationCanceledException>();
+	}
 }

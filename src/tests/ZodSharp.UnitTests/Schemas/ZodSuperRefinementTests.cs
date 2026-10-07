@@ -82,7 +82,7 @@ public class ZodSuperRefinementTests
 		// Assert
 		await Assert.That(result.IsSuccess).IsFalse();
 		await Assert.That(result.Errors.Count).IsEqualTo(1);
-		await Assert.That(result.Errors[0].Code).IsEqualTo("validation_failed");
+		await Assert.That(result.Errors[0].Code).IsEqualTo("too_small");
 	}
 
 	[Test]

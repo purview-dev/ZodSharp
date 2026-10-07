@@ -10,7 +10,7 @@ Purview.ZodSharp is a high-performance schema validation library for C#, ported 
 
 - The project is maintained at `purview-dev/zodsharp`.
 - Public API namespaces are `ZodSharp.*`; packages and assemblies are published under the `Purview.ZodSharp.*` package IDs.
-- Multi-targets `net8.0`, `net9.0` and `net10.0`; the source generator targets `netstandard2.0` so it runs in any compiler host.
+- Multi-targets `net8.0`, `net9.0`, `net10.0` and `net11.0`; the source generator targets `netstandard2.0` so it runs in any compiler host.
 
 ## Repository layout
 
@@ -93,6 +93,20 @@ The generator and analyzer are built with `Purview.SourceGeneratorFramework`:
 - Keep pipeline values immutable and value-equatable; never retain `ISymbol`, `Compilation`, `SemanticModel`, `IOperation`, `SyntaxNode`, or `Location` in pipeline models.
 - Use `ForAttributeWithMetadataName` for attribute-driven discovery.
 - Test incrementally, not just generated text (see the skills above).
+
+Validation rules follow a conventions analyzer (`ValidationRuleConventionsAnalyzer`, diagnostic `ZODSGEN042`): a source-declared rule (a type implementing `ZodSharp.Core.IValidationRule<T>`) must expose its error identity as public `const string ErrorCode` and `const string MessageFormat` constants, so tests can assert against the rule rather than duplicating literals. New built-in rules must follow the same convention; keep `AnalyzerReleases.Shipped.md`/`AnalyzerReleases.Unshipped.md` in sync when a diagnostic is added or changed.
+
+## Numeric rules
+
+The numeric rules are split by the constraint each family needs — pick the constraint that matches the operations, never widen a rule unnecessarily:
+
+- **Bound rules** — `MinValueRule<T>`, `MaxValueRule<T>`, `GreaterThanRule<T>`, `LessThanRule<T>`, `GreaterThanOrEqualRule<T>`, `LessThanOrEqualRule<T>` — are generic over `T : IComparable<T>`. Keep this constraint: `ZodDate` closes the bound rules with `DateTime`, which does **not** implement `INumber<T>`. Do not change them to `INumber<T>`.
+- **Arithmetic rules** — `IntRule<T>`, `FiniteRule<T>`, `MultipleOfRule<T>`, `EvenRule<T>`, `OddRule<T>` — are generic over `T : INumber<T>` so they close with any numeric type (`int`, `long`, `double`, `decimal`, …).
+- **`SafeIntegerRule`** is intentionally `double`-only, because "safe integer" is a JavaScript `Number` concept (`int.MinValue`..`int.MaxValue`); do not make it generic.
+- `ZodNumber` closes the rules with `double`, `ZodBigInt` with `long`, and `ZodDate` with `DateTime`. Fluent methods on `ZodNumber` therefore use `XxxRule<double>`.
+- Any code that matches a rule by name (for example the JSON Schema converter) must tolerate the generic arity suffix: a generic rule's `Type.Name` is `IntRule\`1`, so match with `StartsWith` rather than equality.
+
+Generated rule attributes carry the rule's **value** parameters as a constructor: a parameter declared without a default is a required constructor argument (so it cannot be silently omitted), a parameter with a default keeps it, and `message`/`code`/`origin` stay properties. Attribute usages for required values are positional (`[MinValue(3)]`, `[Regex("^[a-z]+$")]`); defaulted values may still be set by property name. When changing rule constructor parameters, update the affected generator tests and the wiki attribute tables.
 
 ## Packing and package READMEs
 

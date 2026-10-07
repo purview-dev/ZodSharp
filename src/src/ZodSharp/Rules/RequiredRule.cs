@@ -1,0 +1,95 @@
+using System.Runtime.CompilerServices;
+
+namespace ZodSharp.Rules;
+
+/// <summary>
+/// Validation rule that requires a value to be present, mirroring the semantics of
+/// <c>System.ComponentModel.DataAnnotations.RequiredAttribute</c>.
+/// </summary>
+/// <typeparam name="T">The value type. Only strings are inspected for emptiness; every other type is present
+/// unless it is <see langword="null"/> (a nullable value type or a reference type).</typeparam>
+/// <remarks>
+/// <para>
+/// For a string value the rule always rejects <see langword="null"/>. When
+/// <see cref="RequiredRule{T}(bool, bool, string?, string?)">allowEmptyString</see> is <see langword="false"/>
+/// an empty string is rejected as well; when it is <see langword="true"/> an empty string is accepted. The
+/// <c>trimWhitespace</c> option additionally treats a whitespace-only string as empty, so <c>"   "</c> fails
+/// unless empty strings are allowed. Leading/trailing whitespace on a non-empty value is preserved, matching a
+/// trim-then-check reading of the option.
+/// </para>
+/// <para>
+/// The generated <c>[RequiredZod]</c> attribute surfaces both options as constructor/property arguments; the
+/// name is suffixed with <c>Zod</c> because <c>RequiredAttribute</c> is already declared by
+/// <c>System.ComponentModel.DataAnnotations</c>.
+/// </para>
+/// </remarks>
+[Core.ZodRule]
+public readonly record struct RequiredRule<T> : Core.IValidationRule<T>, Core.IZodRule
+{
+	/// <summary>Gets the error code reported when the rule fails.</summary>
+	public const string ErrorCode = "missing_field";
+
+	/// <summary>Gets the message format; <c>{0}</c> is the offending value.</summary>
+	public const string MessageFormat = "Field is required";
+
+	readonly bool _allowEmptyString;
+	readonly bool _trimWhitespace;
+	readonly string _message;
+
+	/// <summary>
+	/// Initializes a new instance of the <see cref="RequiredRule{T}"/> struct.
+	/// </summary>
+	/// <param name="allowEmptyString">Whether an empty string satisfies the rule. Defaults to <see langword="false"/>.</param>
+	/// <param name="trimWhitespace">Whether a whitespace-only string counts as empty. Defaults to <see langword="false"/>.</param>
+	/// <param name="message">Optional error message/ message format.</param>
+	/// <param name="code">Optional error code override. If one is not specified then the <see cref="ErrorCode"/> is used.</param>
+	public RequiredRule(
+		bool allowEmptyString = false,
+		bool trimWhitespace = false,
+		string? message = null,
+		string? code = null
+	)
+	{
+		_allowEmptyString = allowEmptyString;
+		_trimWhitespace = trimWhitespace;
+		_message = message.Or(MessageFormat);
+		Code = code.Or(ErrorCode);
+	}
+
+	/// <summary>
+	/// Validates that the value is present.
+	/// </summary>
+	/// <param name="value">The value to validate</param>
+	/// <returns>True if the value is present, false otherwise</returns>
+	public bool IsValid(in T value)
+	{
+		if (typeof(T) == typeof(string))
+		{
+			var text = Unsafe.As<T, string?>(ref Unsafe.AsRef(in value));
+			if (text is null)
+				return false;
+
+			if (_allowEmptyString)
+				return true;
+
+			// If we get here, the string is not null and empty strings are not allowed. Check for whitespace if needed.
+			return _trimWhitespace ? !string.IsNullOrWhiteSpace(text) : text.Length != 0;
+		}
+
+		return value is not null;
+	}
+
+	/// <summary>
+	/// Gets the error message for a failed validation.
+	/// </summary>
+	/// <param name="value">The value that failed validation</param>
+	/// <returns>The error message</returns>
+	public string GetErrorMessage(in T value) => RuleMessage.Format(_message ?? MessageFormat, value);
+
+	/// <summary>Gets the error code reported when the rule fails.</summary>
+	public string Code => field.Or(ErrorCode);
+
+	string? Core.IZodRule.Code => Code;
+
+	string? Core.IZodRule.Origin => null;
+}

@@ -8,8 +8,17 @@ namespace ZodSharp.SourceGenerators;
 
 partial class ZodSchemaGenerator
 {
-	static void GenerateValueSetValidations(CodeWriter writer, ZodPropertyDescriptor property)
+	static void GenerateValueSetValidations(
+		CodeWriter writer,
+		ZodPropertyDescriptor property,
+		bool emitEnumRule = false
+	)
 	{
+		// The enum rule owns the value set: the values a [DeniedValues] attribute lists are absorbed into the
+		// rule's disallowed set, so the standalone validation is skipped to avoid reporting the value twice.
+		if (emitEnumRule)
+			return;
+
 		var allowedValues = property.ValidationAttributes.AllowedValues;
 		var deniedValues = property.ValidationAttributes.DeniedValues;
 		if (
@@ -122,7 +131,7 @@ partial class ZodSchemaGenerator
 		out string displayValues
 	)
 	{
-		List<string> comparisons = new(values.Count);
+		List<string> comparisons = [with(values.Count)];
 		var propertyTypeReference = property.PropertyType.AsTypeReference();
 		var propertyTypeForComparer = property.CanBeNull
 			? propertyTypeReference.Nullable(writer)
@@ -153,7 +162,7 @@ partial class ZodSchemaGenerator
 		if (values.IsDefaultOrEmpty)
 			return string.Empty;
 
-		List<string> parts = new(values.Length);
+		List<string> parts = [with(values.Length)];
 		for (var i = 0; i < values.Length; i++)
 		{
 			var value = values[i];

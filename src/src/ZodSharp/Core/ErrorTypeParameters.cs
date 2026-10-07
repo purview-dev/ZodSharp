@@ -8,6 +8,14 @@ namespace ZodSharp.Core;
 /// through the strongly typed <see cref="Get{T}"/> accessor and format messages with knowledge of
 /// each parameter's type. Implements <see cref="IReadOnlyDictionary{TKey, TValue}"/> so existing
 /// dictionary-based consumers keep working unchanged.
+/// <para>
+/// <b>These values leave the process.</b> They exist to be substituted into a client-facing message, and
+/// the ASP.NET Core integration also copies every one of them into the <c>ProblemDetails</c> extensions of
+/// the response — so whatever you put here is returned to whoever made the request. That is the intended
+/// behaviour for a value the message names, such as an identifier the caller supplied. Do not put internal
+/// context in a parameter: connection details, configuration values, another user's data, or a whole
+/// record fetched while validating. Only <c>issues</c> and <c>traceId</c> are reserved and withheld.
+/// </para>
 /// </summary>
 [System.Diagnostics.CodeAnalysis.SuppressMessage(
 	"Design",
@@ -16,7 +24,7 @@ namespace ZodSharp.Core;
 )]
 public sealed class ErrorTypeParameters : IReadOnlyDictionary<string, object?>
 {
-	static readonly IReadOnlyDictionary<string, ErrorTypeParameter> s_emptyDeclarations =
+	static readonly IReadOnlyDictionary<string, ErrorTypeParameter> EmptyDeclarations =
 		new Dictionary<string, ErrorTypeParameter>();
 
 	readonly IReadOnlyDictionary<string, object?> _values;
@@ -45,14 +53,14 @@ public sealed class ErrorTypeParameters : IReadOnlyDictionary<string, object?>
 	{
 		ArgumentNullException.ThrowIfNull(values);
 
-		Dictionary<string, ErrorTypeParameter> declarationMap = new(StringComparer.Ordinal);
+		Dictionary<string, ErrorTypeParameter> declarationMap = [with(StringComparer.Ordinal)];
 		if (declarations is not null)
 		{
 			foreach (var declaration in declarations)
 				declarationMap[declaration.Name] = declaration;
 		}
 
-		Dictionary<string, object?> valueMap = new(StringComparer.Ordinal);
+		Dictionary<string, object?> valueMap = [with(StringComparer.Ordinal)];
 		foreach (var pair in values)
 		{
 			if (
@@ -79,11 +87,11 @@ public sealed class ErrorTypeParameters : IReadOnlyDictionary<string, object?>
 	{
 		ArgumentNullException.ThrowIfNull(values);
 
-		Dictionary<string, object?> valueMap = new(StringComparer.Ordinal);
+		Dictionary<string, object?> valueMap = [with(StringComparer.Ordinal)];
 		foreach (var pair in values)
 			valueMap[pair.Key] = pair.Value;
 
-		return new ErrorTypeParameters(valueMap, s_emptyDeclarations);
+		return new ErrorTypeParameters(valueMap, EmptyDeclarations);
 	}
 
 	/// <summary>

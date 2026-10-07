@@ -6,7 +6,7 @@
 - **No reflection on hot paths.** The runtime library uses expression trees only in the opt-in `CompiledValidator` and to compile a one-off discriminator accessor per (type, discriminator) pair for `ZodDiscriminatedUnion`. After that first use, validation runs direct property access; the source generator emits direct typed codegen.
 - **Deterministic, reviewable generated code.** The `[ZodSchema]` generator output is stable and de-duplicated; there are no scope leaks in emitted code.
 - **Cross-platform parity.** The C# implementation is exercised against TypeScript/Zod fixtures (see [Cross-Platform Interop](Cross-Platform-Interop.md)).
-- **Multi-targeting.** Packages target `net8.0`, `net9.0`, and `net10.0`; the source generator targets `netstandard2.0` so it runs in any compiler host.
+- **Multi-targeting.** Packages target `net8.0`, `net9.0`, `net10.0`, and `net11.0`; the source generator targets `netstandard2.0` so it runs in any compiler host.
 - **A fully built schema is safe to cache and share across threads.** Validation only reads the rule set and `Description`, so once construction is finished a schema can be reused concurrently. Building is *not* immutable — see the next section.
 
 ## Limitations
@@ -33,7 +33,7 @@ The generator reports `Origin = "string"` for string size failures, `Origin = "a
 
 ### Rule errors
 
-Rules evaluated by the base `Validate` pipeline produce `validation_failed` errors with an empty path. Structured `too_small`/`too_big` issues (with `Origin`, `Minimum`/`Maximum`, and `Inclusive`) are produced by `ZodArray` and by the source generator's size validators.
+Rules evaluated by the base `Validate` pipeline emit Zod-compatible codes: `too_small`/`too_big` for bounds, `not_multiple_of`/`not_finite` for numbers, `invalid_string` for string-format validations, `invalid_type` for `IntRule<T>`, and `invalid_value` for `NonSentinelRule<T>`. Custom rules that do not declare a code default to `validation_failed`. Every rule exposes its correlated code and message template as public `const string ErrorCode` / `MessageFormat` constants so tests can assert against the rule rather than duplicating literals; a source-declared rule that omits them is reported as `ZODSGEN042`. Structured `too_small`/`too_big` issues (with `Origin`, `Minimum`/`Maximum`, and `Inclusive`) are produced by `ZodArray` and by the source generator's size validators.
 
 ### String transforms allocate
 
@@ -41,7 +41,7 @@ Rules evaluated by the base `Validate` pipeline produce `validation_failed` erro
 
 ### Number semantics
 
-`ZodNumber` operates on `double`. `Int()`, `Safe()`, and `Finite()` are validation rules, not conversions; `.Int()` rejects fractional values rather than rounding them. `Positive()`/`Negative()` are strict (they reject `0`; use `NonNegative()`/`NonPositive()` for inclusive bounds). `MultipleOf` compares the quotient to its nearest integer with a relative tolerance (`1e-12`), so `0.3` is accepted for `MultipleOf(0.1)` while `0.3000000001` is not; NaN and infinity are rejected, and a zero divisor throws `ArgumentException`.
+`ZodNumber` operates on `double`. `Int()`, `Safe()`, and `Finite()` are validation rules, not conversions; `.Int()` rejects fractional values rather than rounding them. `Positive()`/`Negative()` are strict (they reject `0`; use `NonNegative()`/`NonPositive()` for inclusive bounds). `MultipleOf` compares the distance to the nearest multiple against a relative tolerance (`1e-12`), so `0.3` is accepted for `MultipleOf(0.1)` while `0.3000000001` is not; NaN and infinity are rejected, and a zero divisor throws `ArgumentException`.
 
 ### Enum semantics
 
@@ -57,7 +57,7 @@ Rules evaluated by the base `Validate` pipeline produce `validation_failed` erro
 
 ## Custom rules
 
-Custom rules and their DataAnnotations-style attributes are a first-class extension point. Rules can be attached to a property or to the schema type itself (validating the value object as a unit), and a generic rule can be closed with the target type so one rule serves every scalar of a given shape. See [Custom Rules](Custom-Rules.md) for the rule contract, the public `AddRule`/`Rule` API, and how to map a rule to a `ValidationAttribute` that the source generator honours.
+Custom rules and their DataAnnotations-style attributes are a first-class extension point. Rules can be attached to a property or to the schema type itself (validating the value object as a unit), and a generic rule can be closed with the target type so one rule serves every scalar of a given shape. A rule written against a `Purview.ValueObjects` scalar's underlying value is adapted automatically when it is applied to a `[Scalar]` type, so one rule also serves every scalar backed by the same primitive. See [Custom Rules](Custom-Rules.md) for the rule contract, the public `AddRule`/`Rule` API, and how to map a rule to a `ValidationAttribute` that the source generator honours, and [Value Objects Integration](Value-Objects-Integration.md) for the `[Scalar]` walkthrough and error code / message definitions.
 
 ## Contract vs. underlying libraries
 

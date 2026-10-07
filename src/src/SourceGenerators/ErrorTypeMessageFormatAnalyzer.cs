@@ -21,14 +21,14 @@ public sealed class ErrorTypeMessageFormatAnalyzer : DiagnosticAnalyzer
 
 	const string ErrorTypeMetadataName = "ZodSharp.Core.ErrorType";
 
-	static readonly Regex s_placeholderRegex = new(@"\{([A-Za-z_][A-Za-z0-9_]*)\}", RegexOptions.Compiled);
+	static readonly Regex PlaceholderRegex = new(@"\{([A-Za-z_][A-Za-z0-9_]*)\}", RegexOptions.Compiled);
 
-	static readonly ImmutableArray<DiagnosticDescriptor> s_supportedDiagnostics =
+	static readonly ImmutableArray<DiagnosticDescriptor> SupportedDiagnosticsList =
 	[
 		DiagnosticLibrary.MessageFormatPlaceholderNotDeclared,
 	];
 
-	public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => s_supportedDiagnostics;
+	public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => SupportedDiagnosticsList;
 
 	public override void Initialize(AnalysisContext context)
 	{
@@ -70,7 +70,7 @@ public sealed class ErrorTypeMessageFormatAnalyzer : DiagnosticAnalyzer
 		if (location is null)
 			return;
 
-		var placeholders = s_placeholderRegex
+		var placeholders = PlaceholderRegex
 			.Matches(messageFormat)
 			.Cast<Match>()
 			.Select(static m => m.Groups[1].Value)
@@ -154,7 +154,7 @@ public sealed class ErrorTypeMessageFormatAnalyzer : DiagnosticAnalyzer
 		{
 			case IArrayCreationOperation array when array.Initializer is not null:
 			{
-				HashSet<string> names = new(StringComparer.Ordinal);
+				HashSet<string> names = [with(StringComparer.Ordinal)];
 				foreach (var element in array.Initializer.ElementValues)
 					AddParameterName(element, names);
 
@@ -163,7 +163,7 @@ public sealed class ErrorTypeMessageFormatAnalyzer : DiagnosticAnalyzer
 
 			case ICollectionExpressionOperation collection:
 			{
-				HashSet<string> names = new(StringComparer.Ordinal);
+				HashSet<string> names = [with(StringComparer.Ordinal)];
 				foreach (var element in collection.Elements)
 					AddParameterName(element, names);
 

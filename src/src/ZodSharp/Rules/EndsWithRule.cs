@@ -4,20 +4,37 @@ namespace ZodSharp.Rules;
 /// Validation rule for string suffix.
 /// Uses struct to avoid allocations.
 /// </summary>
-public readonly record struct EndsWithRule : Core.IValidationRule<string>, Core.IStringValidationRule
+[Core.ZodRule]
+public readonly record struct EndsWithRule : Core.IValidationRule<string>, Core.IStringValidationRule, Core.IZodRule
 {
+	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
+	public const string ErrorCode = "invalid_string";
+
+	/// <summary>Gets the message format; <c>{0}</c> is the required suffix and <c>{1}</c> the value.</summary>
+	public const string MessageFormat = "String must end with '{0}', but got '{1}'";
+
 	readonly string _suffix;
-	readonly string? _message;
+	readonly StringComparison _comparison;
+	readonly string _message;
 
 	/// <summary>
 	/// Initializes a new instance of the EndsWithRule struct.
 	/// </summary>
 	/// <param name="suffix">The required suffix</param>
-	/// <param name="message">Optional error message</param>
-	public EndsWithRule(string suffix, string? message = null)
+	/// <param name="comparison">The string comparison type</param>
+	/// <param name="message">Optional error message/ message format.</param>
+	/// <param name="code">Optional error code override. If one is not specified then the <see cref="ErrorCode"/> is used.</param>
+	public EndsWithRule(
+		string suffix,
+		StringComparison comparison = StringComparison.Ordinal,
+		string? message = null,
+		string? code = null
+	)
 	{
-		_suffix = suffix ?? throw new ArgumentNullException(nameof(suffix));
-		_message = message.OrNull();
+		_suffix = suffix.OrNull() ?? throw new ArgumentNullException(nameof(suffix));
+		_comparison = comparison;
+		_message = message.Or(MessageFormat);
+		Code = code.Or(ErrorCode);
 	}
 
 	/// <summary>
@@ -25,22 +42,21 @@ public readonly record struct EndsWithRule : Core.IValidationRule<string>, Core.
 	/// </summary>
 	/// <param name="value">The value to validate</param>
 	/// <returns>True if valid, false otherwise</returns>
-	public bool IsValid(in string value) => value != null && value.EndsWith(_suffix, StringComparison.Ordinal);
+	public bool IsValid(in string value) => value != null && value.EndsWith(_suffix, _comparison);
 
 	/// <summary>
 	/// Validates that the span ends with the specified suffix without materialising a string.
 	/// </summary>
 	/// <param name="value">The value to validate</param>
 	/// <returns>True if valid, false otherwise</returns>
-	public bool IsValid(ReadOnlySpan<char> value) => value.EndsWith(_suffix.AsSpan(), StringComparison.Ordinal);
+	public bool IsValid(ReadOnlySpan<char> value) => value.EndsWith(_suffix.AsSpan(), _comparison);
 
 	/// <summary>
 	/// Gets the error message for a failed validation.
 	/// </summary>
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
-	public string GetErrorMessage(in string value) =>
-		_message ?? $"String must end with '{_suffix}', but got '{value}'";
+	public string GetErrorMessage(in string value) => RuleMessage.Format(_message ?? MessageFormat, _suffix, value);
 
 	/// <summary>
 	/// Gets the error message for a failed span validation.
@@ -48,5 +64,12 @@ public readonly record struct EndsWithRule : Core.IValidationRule<string>, Core.
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
 	public string GetErrorMessage(ReadOnlySpan<char> value) =>
-		_message ?? $"String must end with '{_suffix}', but got '{value}'";
+		RuleMessage.Format(_message ?? MessageFormat, _suffix, value.ToString());
+
+	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
+	public string Code => field.Or(ErrorCode);
+
+	string? Core.IZodRule.Code => Code;
+
+	string? Core.IZodRule.Origin => null;
 }

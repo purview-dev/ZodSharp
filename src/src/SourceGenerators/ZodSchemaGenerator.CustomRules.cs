@@ -15,11 +15,15 @@ partial class ZodSchemaGenerator
 		if (property.CustomRules.Count == 0)
 			return;
 
+		// The resolver closes a generic rule over the property's underlying type, so a nullable value type is
+		// unwrapped to match. The validation runs inside the non-null guard, so the unwrap cannot throw.
+		var valueExpression = property.IsNullableValueType ? $"value.{property.Name}!.Value" : $"value.{property.Name}";
+
 		GenerateRuleValidations(
 			writer,
 			property.CustomRules,
 			property.Name,
-			$"value.{property.Name}",
+			valueExpression,
 			CodeGenHelpers.GetPathFieldName(property.Name),
 			property.DisplayName,
 			declareValueLocal: true
@@ -63,12 +67,36 @@ partial class ZodSchemaGenerator
 			var valueVariable = declareValueLocal
 				? CodeGenHelpers.GetLocalIdentifier(localPrefix, $"CustomRuleValue{i}")
 				: valueExpression;
-			var arguments = rule.Arguments.Count == 0 ? string.Empty : $"({string.Join(", ", rule.Arguments)})";
+			var arguments = $"({string.Join(", ", rule.Arguments)})";
 
 			if (declareValueLocal)
 				writer.Assignment("var", valueVariable, valueExpression);
 
-			writer.Assignment("var", ruleVariable, $"new {rule.RuleType.AsTypeReference().RenderFullName}{arguments}");
+			// A scalar rule adapter wraps a rule written against the scalar's underlying value. The wrapped
+			// rule is constructed first so it can supply the error identity (the adapter itself has none).
+			var identityVariable = ruleVariable;
+			if (rule.AdaptedFrom is { } adaptedRuleType)
+			{
+				identityVariable = CodeGenHelpers.GetLocalIdentifier(localPrefix, $"CustomRuleInner{i}");
+				writer.Assignment(
+					"var",
+					identityVariable,
+					$"new {adaptedRuleType.AsTypeReference().RenderFullName}{arguments}"
+				);
+				writer.Assignment(
+					"var",
+					ruleVariable,
+					$"new {rule.RuleType.AsTypeReference().RenderFullName}({identityVariable})"
+				);
+			}
+			else
+			{
+				writer.Assignment(
+					"var",
+					ruleVariable,
+					$"new {rule.RuleType.AsTypeReference().RenderFullName}{arguments}"
+				);
+			}
 
 			var codeFallback = rule.Code is { Length: > 0 } customCode ? customCode : "validation_failed";
 			var zodRuleInterface = TypeLibrary.ZodSharp.Core.IZodRule.AsTypeReference().RenderFullName;
@@ -76,12 +104,14 @@ partial class ZodSchemaGenerator
 			// A rule that implements IZodRule owns its error identity; the attribute-mapped value is only a
 			// fallback. The cast is required because the interface may be implemented explicitly.
 			var codeExpression = rule.RuleOwnsIdentity
-				? $"(({zodRuleInterface}){ruleVariable}).Code ?? {codeFallback.Surround()}"
+				? $"(({zodRuleInterface}){identityVariable}).Code ?? {codeFallback.Surround()}"
 				: codeFallback.Surround();
-			var originFallback = rule.Origin is { Length: > 0 } customOrigin ? customOrigin.Surround() : "null";
+			var originFallback = rule.Origin is { Length: > 0 } customOrigin ? customOrigin.Surround() : null;
 			var originExpression = rule.RuleOwnsIdentity
-				? $"(({zodRuleInterface}){ruleVariable}).Origin ?? {originFallback}"
-				: originFallback;
+				? originFallback is null
+					? $"(({zodRuleInterface}){identityVariable}).Origin"
+					: $"(({zodRuleInterface}){identityVariable}).Origin ?? {originFallback}"
+				: originFallback ?? "null";
 
 			var message = !string.IsNullOrEmpty(rule.Message.ErrorMessage)
 				? BuildErrorMessageExpression(rule.Message, "Field '{0}' is invalid.", displayName.StringLiteral())

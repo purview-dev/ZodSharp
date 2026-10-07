@@ -38,6 +38,8 @@ A `ValidationProblemDetails` overload is also available:
 var problem = result.ToValidationProblemDetails();
 ```
 
+For minimal APIs, `ToValidationProblem()` returns a `Results.ValidationProblem` `IResult` directly, and `WithZodSharpValidation<T>()` validates the bound request DTO automatically (see the [ASP.NET Core Integration](https://purview.dev/docs/zodsharp/aspnetcore-integration/) guide).
+
 ## Exception handling
 
 Thrown `ZodException`s (e.g. from a value object's strict deserialization) are converted automatically by
