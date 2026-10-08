@@ -1,1 +1,1 @@
-[assembly: ZodSharp.Core.ZodSchemaGenerated(typeof(ZodSharp.SampleDiDto), typeof(ZodSharp.SampleDiDtoSchemaValidator))]
+[assembly: ZodSharp.Core.ZodSchemaGenerated(typeof(SampleDIDto), typeof(SampleDIDtoSchemaValidator))]

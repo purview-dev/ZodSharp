@@ -178,8 +178,11 @@ Behaviour notes:
 | Rule | Constructor | Fluent method | Code | Message format |
 |---|---|---|---|---|
 | `NonSentinelRule<T>` | `(string? message)` | `NonSentinel()` | `invalid_value` | `Value is a sentinel value, but got {0}` |
+| `NullOrNonWhiteSpaceRule` | `(string? message, string? code)` | — | `invalid_string` | `Value must be null or non-whitespace, but got '{0}'` |
 
 `NonSentinelRule<T>` rejects the framework default/boundary values an ORM commonly stores to mean "no value": `Guid.Empty`; `DateTime`, `DateTimeOffset`, `DateOnly`, and `TimeOnly` `MinValue`/`MaxValue`; and `null`/empty/whitespace strings. Types without a known sentinel always pass, so the rule never rejects a type it does not understand. It detects sentinels with a `typeof(T)` dispatch and reinterprets the value in place, so no boxing occurs.
+
+`NullOrNonWhiteSpaceRule` is the null-tolerant counterpart: it accepts `null` but rejects an empty or whitespace-only string. It exists for nullable scalar value objects, which round-trip JSON `null`, so their schema must accept `null` while still rejecting whitespace — `[RequiredZod]` always rejects `null` and so cannot express it. Apply it to a nullable scalar type with `[NullOrNonWhiteSpace]`; a rule written against the underlying `string?` value is adapted to the value object automatically.
 
 The fluent `NonSentinel()` method is declared on `ZodType<TOutput, TInput>`, so it is available on every schema and closes the rule with the schema's output type. `ZodString` and `ZodDate` override it with a covariant return type so the fluent chain keeps the concrete schema:
 
@@ -280,6 +283,7 @@ Each built-in rule that can be expressed as an attribute ships a generated `Vali
 | `[Int]` | `IntRule<T>` | closes the open generic with the member type |
 | `[Uri(UriKind.…)]` | `UriRule` | the `UriKind` is required |
 | `[NonSentinel]` | `NonSentinelRule<T>` | closes the open generic with the member/scalar type |
+| `[NullOrNonWhiteSpace]` | `NullOrNonWhiteSpaceRule` | accepts `null` but rejects empty/whitespace-only strings (for nullable scalar value objects) |
 | `[Enum]` | `EnumRule<TEnum>` | closes the open generic with the enum member type; excludes only the members the rule receives |
 | `[MinValue(…)]` | `MinValueRule<T>` | the type-parameter bound is a `double`; the rule closes with the member type |
 | `[MaxValue(…)]` | `MaxValueRule<T>` | as above |

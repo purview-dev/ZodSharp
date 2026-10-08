@@ -37,11 +37,10 @@ public readonly record struct RegexRule : Core.IValidationRule<string>, Core.ISt
 	/// </remarks>
 	public static readonly TimeSpan DefaultMatchTimeout = TimeSpan.FromSeconds(2);
 
-	readonly Regex _pattern;
 	readonly string _message;
 
 	// Read by the JSON Schema exporter, which previously reached this by reflecting on the field name.
-	internal Regex Pattern => _pattern;
+	internal Regex Pattern { get; }
 
 	/// <summary>
 	/// Initializes a new instance of the RegexRule struct.
@@ -51,7 +50,7 @@ public readonly record struct RegexRule : Core.IValidationRule<string>, Core.ISt
 	/// <param name="code">Optional error code override. If one is not specified then the <see cref="ErrorCode"/> is used.</param>
 	public RegexRule(Regex pattern, string? message = null, string? code = null)
 	{
-		_pattern = pattern ?? throw new ArgumentNullException(nameof(pattern));
+		Pattern = pattern ?? throw new ArgumentNullException(nameof(pattern));
 		_message = message.Or(MessageFormat);
 		Code = code.Or(ErrorCode);
 	}
@@ -74,7 +73,7 @@ public readonly record struct RegexRule : Core.IValidationRule<string>, Core.ISt
 	{
 		try
 		{
-			return _pattern.IsMatch(value);
+			return Pattern.IsMatch(value);
 		}
 		catch (RegexMatchTimeoutException)
 		{
@@ -94,7 +93,7 @@ public readonly record struct RegexRule : Core.IValidationRule<string>, Core.ISt
 	{
 		try
 		{
-			return _pattern.IsMatch(value);
+			return Pattern.IsMatch(value);
 		}
 		catch (RegexMatchTimeoutException)
 		{

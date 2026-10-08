@@ -262,9 +262,112 @@ static class CustomRuleResolver
 	}
 
 	/// <summary>
-	/// Gets the underlying value type of a scalar value object: a type marked with the Purview.ValueObjects
-	/// <c>[Scalar]</c> attribute that exposes a public property for the underlying value. The interface
-	/// implementation is contributed by another generator, so the property is the source-visible contract.
+	/// Describes the Purview.ValueObjects <c>[Scalar]</c> attribute applied to a type: the manual form
+	/// (the author declares the underlying property) or one of the automatic forms
+	/// (<c>[Scalar&lt;TValue&gt;]</c> or <c>[Scalar(typeof(TValue))]</c>, where the value-object generator
+	/// declares it and ZodSharp cannot see the member).
+	/// </summary>
+	/// <param name="PropertyName">The name of the property holding the underlying value (default <c>Value</c>).</param>
+	/// <param name="IsAutomatic">Whether the value-object generator owns the underlying property.</param>
+	/// <param name="ValueType">The declared underlying type for an automatic form; otherwise <see langword="null"/>.</param>
+	/// <param name="Nullable">Whether the automatic form declares the property as a nullable reference type.</param>
+	internal readonly record struct ScalarAttributeInfo(
+		string PropertyName,
+		bool IsAutomatic,
+		ITypeSymbol? ValueType,
+		bool Nullable
+	);
+
+	/// <summary>
+	/// Finds the Purview.ValueObjects <c>[Scalar]</c> attribute applied to <paramref name="type"/>, generic
+	/// or non-generic. Detection is by metadata name, so it does not require a reference to the value-object
+	/// runtime.
+	/// </summary>
+	/// <param name="type">The type to inspect.</param>
+	/// <param name="info">The parsed attribute, when one is applied.</param>
+	/// <returns><see langword="true"/> when the type is a scalar value object.</returns>
+	/// <remarks>
+	/// The underlying type comes from the generic type argument (<c>[Scalar&lt;TValue&gt;]</c>) or from the
+	/// <c>typeof(...)</c> constructor argument (<c>[Scalar(typeof(TValue))]</c>); neither selects the manual
+	/// form. <c>Nullable</c> is declared on the shared <c>ScalarOptionsAttribute</c> base, so it is read by
+	/// name and applies to both automatic forms.
+	/// </remarks>
+	internal static bool TryGetScalarAttribute(INamedTypeSymbol type, out ScalarAttributeInfo info)
+	{
+		foreach (var attribute in type.GetAttributes())
+		{
+			if (
+				attribute.AttributeClass
+				is not { Name: TypeLibraryGenerator.ScalarAttributeName, Arity: <= 1 } attributeClass
+			)
+			{
+				continue;
+			}
+
+			if (
+				attributeClass.ContainingNamespace.ToDisplayString()
+				!= TypeLibraryGenerator.ValueObjectsSerializationNamespace
+			)
+			{
+				continue;
+			}
+
+			var propertyName = "Value";
+			ITypeSymbol? valueType = null;
+			var parameters = attribute.AttributeConstructor?.Parameters ?? default;
+
+			for (var index = 0; index < attribute.ConstructorArguments.Length; index++)
+			{
+				var argument = attribute.ConstructorArguments[index];
+
+				if (argument.Kind == TypedConstantKind.Type && argument.Value is ITypeSymbol declaredType)
+				{
+					valueType = declaredType;
+					continue;
+				}
+
+				// The property name is mapped by the constructor parameter's name, because the automatic
+				// `[Scalar(typeof(T), "Name")]` form carries the type as the first argument. When the
+				// constructor (and therefore the parameter names) is unavailable, the first string argument is
+				// treated as the property name.
+				if (argument.Value is string name && !string.IsNullOrWhiteSpace(name))
+				{
+					var parameterName =
+						!parameters.IsDefaultOrEmpty && index < parameters.Length ? parameters[index].Name : null;
+
+					if (parameterName is null || string.Equals(parameterName, "propertyName", StringComparison.Ordinal))
+					{
+						propertyName = name;
+					}
+				}
+			}
+
+			// The generic form carries the underlying type as its type argument.
+			if (valueType is null && attributeClass.Arity == 1)
+				valueType = attributeClass.TypeArguments[0];
+
+			var nullable = false;
+			foreach (var pair in attribute.NamedArguments)
+			{
+				if (pair.Key == "Nullable" && pair.Value.Value is bool isNullable)
+				{
+					nullable = isNullable;
+					break;
+				}
+			}
+
+			info = new(propertyName, valueType is not null, valueType, nullable);
+			return true;
+		}
+
+		info = default;
+		return false;
+	}
+
+	/// <summary>
+	/// Gets the underlying value type of a scalar value object. The manual form exposes a public property
+	/// for the value; the automatic forms declare the type in the attribute and the value-object generator
+	/// owns the property, so the type is read from the attribute instead.
 	/// </summary>
 	/// <param name="type">The type to inspect.</param>
 	/// <param name="valueType">The scalar's underlying value type, when it is a scalar.</param>
@@ -273,14 +376,10 @@ static class CustomRuleResolver
 	{
 		valueType = null!;
 
-		if (type is not INamedTypeSymbol named)
+		if (type is not INamedTypeSymbol named || !TryGetScalarAttribute(named, out var scalar))
 			return false;
 
-		var propertyName = GetScalarPropertyName(named);
-		if (propertyName is null)
-			return false;
-
-		foreach (var member in named.GetMembers(propertyName))
+		foreach (var member in named.GetMembers(scalar.PropertyName))
 		{
 			if (member is IPropertySymbol { IsStatic: false, DeclaredAccessibility: Accessibility.Public } property)
 			{
@@ -289,37 +388,50 @@ static class CustomRuleResolver
 			}
 		}
 
-		return false;
+		if (scalar.ValueType is null)
+			return false;
+
+		valueType = AnnotateScalarValueType(scalar);
+		return true;
 	}
 
 	/// <summary>
-	/// Gets the name of the member holding a scalar's underlying value: the <c>[Scalar]</c> attribute's
-	/// <c>propertyName</c> argument (<c>[Scalar("Id")]</c>), defaulting to <c>Value</c>.
+	/// Gets the underlying type and property name of an automatic scalar value object
+	/// (<c>[Scalar&lt;TValue&gt;]</c> or <c>[Scalar(typeof(TValue))]</c>), where the value-object generator
+	/// declares the property. Used to synthesize the schema's property without the member being visible.
 	/// </summary>
 	/// <param name="type">The type to inspect.</param>
-	/// <returns>The property name, or <see langword="null"/> when the type is not a scalar.</returns>
-	static string? GetScalarPropertyName(INamedTypeSymbol type)
+	/// <param name="propertyName">The property the value-object generator declares.</param>
+	/// <param name="valueType">The declared underlying type, with a nullable reference annotation applied.</param>
+	/// <returns><see langword="true"/> when <paramref name="type"/> uses an automatic scalar form.</returns>
+	internal static bool TryGetAutomaticScalar(ITypeSymbol type, out string propertyName, out ITypeSymbol valueType)
 	{
-		foreach (var attribute in type.GetAttributes())
+		propertyName = string.Empty;
+		valueType = null!;
+
+		if (
+			type is not INamedTypeSymbol named
+			|| !TryGetScalarAttribute(named, out var scalar)
+			|| scalar.ValueType is null
+		)
 		{
-			if (attribute.AttributeClass?.ToDisplayString() != TypeLibraryGenerator.ScalarAttributeFullName)
-				continue;
-
-			if (
-				attribute.ConstructorArguments.Length == 1
-				&& attribute.ConstructorArguments[0].Value is string name
-				&& !string.IsNullOrWhiteSpace(name)
-			)
-			{
-				return name;
-			}
-
-			// The attribute is present but no property name was supplied, so the default is used.
-			return "Value";
+			return false;
 		}
 
-		return null;
+		propertyName = scalar.PropertyName;
+		valueType = AnnotateScalarValueType(scalar);
+		return true;
 	}
+
+	/// <summary>
+	/// Applies the automatic form's <c>Nullable</c> option as a nullable reference annotation, so the
+	/// adapted rule and the synthesized schema property match the value-object generator's
+	/// <c>IScalarValueObject&lt;TSelf, string?&gt;</c> construction.
+	/// </summary>
+	static ITypeSymbol AnnotateScalarValueType(ScalarAttributeInfo scalar) =>
+		scalar.Nullable && scalar.ValueType is { IsReferenceType: true } referenceType
+			? referenceType.WithNullableAnnotation(NullableAnnotation.Annotated)
+			: scalar.ValueType!;
 
 	/// <summary>
 	/// Builds the <c>Purview.ValueObjects.ScalarRuleAdapter&lt;TSelf, TValue, TRule&gt;</c> identity the

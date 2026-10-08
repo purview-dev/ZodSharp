@@ -21,7 +21,11 @@ static partial class TypeLibraryGenerator
 	// generator emits into the consuming compilation; the adapter is referenced by name, not by a package.
 	public const string ValueObjectsNamespace = "Purview.ValueObjects";
 
-	public const string ScalarAttributeFullName = ValueObjectsNamespace + ".Serialization.ScalarAttribute";
+	public const string ValueObjectsSerializationNamespace = ValueObjectsNamespace + ".Serialization";
+
+	// Both the manual [Scalar] attribute and the automatic [Scalar<TValue>] / [Scalar(typeof(TValue))]
+	// attributes share this name; they are distinguished by arity and by their constructor arguments.
+	public const string ScalarAttributeName = "ScalarAttribute";
 
 	public const string ScalarRuleAdapterName = "ScalarRuleAdapter";
 

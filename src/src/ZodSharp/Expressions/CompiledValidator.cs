@@ -78,9 +78,8 @@ public static class CompiledValidator
 	// cannot keep a schema (or its closure over user state) alive.
 	static class ValidatorCache<T>
 	{
-		internal static readonly ConditionalWeakTable<IZodSchema<T, T>, Func<T, ValidationResult<T>>> Validators =
-			new();
+		internal static readonly ConditionalWeakTable<IZodSchema<T, T>, Func<T, ValidationResult<T>>> Validators = [];
 
-		internal static readonly ConditionalWeakTable<IZodSchema<T, T>, Func<T, T>> Parsers = new();
+		internal static readonly ConditionalWeakTable<IZodSchema<T, T>, Func<T, T>> Parsers = [];
 	}
 }

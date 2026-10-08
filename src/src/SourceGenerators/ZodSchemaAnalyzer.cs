@@ -42,6 +42,7 @@ public sealed class ZodSchemaAnalyzer : DiagnosticAnalyzer
 		DiagnosticLibrary.UnusedRuleAttributeArgument,
 		DiagnosticLibrary.RuleAttributeWithoutSchema,
 		DiagnosticLibrary.NativeUnionRecommended,
+		DiagnosticLibrary.AutomaticScalarSchemaUnavailable,
 	];
 
 	public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => SupportedDiagnosticsList;
@@ -116,6 +117,8 @@ public sealed class ZodSchemaAnalyzer : DiagnosticAnalyzer
 			return;
 
 		var typeLocation = GetTypeLocation(type);
+
+		ReportAutomaticScalarDiagnostics(context, type, zodSchemaData, typeLocation);
 
 		// Type-level rules validate the whole value. The generator resolves the same attributes to emit those
 		// validations, so a rule that resolves to nothing is reported here rather than dropped silently.
@@ -229,6 +232,59 @@ public sealed class ZodSchemaAnalyzer : DiagnosticAnalyzer
 			}
 
 			context.ReportDiagnostic(diagnostic);
+		}
+	}
+
+	/// <summary>
+	/// Reports <c>ZODSGEN044</c> when a <c>[ZodSchema]</c> type uses an automatic scalar form
+	/// (<c>[Scalar&lt;TValue&gt;]</c> or <c>[Scalar(typeof(TValue))]</c>) that cannot produce a usable schema.
+	/// The value-object generator always emits a <c>Create</c> that calls
+	/// <c>{Type}Schema.Validate(instance)</c>, so both a suppressed <c>Validate</c> method and an underlying
+	/// type that cannot be represented leave a dangling reference.
+	/// </summary>
+	/// <param name="context">The analysis context the diagnostic is reported to.</param>
+	/// <param name="type">The schema target type.</param>
+	/// <param name="zodSchemaData">The resolved <c>[ZodSchema]</c> attribute data.</param>
+	/// <param name="typeLocation">The location to report against.</param>
+	static void ReportAutomaticScalarDiagnostics(
+		SymbolAnalysisContext context,
+		INamedTypeSymbol type,
+		ZodSchemaAttributeData zodSchemaData,
+		Location typeLocation
+	)
+	{
+		if (
+			!CustomRuleResolver.TryGetScalarAttribute(type, out var scalar)
+			|| !scalar.IsAutomatic
+			|| scalar.ValueType is null
+		)
+		{
+			return;
+		}
+
+		if (!zodSchemaData.GenerateValidateMethod)
+		{
+			context.ReportDiagnostic(
+				Diagnostic.Create(
+					DiagnosticLibrary.AutomaticScalarSchemaUnavailable,
+					typeLocation,
+					type.Name,
+					"[ZodSchema(GenerateValidateMethod = false)] suppresses the Validate method the value-object generator calls"
+				)
+			);
+			return;
+		}
+
+		if (!SourceGenLibrary.CanRepresentScalarValueType(scalar.ValueType))
+		{
+			context.ReportDiagnostic(
+				Diagnostic.Create(
+					DiagnosticLibrary.AutomaticScalarSchemaUnavailable,
+					typeLocation,
+					type.Name,
+					$"its underlying type '{scalar.ValueType.ToDisplayString()}' cannot be represented"
+				)
+			);
 		}
 	}
 

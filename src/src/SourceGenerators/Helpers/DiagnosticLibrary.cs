@@ -435,4 +435,20 @@ static class DiagnosticLibrary
 		defaultSeverity: DiagnosticSeverity.Info,
 		isEnabledByDefault: true
 	);
+
+	/// <summary>
+	/// ZODSGEN044: a <c>[ZodSchema]</c> type that also uses an automatic scalar form
+	/// (<c>[Scalar&lt;TValue&gt;]</c> or <c>[Scalar(typeof(TValue))]</c>) cannot produce a usable schema, so
+	/// the value-object generator's generated <c>Create</c> would reference a <c>{Type}Schema</c> that does
+	/// not exist or cannot validate. Reported for a suppressed <c>Validate</c> method and for an underlying
+	/// type that cannot be represented.
+	/// </summary>
+	public static readonly DiagnosticDescriptor AutomaticScalarSchemaUnavailable = new(
+		id: "ZODSGEN044",
+		title: "Automatic scalar schema cannot be generated",
+		messageFormat: "The [ZodSchema] type '{0}' uses an automatic [Scalar] form, but a schema cannot be generated for it: {1}",
+		category: Category,
+		defaultSeverity: DiagnosticSeverity.Error,
+		isEnabledByDefault: true
+	);
 }

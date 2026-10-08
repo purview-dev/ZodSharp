@@ -13,10 +13,8 @@ public readonly record struct MinLengthRule : Core.IValidationRule<string>, Core
 	/// <summary>Gets the message format; <c>{0}</c> is the minimum length and <c>{1}</c> the actual length.</summary>
 	public const string MessageFormat = "String must be at least {0} characters long, but got {1}";
 
-	readonly int _minLength;
-
 	// Read by the JSON Schema exporter, which previously reached this by reflecting on the field name.
-	internal int MinLength => _minLength;
+	internal int MinLength { get; }
 	readonly string _message;
 
 	/// <summary>
@@ -27,7 +25,7 @@ public readonly record struct MinLengthRule : Core.IValidationRule<string>, Core
 	/// <param name="code">Optional error code override. If one is not specified then the <see cref="ErrorCode"/> is used.</param>
 	public MinLengthRule(int minLength, string? message = null, string? code = null)
 	{
-		_minLength = minLength;
+		MinLength = minLength;
 		_message = message.Or(MessageFormat);
 		Code = code.Or(ErrorCode);
 	}
@@ -37,14 +35,14 @@ public readonly record struct MinLengthRule : Core.IValidationRule<string>, Core
 	/// </summary>
 	/// <param name="value">The value to validate</param>
 	/// <returns>True if valid, false otherwise</returns>
-	public bool IsValid(in string value) => value.LengthOrDefault() >= _minLength;
+	public bool IsValid(in string value) => value.LengthOrDefault() >= MinLength;
 
 	/// <summary>
 	/// Validates that the span meets the minimum length requirement without materialising a string.
 	/// </summary>
 	/// <param name="value">The value to validate</param>
 	/// <returns>True if valid, false otherwise</returns>
-	public bool IsValid(ReadOnlySpan<char> value) => value.Length >= _minLength;
+	public bool IsValid(ReadOnlySpan<char> value) => value.Length >= MinLength;
 
 	/// <summary>
 	/// Gets the error message for a failed validation.
@@ -52,7 +50,7 @@ public readonly record struct MinLengthRule : Core.IValidationRule<string>, Core
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
 	public string GetErrorMessage(in string value) =>
-		RuleMessage.Format(_message ?? MessageFormat, _minLength, value.LengthOrDefault());
+		RuleMessage.Format(_message ?? MessageFormat, MinLength, value.LengthOrDefault());
 
 	/// <summary>
 	/// Gets the error message for a failed span validation.
@@ -60,7 +58,7 @@ public readonly record struct MinLengthRule : Core.IValidationRule<string>, Core
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
 	public string GetErrorMessage(ReadOnlySpan<char> value) =>
-		RuleMessage.Format(_message ?? MessageFormat, _minLength, value.Length);
+		RuleMessage.Format(_message ?? MessageFormat, MinLength, value.Length);
 
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
 	public string Code => field.Or(ErrorCode);

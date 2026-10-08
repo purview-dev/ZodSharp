@@ -15,10 +15,8 @@ public readonly record struct LessThanOrEqualRule<T> : Core.IValidationRule<T>, 
 	/// <summary>Gets the message format; <c>{0}</c> is the bound and <c>{1}</c> the offending value.</summary>
 	public const string MessageFormat = "Value must be less than or equal to {0}, but got {1}";
 
-	readonly T _maxValue;
-
 	// Read by the JSON Schema exporter, which previously reached this by reflecting on the field name.
-	internal T MaxValue => _maxValue;
+	internal T MaxValue { get; }
 	readonly string _message;
 
 	/// <summary>
@@ -29,7 +27,7 @@ public readonly record struct LessThanOrEqualRule<T> : Core.IValidationRule<T>, 
 	/// <param name="code">Optional error code override. If one is not specified then the <see cref="ErrorCode"/> is used.</param>
 	public LessThanOrEqualRule(T maxValue, string? message = null, string? code = null)
 	{
-		_maxValue = maxValue;
+		MaxValue = maxValue;
 		_message = message.Or(MessageFormat);
 		Code = code.Or(ErrorCode);
 	}
@@ -39,14 +37,14 @@ public readonly record struct LessThanOrEqualRule<T> : Core.IValidationRule<T>, 
 	/// </summary>
 	/// <param name="value">The value to validate</param>
 	/// <returns>True if valid, false otherwise</returns>
-	public bool IsValid(in T value) => value.CompareTo(_maxValue) <= 0;
+	public bool IsValid(in T value) => value.CompareTo(MaxValue) <= 0;
 
 	/// <summary>
 	/// Gets the error message for a failed validation.
 	/// </summary>
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
-	public string GetErrorMessage(in T value) => RuleMessage.Format(_message ?? MessageFormat, _maxValue, value);
+	public string GetErrorMessage(in T value) => RuleMessage.Format(_message ?? MessageFormat, MaxValue, value);
 
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
 	public string Code => field.Or(ErrorCode);

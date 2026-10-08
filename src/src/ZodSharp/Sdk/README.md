@@ -274,6 +274,8 @@ public readonly partial record struct AssetId
 
 The generated validator runs the rule against the value object (`NotEmptyRule<AssetId>`) and reports `Code`, `Message`, and `Origin` with an empty path. A rule written against the underlying value (for example `NonSentinelRule<Guid>`) is instead adapted automatically when applied to a `[Scalar]` type, so one rule serves every scalar backed by the same primitive. A rule attribute on a type that gets no schema is ignored, and the analyzer warns (`ZODSGEN033`) rather than failing silently. See [Value Objects Integration](https://purview.dev/docs/zodsharp/value-objects-integration/) for the full `[Scalar]` walkthrough and the error code / message definitions.
 
+`Purview.ValueObjects` 1.0.1 (or later) adds an **automatic** scalar form where the value-object generator declares the underlying property: `[Scalar<TValue>]` or `[Scalar(typeof(TValue))]` (for example `[Scalar<Guid>]` / `[Scalar(typeof(Guid))]`). The property is invisible to ZodSharp, so the schema is generated from the attribute and supports **type-level** rules only (property-level DataAnnotations have no host — use the manual `[Scalar]` form when you need them). A nullable reference scalar is written `[Scalar<string>(Nullable = true)]` (or `[Scalar(typeof(string), Nullable = true)]`) and round-trips JSON `null`; `[RequiredZod]` still rejects `null`, so use the shipped null-tolerant `[NullOrNonWhiteSpace]` (`NullOrNonWhiteSpaceRule`) to accept `null` while rejecting whitespace. A suppressed `Validate` method on a scalar schema is reported as `ZODSGEN044`.
+
 ## Error factory
 
 `ErrorType` lets you define a user-facing error (code, optional category, description, optional

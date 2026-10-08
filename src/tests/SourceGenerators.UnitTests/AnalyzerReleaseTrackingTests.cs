@@ -9,8 +9,8 @@ namespace ZodSharp.SourceGenerators;
 /// (<c>RS2000</c>/<c>RS2001</c>), which report at build time when a diagnostic is missing from either file.
 /// </summary>
 /// <remarks>
-/// <c>ZODSGEN037</c>–<c>ZODSGEN043</c> moved into a <c>## Release 2.1.0</c> block, so the unshipped file is
-/// now empty. The next diagnostic added goes into the unshipped file and moves across when it ships.
+/// <c>ZODSGEN037</c>–<c>ZODSGEN044</c> are recorded under a <c>## Release 2.0.2</c> block. The unshipped
+/// file declares no rules; the next diagnostic added goes there and moves across when it ships.
 /// </remarks>
 public partial class AnalyzerReleaseTrackingTests
 {
@@ -63,7 +63,7 @@ public partial class AnalyzerReleaseTrackingTests
 		"ZODSASP003",
 		"ZODSASP100",
 		"ZODSASP101",
-		// Release 2.1.0.
+		// Release 2.0.2.
 		"ZODSGEN037",
 		"ZODSGEN038",
 		"ZODSGEN039",
@@ -71,6 +71,7 @@ public partial class AnalyzerReleaseTrackingTests
 		"ZODSGEN041",
 		"ZODSGEN042",
 		"ZODSGEN043",
+		"ZODSGEN044",
 	];
 
 	/// <summary>
@@ -90,7 +91,7 @@ public partial class AnalyzerReleaseTrackingTests
 
 		// Assert — each release block the catalogue has published, and the full rule set across them.
 		await Assert.That(markdown).Contains("## Release 2.0.0");
-		await Assert.That(markdown).Contains("## Release 2.1.0");
+		await Assert.That(markdown).Contains("## Release 2.0.2");
 		await Assert.That(SortedRuleIds(ruleIds)).IsEqualTo(SortedRuleIds(ExpectedShippedRuleIds));
 	}
 

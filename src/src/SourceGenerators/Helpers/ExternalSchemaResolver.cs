@@ -60,7 +60,10 @@ sealed class ExternalSchemaResolver(Compilation compilation)
 	/// <returns><see langword="true"/> when an existing, accessible schema was found.</returns>
 	public bool TryGetExistingSchema(INamedTypeSymbol type, out TypeIdentity schemaType)
 	{
-		if (type.ContainingAssembly?.Identity is not { } assembly)
+		// Only a class or struct can own a generated schema. Rejecting non-schema-shaped types up front keeps
+		// an error/type-parameter symbol (for example the element of a List<Unresolved>) from reaching the
+		// TypeIdentity constructor below, which throws for symbols it cannot represent.
+		if (!HasSchemaShape(type) || type.ContainingAssembly?.Identity is not { } assembly)
 		{
 			schemaType = default;
 			return false;

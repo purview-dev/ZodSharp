@@ -1,7 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
 		<TargetFramework>netstandard2.0</TargetFramework>
-		<AssemblyName>Purview.ZodSharp.CodeFixes</AssemblyName>
 		<!--
 			The code fix lives in its own assembly because RS1038 forbids an assembly that contains
 			analyzers/generators (which run in csc) from referencing Microsoft.CodeAnalysis.Workspaces

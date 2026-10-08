@@ -12,8 +12,7 @@ been published to NuGet.
 ## Unreleased
 
 > **This release contains breaking changes.** See [Breaking changes](#breaking-changes) below before
-> upgrading from `2.0.0`. The analyzer catalogue records them under `2.1.0`; `package.json` still carries the
-> prerelease version and is set at release time.
+> upgrading from `2.0.0`. The analyzer catalogue records them under `2.0.2`.
 >
 > Note the changes below are consumer-visible: a rule's public `Code` constant was renamed to `ErrorCode`,
 > and rule constructor signatures changed, so attribute usages and code referencing those constants may not
@@ -48,10 +47,21 @@ been published to NuGet.
   attribute, and expanded downstream rule generation for `Purview.ValueObjects` consumers.
 - A new `enum` rule, applied automatically on generated schemas, plus additional explicit rules.
 - `IZodRule` organisation with a supporting analyzer, and `RuleMessage` is now public.
-- Seven new diagnostics: `ZODSGEN037`–`ZODSGEN043`, recorded in `AnalyzerReleases.Shipped.md` under
-  `## Release 2.1.0`. See [Source Generator Diagnostics](docs/wiki/Source-Generator-Diagnostics.md).
-  `AnalyzerReleases.Unshipped.md` is now empty; the next diagnostic added goes there and moves across when
-  it ships.
+- Eight new diagnostics: `ZODSGEN037`–`ZODSGEN044`, recorded in `AnalyzerReleases.Shipped.md` under
+  `## Release 2.0.2`. See [Source Generator Diagnostics](docs/wiki/Source-Generator-Diagnostics.md).
+- **Automatic scalar value-object support.** `[ZodSchema]` now works with the automatic scalar forms
+  `[Scalar<TValue>]` and `[Scalar(typeof(TValue))]` (Purview.ValueObjects 1.0.1+), where the value-object
+  generator declares the underlying property. ZodSharp resolves the underlying type and property name from
+  the attribute, generates the `{Type}Schema` (and validator adapter) without the member being visible, and
+  adapts type-level `[RequiredZod]`/`[ZodRule]` rules to the underlying value. Nullable scalars
+  (`Nullable = true`, or a `T?` value type) accept and round-trip JSON `null`. Property-level DataAnnotations
+  have no host on the generated property; use Zod-native type-level rules or the manual `[Scalar]` form.
+- **`NullOrNonWhiteSpaceRule` / `[NullOrNonWhiteSpace]`.** A null-tolerant string rule that accepts `null`
+  but rejects an empty or whitespace-only value, for nullable scalar value objects where `[RequiredZod]`
+  (which always rejects `null`) cannot express the check.
+- **`ZODSGEN044`.** A `[ZodSchema]` type using an automatic `[Scalar]` form that cannot produce a usable
+  schema (a suppressed `Validate` method, or an unrepresentable underlying type) is reported instead of
+  leaving a dangling `{Type}Schema` reference. Recorded in `AnalyzerReleases.Unshipped.md`.
 
 ### Changed — trimming and Native AOT
 

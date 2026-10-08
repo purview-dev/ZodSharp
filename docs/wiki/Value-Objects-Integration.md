@@ -70,6 +70,36 @@ so `AssetId` is `IScalarValueObject<AssetId, Guid>`.
 > [!NOTE]
 > The `ScalarRuleAdapter<TSelf, TValue, TRule>` type is emitted into your compilation by the **Purview.ValueObjects** generator whenever the project references both `Purview.ValueObjects` and `Purview.ZodSharp`. Do not declare it yourself. If the value-objects generator is disabled (`DisableValueObjectsSourceGenerator`), the adapter is not emitted and the generated validator will not compile.
 
+## Automatic scalar forms
+
+`Purview.ValueObjects` 1.0.1 (or later) also supports an **automatic** form, where the value-object generator declares the underlying property for you. Both spellings are equivalent:
+
+```csharp
+[Scalar<Guid>]                                 [Scalar(typeof(Guid))]
+[Scalar<string>(Nullable = true)]              [Scalar(typeof(string), Nullable = true)]
+[Scalar<int?>]                                 [Scalar(typeof(int?))]
+[Scalar<Guid>("Id")]                           [Scalar(typeof(Guid), "Id")]
+```
+
+A nullable reference type cannot be a generic attribute argument (`[Scalar<string?>]` reports `CS8970`) or a `typeof` operand (`typeof(string?)` reports `CS8639`), so a nullable reference scalar is written with `Nullable = true`. Nullable value types are written directly (`[Scalar<int?>]` / `[Scalar(typeof(int?))]`). A nullable scalar round-trips JSON `null`, so its schema accepts `null`.
+
+The property is emitted by the value-object generator, which ZodSharp cannot observe, so the automatic form has no source member for ZodSharp to read. ZodSharp resolves the underlying type from the attribute instead, so the schema is generated exactly as for the manual form:
+
+```csharp
+[Scalar<Guid>]
+[ZodSchema]
+[NonSentinel(Message = "InstallationId must not be empty.")]
+public readonly partial record struct InstallationId { }
+```
+
+Because there is no property to carry DataAnnotations, the automatic form supports **type-level** rules only:
+
+- `[RequiredZod]`, `[NullOrNonWhiteSpace]`, `[NonSentinel]`, and any custom `[ZodRule(typeof(...))]`-mapped attribute applied to the type are read from the type and adapted to the scalar's underlying value, reporting an **empty path** exactly as for the manual form.
+- A **property-level DataAnnotation has no host** on the generated property, so it is never observed. Use a Zod-native type-level rule, or switch to the manual `[Scalar]` form when property-level DataAnnotations are required.
+- `[RequiredZod]` always rejects `null`; use `[NullOrNonWhiteSpace]` (or a custom null-tolerant rule) when a nullable scalar must accept `null` while rejecting whitespace.
+
+`[ZodSchema(GenerateValidateMethod = false)]` is incompatible with a scalar form, because the value-object generator's generated `Create` always calls `{Type}Schema.Validate(instance)`; ZodSharp reports **`ZODSGEN044`** rather than leaving a dangling reference, and it also reports it when the declared underlying type cannot be represented.
+
 ## Two ways to attach a rule to a scalar
 
 There are two shapes, and the generator picks the right one from the rule's own constraints:
@@ -294,6 +324,7 @@ await Assert.That(
 | ZODSGEN039 | Warning | A rule accepts a `code`/`origin` constructor parameter but does not implement `IZodRule`, so the value never reaches the reported error identity. |
 | ZODSGEN040 | Warning | An attribute argument has no effect: the resolved rule has no matching constructor parameter and the value is not part of the reported error identity. |
 | ZODSGEN042 | Warning | A rule does not expose public `const string ErrorCode` / `MessageFormat` constants. |
+| ZODSGEN044 | Error | A `[ZodSchema]` type uses an automatic `[Scalar]` form but cannot produce a usable schema: the generated `Validate` method is suppressed, or the declared underlying type cannot be represented. |
 
 Common causes:
 
