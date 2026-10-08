@@ -1,5 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
+		<AssemblyName>Purview.ZodSharp.UnitTests</AssemblyName>
 		<NoWarn>$(NoWarn);CA1308;CA1849;</NoWarn>
 	</PropertyGroup>
 

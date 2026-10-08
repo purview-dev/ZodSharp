@@ -7,6 +7,8 @@
 
 	<PropertyGroup>
 		<IsPackable>true</IsPackable>
+		<AssemblyName>Purview.ZodSharp.SystemTextJson</AssemblyName>
+		<PackageId>Purview.ZodSharp.SystemTextJson</PackageId>
 		<Description>A high-performance C# port of Zod schema validation library. Features zero-allocation validation, struct-based rules, fluent API, and source generator support for maximum performance.</Description>
 		<PackageTags>zod;validation;schema;json</PackageTags>
 	</PropertyGroup>
