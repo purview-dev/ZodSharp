@@ -9,9 +9,6 @@
 		<IsPackable>false</IsPackable>
 		<ExcludePurviewTelemetry>true</ExcludePurviewTelemetry>
 		<RepositoryUrl>https://github.com/purview-dev/zodsharp</RepositoryUrl>
-	</PropertyGroup>
-
-	<PropertyGroup>
 		<NoWarn>$(NoWarn);CA1031;CA1307;CA1510;</NoWarn>
 	</PropertyGroup>
 

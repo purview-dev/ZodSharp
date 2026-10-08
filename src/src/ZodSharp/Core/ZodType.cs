@@ -14,11 +14,9 @@ public abstract class ZodType<TOutput, TInput> : IZodSchema<TOutput, TInput>, IO
 {
 	static readonly string[] EmptyPath = [];
 
-	ImmutableArray<IValidationRule<TOutput>> _rules = [];
-
 	// Read by the JSON Schema exporter, which previously reached this by walking BaseType.BaseType and
 	// reflecting on the field name — fragile, and invisible to the trimmer.
-	internal ImmutableArray<IValidationRule<TOutput>> AppliedRules => _rules;
+	internal ImmutableArray<IValidationRule<TOutput>> AppliedRules { get; private set; } = [];
 
 	/// <inheritdoc/>
 	public virtual bool IsOptional => false;
@@ -43,7 +41,7 @@ public abstract class ZodType<TOutput, TInput> : IZodSchema<TOutput, TInput>, IO
 
 		var validatedValue = parseResult.Value;
 
-		var rulesCount = _rules.Length;
+		var rulesCount = AppliedRules.Length;
 		if (rulesCount == 0)
 		{
 			return ValidationResult<TOutput>.Success(validatedValue);
@@ -51,7 +49,7 @@ public abstract class ZodType<TOutput, TInput> : IZodSchema<TOutput, TInput>, IO
 
 		List<ValidationError>? errors = null;
 
-		foreach (var rule in _rules)
+		foreach (var rule in AppliedRules)
 		{
 			if (!rule.IsValid(validatedValue))
 			{
@@ -99,7 +97,7 @@ public abstract class ZodType<TOutput, TInput> : IZodSchema<TOutput, TInput>, IO
 	public virtual ZodType<TOutput, TInput> AddRule(IValidationRule<TOutput> rule)
 	{
 		ArgumentNullException.ThrowIfNull(rule);
-		_rules = _rules.Add(rule);
+		AppliedRules = AppliedRules.Add(rule);
 		return this;
 	}
 
@@ -183,7 +181,7 @@ public abstract class ZodType<TOutput, TInput> : IZodSchema<TOutput, TInput>, IO
 	/// <summary>
 	/// Gets the number of rules accumulated on this schema.
 	/// </summary>
-	protected int RuleCount => _rules.Length;
+	protected int RuleCount => AppliedRules.Length;
 
 	/// <summary>
 	/// Sets the description of this schema.

@@ -39,7 +39,7 @@ public class AddZodSharpExtensionsTests
 		services.AddZodSharp(static opts => opts.ScanAssemblies.Add(typeof(AddZodSharpExtensionsTests).Assembly));
 		var provider = services.BuildServiceProvider();
 		var factory = provider.GetRequiredService<IZodSchemaFactory>();
-		await Assert.That(factory.IsRegistered<SampleDiDto>()).IsTrue();
+		await Assert.That(factory.IsRegistered<SampleDIDto>()).IsTrue();
 	}
 
 	[Test]
@@ -55,7 +55,7 @@ public class AddZodSharpExtensionsTests
 		var factory = provider.GetRequiredService<IZodSchemaFactory>();
 
 		// Assert
-		await Assert.That(factory.IsRegistered<SampleDiDto>()).IsTrue();
+		await Assert.That(factory.IsRegistered<SampleDIDto>()).IsTrue();
 	}
 
 	[Test]
@@ -72,7 +72,7 @@ public class AddZodSharpExtensionsTests
 		var factory = provider.GetRequiredService<IZodSchemaFactory>();
 
 		// Assert
-		await Assert.That(factory.IsRegistered<SampleDiDto>()).IsTrue();
+		await Assert.That(factory.IsRegistered<SampleDIDto>()).IsTrue();
 		await Assert.That(factory.IsRegistered<UserDto>()).IsTrue();
 	}
 
@@ -89,7 +89,7 @@ public class AddZodSharpExtensionsTests
 		var factory = provider.GetRequiredService<IZodSchemaFactory>();
 
 		// Assert
-		await Assert.That(factory.IsRegistered<SampleDiDto>()).IsTrue();
+		await Assert.That(factory.IsRegistered<SampleDIDto>()).IsTrue();
 	}
 
 	[Test]
@@ -149,7 +149,7 @@ public class AddZodSharpExtensionsTests
 		services.AddZodSharp();
 		var provider = services.BuildServiceProvider();
 		var factory = provider.GetRequiredService<IZodSchemaFactory>();
-		await Assert.That(factory.IsRegistered<SampleDiDto>()).IsTrue();
+		await Assert.That(factory.IsRegistered<SampleDIDto>()).IsTrue();
 	}
 
 	[Test]
@@ -175,7 +175,7 @@ public class AddZodSharpExtensionsTests
 		// Assert
 		await Assert.That(factory.IsRegistered<string>()).IsTrue();
 		await Assert.That(factory.IsRegistered<double>()).IsFalse();
-		await Assert.That(factory.IsRegistered<SampleDiDto>()).IsTrue();
+		await Assert.That(factory.IsRegistered<SampleDIDto>()).IsTrue();
 		await Assert.That(factory.IsRegistered<UserDto>()).IsTrue();
 	}
 
@@ -190,6 +190,6 @@ public class AddZodSharpExtensionsTests
 		var provider = services.BuildServiceProvider();
 		var factory = provider.GetRequiredService<IZodSchemaFactory>();
 		await Assert.That(factory.IsRegistered<string>()).IsTrue();
-		await Assert.That(factory.IsRegistered<SampleDiDto>()).IsFalse();
+		await Assert.That(factory.IsRegistered<SampleDIDto>()).IsFalse();
 	}
 }

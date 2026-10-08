@@ -41,6 +41,7 @@ The `[ZodSchema]` generator ships an analyzer (category `ZodSharp.SourceGenerato
 | ZODSGEN041 | (info) A typed union (`Z.Union`) whose option types are all reference types can use the allocation-free native C# 15 union returned by `Z.NativeUnion` on .NET 11+; a code fix is offered |
 | ZODSGEN042 | (warning) A validation rule (a type implementing `IValidationRule<T>`) does not expose a public `const string ErrorCode` and a public `const string MessageFormat`, so its error identity cannot be asserted in tests without duplicating literals |
 | ZODSGEN043 | (info) A built-in rule marked `[ZodRule]` does not generate a validation attribute, because a constructor parameter cannot be represented as an attribute property; the rule is still reachable through the runtime/fluent API. A derived name that collides with `System.ComponentModel.DataAnnotations` is *not* skipped — the attribute is emitted under a `Zod` suffix instead |
+| ZODSGEN044 | A `[ZodSchema]` type that uses an automatic `[Scalar]` form (`[Scalar<TValue>]` or `[Scalar(typeof(TValue))]`) cannot produce a usable schema, so the value-object generator's generated `Create` would reference a `{Type}Schema` that does not exist or cannot validate. Reported when `[ZodSchema(GenerateValidateMethod = false)]` suppresses the `Validate` method the value-object generator calls, or when the declared underlying type cannot be represented |
 
 IDs `ZODSGEN002` and `ZODSGEN022`–`ZODSGEN026` are intentionally unused; rule identifiers are never renumbered or re-used.
 

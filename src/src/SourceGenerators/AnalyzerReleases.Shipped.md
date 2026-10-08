@@ -47,7 +47,7 @@
 | ZODSASP100 | ZodSharp.SourceGenerator | Error | Unhandled exception in the ErrorType source generator
 | ZODSASP101 | ZodSharp.SourceGenerator | Error | ErrorType Parameters could not be extracted
 
-## Release 2.1.0
+## Release 2.0.2
 
 ### New Rules
 
@@ -60,3 +60,4 @@
 | ZODSGEN041 | ZodSharp.SourceGenerator | Info | A typed union whose option types are all reference types can use the native C# 15 union returned by Z.NativeUnion on net11+ (allocation-free, exhaustive pattern matching) |
 | ZODSGEN042 | ZodSharp.SourceGenerator | Warning | A validation rule does not expose its error identity as public const ErrorCode/MessageFormat constants, so tests cannot assert against the rule without duplicating literals |
 | ZODSGEN043 | ZodSharp.SourceGenerator | Info | A built-in rule marked [ZodRule] does not generate a validation attribute because a constructor parameter cannot be represented as an attribute property (a derived name that collides with System.ComponentModel.DataAnnotations is emitted under a "Zod" suffix instead) |
+| ZODSGEN044 | ZodSharp.SourceGenerator | Error | A [ZodSchema] type that uses an automatic [Scalar] form ([Scalar<TValue>] or [Scalar(typeof(TValue))]) cannot produce a usable schema, because the generated Validate method is suppressed or the underlying type cannot be represented |

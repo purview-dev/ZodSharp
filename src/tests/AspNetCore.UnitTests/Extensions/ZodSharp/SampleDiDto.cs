@@ -2,15 +2,15 @@ using ZodSharp.Core;
 
 namespace ZodSharp;
 
-sealed class SampleDiDto
+sealed class SampleDIDto
 {
 	public string? Name { get; set; }
 }
 
-sealed class SampleDiDtoSchemaValidator : IZodSchemaValidator<SampleDiDto>
+sealed class SampleDIDtoSchemaValidator : IZodSchemaValidator<SampleDIDto>
 {
-	public ValidationResult<SampleDiDto> Validate(SampleDiDto value) => ValidationResult<SampleDiDto>.Success(value);
+	public ValidationResult<SampleDIDto> Validate(SampleDIDto value) => ValidationResult<SampleDIDto>.Success(value);
 
-	public ValueTask<ValidationResult<SampleDiDto>> ValidateAsync(SampleDiDto value, CancellationToken _ = default) =>
+	public ValueTask<ValidationResult<SampleDIDto>> ValidateAsync(SampleDIDto value, CancellationToken _ = default) =>
 		new(Validate(value));
 }

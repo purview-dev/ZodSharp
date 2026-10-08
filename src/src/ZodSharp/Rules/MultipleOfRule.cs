@@ -22,10 +22,8 @@ public readonly record struct MultipleOfRule<T> : Core.IValidationRule<T>, Core.
 	/// </summary>
 	const double RelativeTolerance = 1e-12;
 
-	readonly T _divisor;
-
 	// Read by the JSON Schema exporter, which previously reached this by reflecting on the field name.
-	internal T Divisor => _divisor;
+	internal T Divisor { get; }
 	readonly string _message;
 
 	/// <summary>
@@ -39,7 +37,7 @@ public readonly record struct MultipleOfRule<T> : Core.IValidationRule<T>, Core.
 		if (divisor == T.Zero)
 			throw new ArgumentException("Divisor cannot be zero", nameof(divisor));
 
-		_divisor = divisor;
+		Divisor = divisor;
 		_message = message.Or(MessageFormat);
 		Code = code.Or(ErrorCode);
 	}
@@ -60,9 +58,9 @@ public readonly record struct MultipleOfRule<T> : Core.IValidationRule<T>, Core.
 		if (!T.IsFinite(value))
 			return false;
 
-		var remainder = T.Abs(value % _divisor);
-		var distance = T.Min(remainder, T.Abs(_divisor) - remainder);
-		var tolerance = T.CreateSaturating(RelativeTolerance) * T.Max(T.Abs(_divisor), T.Abs(value));
+		var remainder = T.Abs(value % Divisor);
+		var distance = T.Min(remainder, T.Abs(Divisor) - remainder);
+		var tolerance = T.CreateSaturating(RelativeTolerance) * T.Max(T.Abs(Divisor), T.Abs(value));
 		return distance <= tolerance;
 	}
 
@@ -71,7 +69,7 @@ public readonly record struct MultipleOfRule<T> : Core.IValidationRule<T>, Core.
 	/// </summary>
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
-	public string GetErrorMessage(in T value) => RuleMessage.Format(_message ?? MessageFormat, _divisor, value);
+	public string GetErrorMessage(in T value) => RuleMessage.Format(_message ?? MessageFormat, Divisor, value);
 
 	/// <summary>Gets the Zod-compatible error code reported when the rule fails.</summary>
 	public string Code => field.Or(ErrorCode);

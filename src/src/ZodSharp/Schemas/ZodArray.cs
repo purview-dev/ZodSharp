@@ -132,6 +132,7 @@ public class ZodArray<T>(IZodSchema<T, T> elementSchema) : ZodType<T[], T[]>, Js
 			);
 		}
 
+		// No length failure.
 		return null;
 	}
 

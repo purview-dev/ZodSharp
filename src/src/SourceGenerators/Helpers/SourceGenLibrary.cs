@@ -171,6 +171,7 @@ static partial class SourceGenLibrary
 			var schema = target with { Name = schemaName };
 			var targetCanBeNull = TypeHelpers.CanBeNull(symbol);
 			var properties = GetZodProperties(symbol, externalSchemas);
+			properties = AddAutomaticScalarProperty(symbol, properties, externalSchemas);
 
 			// Type-level rules ([ZodRule]-mapped attributes on the target itself) validate the whole value
 			// rather than a property, which is what makes a scalar value object validatable as a unit. The
@@ -322,12 +323,121 @@ static partial class SourceGenLibrary
 		return new(properties);
 	}
 
+	/// <summary>
+	/// Adds the schema property for an automatic scalar value object
+	/// (<c>[Scalar&lt;TValue&gt;]</c> / <c>[Scalar(typeof(TValue))]</c>), whose underlying member is
+	/// emitted by the value-object generator and is therefore invisible here. The property is synthesized
+	/// from the attribute so the schema reads <c>value.{PropertyName}</c>, which resolves once the
+	/// value-object generator's partial is merged.
+	/// </summary>
+	/// <param name="symbol">The schema target type.</param>
+	/// <param name="properties">The properties discovered from source.</param>
+	/// <param name="externalSchemas">The resolver that decides schema ownership.</param>
+	/// <returns>The properties with the synthesized scalar property prepended, when applicable.</returns>
+	static EquatableArray<GeneratorResult<ZodPropertyDescriptor>> AddAutomaticScalarProperty(
+		INamedTypeSymbol symbol,
+		EquatableArray<GeneratorResult<ZodPropertyDescriptor>> properties,
+		ExternalSchemaResolver externalSchemas
+	)
+	{
+		if (!CustomRuleResolver.TryGetAutomaticScalar(symbol, out var propertyName, out var valueType))
+			return properties;
+
+		// A declared member means the value-object generator does not own the property (the manual form, or
+		// a consumer that declared it by mistake); the discovered descriptor already covers it.
+		foreach (var member in symbol.GetMembers(propertyName))
+		{
+			if (member is IPropertySymbol { IsStatic: false, DeclaredAccessibility: Accessibility.Public })
+				return properties;
+		}
+
+		var declaredType = CreateTypeIdentity(valueType);
+		if (declaredType is null)
+			return properties;
+
+		var propertyType = declaredType.Value;
+		var originalPropertyType = valueType;
+		var isNullableValueType = false;
+		if (
+			originalPropertyType is INamedTypeSymbol
+			{
+				OriginalDefinition.SpecialType: SpecialType.System_Nullable_T
+			} nullableType
+		)
+		{
+			var unwrappedType = CreateTypeIdentity(nullableType.TypeArguments[0]);
+			if (unwrappedType is null)
+				return properties;
+
+			propertyType = unwrappedType.Value;
+			originalPropertyType = nullableType.TypeArguments[0];
+			isNullableValueType = true;
+		}
+
+		var validationKind = GetPropertyValidationKind(propertyType, originalPropertyType, externalSchemas);
+		var enumType = TypeHelpers.UnwrapNullableType(originalPropertyType) as INamedTypeSymbol;
+		var isEnum = enumType is { TypeKind: TypeKind.Enum };
+		var isFlagsEnum = isEnum && HasFlagsAttribute(enumType!);
+
+		ZodPropertyDescriptor descriptor = new(
+			propertyType,
+			propertyName,
+			propertyName,
+			TypeHelpers.CanBeNull(valueType),
+			isNullableValueType,
+			isEnum,
+			isFlagsEnum,
+			isEnum && !isFlagsEnum ? GetIgnoredEnumMembers(enumType!) : default,
+			validationKind,
+			null,
+			false,
+			null,
+			new(string.Empty, string.Empty, false),
+			false,
+			EmptyValidationAttributes,
+			new([])
+		);
+
+		return new([GeneratorResult<ZodPropertyDescriptor>.Create(descriptor), .. properties]);
+	}
+
+	/// <summary>
+	/// The empty <see cref="ValidationAttributes"/> for a synthesized property: the automatic scalar form
+	/// has no source member, so it carries no DataAnnotations.
+	/// </summary>
+	static readonly ValidationAttributes EmptyValidationAttributes = new(
+		GeneratorResult<RequiredAttributeData>.Empty,
+		GeneratorResult<CompareAttributeData>.Empty,
+		GeneratorResult<DisplayAttributeData>.Empty,
+		GeneratorResult<EmailAddressAttributeData>.Empty,
+		GeneratorResult<CreditCardAttributeData>.Empty,
+		GeneratorResult<PhoneAttribute>.Empty,
+		GeneratorResult<UrlAttribute>.Empty,
+		GeneratorResult<StringLengthAttribute>.Empty,
+		GeneratorResult<MinLengthAttributeData>.Empty,
+		GeneratorResult<MaxLengthAttributeData>.Empty,
+		GeneratorResult<RegularExpressionAttributeData>.Empty,
+		GeneratorResult<Base64StringAttributeData>.Empty,
+		GeneratorResult<DeniedValuesAttributeData>.Empty,
+		GeneratorResult<AllowedValuesAttributeData>.Empty,
+		GeneratorResult<LengthAttributeData>.Empty,
+		GeneratorResult<RangeAttributeData>.Empty
+	);
+
 	internal static GeneratorResult<ZodPropertyDescriptor> GetValidatablePropertyDescriptor(
 		IPropertySymbol property,
 		ExternalSchemaResolver? externalSchemas = null
 	)
 	{
-		var propertyType = CreateTypeIdentity(property.Type);
+		var declaredType = CreateTypeIdentity(property.Type);
+
+		// The property type cannot be represented (an unresolved/error type, a type parameter, dynamic, a
+		// pointer, ...). The compiler already reports the underlying problem, so skip the property rather than
+		// fail the whole generation pass and add a second, noisier error.
+		if (declaredType is null)
+			return GeneratorResult<ZodPropertyDescriptor>.Empty;
+
+		var propertyType = declaredType.Value;
 		var originalPropertyType = property.Type;
 		var propertyCanBeNull = TypeHelpers.CanBeNull(originalPropertyType);
 		var isNullableValueType = false;
@@ -338,7 +448,11 @@ static partial class SourceGenLibrary
 			} nullableType
 		)
 		{
-			propertyType = new(nullableType.TypeArguments[0]);
+			var unwrappedType = CreateTypeIdentity(nullableType.TypeArguments[0]);
+			if (unwrappedType is null)
+				return GeneratorResult<ZodPropertyDescriptor>.Empty;
+
+			propertyType = unwrappedType.Value;
 			originalPropertyType = nullableType.TypeArguments[0];
 			isNullableValueType = true;
 		}
@@ -499,16 +613,37 @@ static partial class SourceGenLibrary
 		);
 	}
 
-	static TypeIdentity CreateTypeIdentity(ITypeSymbol typeSymbol)
+	/// <summary>
+	/// Creates the <c>TypeIdentity</c> for a symbol, returning <see langword="null"/> for symbols that
+	/// cannot be represented (unresolved error types, type parameters, <c>dynamic</c>, pointers, ...).
+	/// </summary>
+	/// <remarks>
+	/// Generator pipelines routinely encounter such symbols — an unresolved property type in a compilation that
+	/// is already failing to build is the common case — so this must not throw. The caller skips the property
+	/// instead, leaving the compiler's own error as the single, clear signal.
+	/// </remarks>
+	static TypeIdentity? CreateTypeIdentity(ITypeSymbol typeSymbol)
 	{
 		if (typeSymbol is IArrayTypeSymbol arrayType)
 		{
 			var elementIdentity = CreateTypeIdentity(arrayType.ElementType);
-			return new TypeIdentity($"{elementIdentity.Name}[]", elementIdentity.Namespace);
+			return elementIdentity is null
+				? null
+				: new TypeIdentity($"{elementIdentity.Value.Name}[]", elementIdentity.Value.Namespace);
 		}
 
-		return new TypeIdentity(typeSymbol);
+		return TypeIdentity.TryCreate(typeSymbol, out var identity) ? identity : null;
 	}
+
+	/// <summary>
+	/// Determines whether an automatic scalar's underlying type can be represented as a schema property.
+	/// Mirrors <see cref="CreateTypeIdentity"/> so the analyzer and the generator agree on which automatic
+	/// scalar types can produce a schema.
+	/// </summary>
+	/// <param name="valueType">The scalar's declared underlying type.</param>
+	/// <returns><see langword="true"/> when the type can be represented.</returns>
+	internal static bool CanRepresentScalarValueType(ITypeSymbol valueType) =>
+		CreateTypeIdentity(TypeHelpers.UnwrapNullableType(valueType)) is not null;
 
 	static PropertyValidationKind GetPropertyValidationKind(
 		TypeIdentity propertyType,
@@ -600,13 +735,13 @@ static partial class SourceGenLibrary
 		foreach (var iface in namedType.AllInterfaces)
 		{
 			if (TypeHelpers.Implements(iface, TypeLibrary.System.Collections.Generic.IEnumerable))
-				return new TypeIdentity(iface.TypeArguments[0]);
+				return CreateTypeIdentity(iface.TypeArguments[0]);
 		}
 
 		return
 			namedType.IsGenericType
 			&& TypeHelpers.Implements(namedType, TypeLibrary.System.Collections.Generic.IEnumerable)
-			? new TypeIdentity(namedType.TypeArguments[0])
+			? CreateTypeIdentity(namedType.TypeArguments[0])
 			: null;
 	}
 
