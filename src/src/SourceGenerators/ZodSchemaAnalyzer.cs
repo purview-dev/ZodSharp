@@ -177,17 +177,25 @@ public sealed class ZodSchemaAnalyzer : DiagnosticAnalyzer
 
 		foreach (var property in type.GetMembers().OfType<IPropertySymbol>())
 		{
+			// A positional record property inherits the attributes of the primary-constructor parameter it is
+			// synthesized from, so the analyzer resolves the same effective set the generator validates with.
+			var validationAttributes = SourceGenLibrary.GetValidationAttributes(property, context.Compilation);
+
 			if (
 				property.DeclaredAccessibility != Accessibility.Public
 				|| property.IsStatic
 				|| property.IsIndexer
-				|| !TypeHelpers.HasDataAnnotationAttribute(property)
+				|| !TypeHelpers.HasDataAnnotationAttribute(validationAttributes)
 			)
 			{
 				continue;
 			}
 
-			var propertyResult = SourceGenLibrary.GetValidatablePropertyDescriptor(property, externalSchemas);
+			var propertyResult = SourceGenLibrary.GetValidatablePropertyDescriptor(
+				property,
+				externalSchemas,
+				context.Compilation
+			);
 			foreach (var diagnosticInfo in propertyResult.Diagnostics)
 			{
 				var diagnostic = diagnosticInfo.ToDiagnostic();
@@ -393,7 +401,13 @@ public sealed class ZodSchemaAnalyzer : DiagnosticAnalyzer
 			if (property.DeclaredAccessibility != Accessibility.Public || property.IsStatic || property.IsIndexer)
 				continue;
 
-			ReportRuleAttributes(context, property.GetAttributes(), type.Name);
+			// A positional record property inherits the attributes of the primary-constructor parameter it is
+			// synthesized from, so the same effective set the generator validates with is reported here.
+			ReportRuleAttributes(
+				context,
+				SourceGenLibrary.GetValidationAttributes(property, context.Compilation),
+				type.Name
+			);
 		}
 	}
 

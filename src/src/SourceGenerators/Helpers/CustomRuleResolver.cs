@@ -45,11 +45,27 @@ static class CustomRuleResolver
 		ISymbol symbol,
 		ITypeSymbol ruleTargetType,
 		ImmutableArray<ReportableDiagnostic>.Builder diagnostics
+	) => Resolve(symbol.GetAttributes(), ruleTargetType, diagnostics);
+
+	/// <summary>
+	/// Resolves the custom rules declared by <paramref name="attributes"/>. The attributes are supplied by the
+	/// caller rather than read from a symbol so a positional record property can contribute the attributes of
+	/// the primary-constructor parameter it is synthesized from, which the compiler does not copy onto the
+	/// property when the attribute is valid on both targets.
+	/// </summary>
+	/// <param name="attributes">The validation attributes to resolve.</param>
+	/// <param name="ruleTargetType">The type the rules are applied to.</param>
+	/// <param name="diagnostics">The diagnostics a failed resolution reports into.</param>
+	/// <returns>The resolved rule descriptors.</returns>
+	public static EquatableArray<CustomRuleDescriptor> Resolve(
+		ImmutableArray<AttributeData> attributes,
+		ITypeSymbol ruleTargetType,
+		ImmutableArray<ReportableDiagnostic>.Builder diagnostics
 	)
 	{
 		ImmutableArray<CustomRuleDescriptor>.Builder? builder = null;
 
-		foreach (var attribute in symbol.GetAttributes())
+		foreach (var attribute in attributes)
 		{
 			if (attribute.AttributeClass is not INamedTypeSymbol attributeClass)
 				continue;
