@@ -208,11 +208,38 @@ public class NonSentinelRuleTests
 		var expected = string.Format(
 			CultureInfo.CurrentCulture,
 			CompositeFormat.Parse(NonSentinelRule<Guid>.MessageFormat),
-			Guid.Empty
+			"an empty GUID"
 		);
 
 		// Assert
 		await Assert.That(message).IsEqualTo(expected);
+		await Assert.That(message).IsEqualTo("Value has a sentinel value, but got an empty GUID");
+	}
+
+	[Test]
+	public async Task GetErrorMessage_GivenEmptyString_DescribesTheSentinel()
+	{
+		// Arrange
+		NonSentinelRule<string> rule = new();
+
+		// Act
+		var message = rule.GetErrorMessage("");
+
+		// Assert
+		await Assert.That(message).IsEqualTo("Value has a sentinel value, but got an empty string");
+	}
+
+	[Test]
+	public async Task GetErrorMessage_GivenDateTimeMinValue_DescribesTheSentinel()
+	{
+		// Arrange
+		NonSentinelRule<DateTime> rule = new();
+
+		// Act
+		var message = rule.GetErrorMessage(DateTime.MinValue);
+
+		// Assert
+		await Assert.That(message).IsEqualTo("Value has a sentinel value, but got DateTime.MinValue");
 	}
 
 	[Test]

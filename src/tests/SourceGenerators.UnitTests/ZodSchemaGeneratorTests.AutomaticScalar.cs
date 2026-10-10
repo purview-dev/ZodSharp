@@ -415,4 +415,147 @@ partial class ZodSchemaGeneratorTests
 
 		await Assert.That((bool)validResult.GetType().GetProperty("IsSuccess")!.GetValue(validResult)!).IsTrue();
 	}
+
+	[Test]
+	public async Task AutomaticScalar_GivenTypeLevelRuleWithoutMessage_NamesTheScalarInTheDefaultMessage(
+		CancellationToken cancellationToken
+	)
+	{
+		// Arrange — the property is declared so the harness can compile the generated schema.
+		const string source =
+			AutomaticScalarPrelude
+			+ """
+				namespace Testing
+				{
+					[Purview.ValueObjects.Serialization.Scalar<Guid>]
+					[NonSentinel]
+					[ZodSchema]
+					public readonly partial record struct TenantId
+						: Purview.ValueObjects.IScalarValueObject<TenantId, Guid>
+					{
+						public Guid Value { get; init; }
+					}
+				}
+				""";
+
+		// Act
+		var driverResult = await GenerateAsync(source, ZodSourceGeneratorTestOptions.NoValidation, cancellationToken);
+		var generated = driverResult.GetSource("TenantIdSchema");
+
+		// Assert — the rule's own default message is reworded to name the scalar, since the error has an
+		// empty path and nothing else identifies it.
+		await Assert
+			.That(generated)
+			.ContainsGeneratedCode(
+				"new global::ZodSharp.Rules.NonSentinelRule<global::System.Guid>(\"TenantId has a sentinel value, but got {0}\", null!)"
+			);
+	}
+
+	[Test]
+	public async Task AutomaticScalar_GivenTypeLevelRuleWithoutMessage_ReportsTheScalarNameAtRuntime(
+		CancellationToken cancellationToken
+	)
+	{
+		// Arrange — the manual `[Scalar]` form with a declared `Value` property, exactly as a consumer writes it.
+		const string source =
+			AutomaticScalarPrelude
+			+ """
+				namespace Testing
+				{
+					[Purview.ValueObjects.Serialization.Scalar]
+					[NonSentinel]
+					[ZodSchema]
+					public readonly partial record struct TenantId
+						: Purview.ValueObjects.IScalarValueObject<TenantId, Guid>
+					{
+						public Guid Value { get; init; }
+					}
+				}
+				""";
+
+		// Act
+		var driverResult = await GenerateAsync(
+			source,
+			new ZodSourceGeneratorTestOptions().Compile(),
+			cancellationToken
+		);
+		var assembly = await Assert.That(driverResult.CompilationResult.Assembly).IsNotNull();
+		var modelType = assembly.GetType("Testing.TenantId")!;
+		var validate = assembly.GetType("Testing.TenantIdSchema")!.GetMethod("Validate")!;
+
+		var emptyResult = validate.Invoke(null, [Activator.CreateInstance(modelType)!])!;
+
+		// Assert
+		await Assert.That((bool)emptyResult.GetType().GetProperty("IsSuccess")!.GetValue(emptyResult)!).IsFalse();
+		var errors = (System.Collections.Immutable.ImmutableArray<Core.ValidationError>)
+			emptyResult.GetType().GetProperty("Errors")!.GetValue(emptyResult)!;
+		await Assert.That(errors).HasSingleItem();
+		await Assert.That(errors[0].Message).IsEqualTo("TenantId has a sentinel value, but got an empty GUID");
+		await Assert.That(errors[0].Path.Length).IsEqualTo(0);
+	}
+
+	[Test]
+	public async Task AutomaticScalar_GivenTypeLevelRuleWithMessage_KeepsTheSuppliedMessage(
+		CancellationToken cancellationToken
+	)
+	{
+		// Arrange — an explicit message must never be rewritten.
+		const string source =
+			AutomaticScalarPrelude
+			+ """
+				namespace Testing
+				{
+					[Purview.ValueObjects.Serialization.Scalar<Guid>]
+					[NonSentinel(Message = "TenantId must not be empty.")]
+					[ZodSchema]
+					public readonly partial record struct TenantId
+						: Purview.ValueObjects.IScalarValueObject<TenantId, Guid>
+					{
+						public Guid Value { get; init; }
+					}
+				}
+				""";
+
+		// Act
+		var driverResult = await GenerateAsync(source, ZodSourceGeneratorTestOptions.NoValidation, cancellationToken);
+		var generated = driverResult.GetSource("TenantIdSchema");
+
+		// Assert
+		await Assert
+			.That(generated)
+			.ContainsGeneratedCode(
+				"new global::ZodSharp.Rules.NonSentinelRule<global::System.Guid>(\"TenantId must not be empty.\", null!)"
+			);
+	}
+
+	[Test]
+	public async Task PropertyRule_GivenRuleWithoutMessage_KeepsTheGenericSubject(CancellationToken cancellationToken)
+	{
+		// Arrange — a rule on a member reports the member through the error path, so the rule's own default
+		// message is left untouched.
+		const string source = """
+			using System;
+			using ZodSharp;
+			using ZodSharp.Rules;
+
+			namespace Testing
+			{
+				[ZodSchema]
+				public partial class Tenant
+				{
+					[NonSentinel]
+					public Guid TenantId { get; set; }
+				}
+			}
+			""";
+
+		// Act
+		var driverResult = await GenerateAsync(source, ZodSourceGeneratorTestOptions.NoValidation, cancellationToken);
+		var generated = driverResult.GetSource("TenantSchema");
+
+		// Assert
+		await Assert
+			.That(generated)
+			.ContainsGeneratedCode("new global::ZodSharp.Rules.NonSentinelRule<global::System.Guid>(null!, null!)");
+	}
 }

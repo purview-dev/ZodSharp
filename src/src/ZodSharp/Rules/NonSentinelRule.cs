@@ -32,8 +32,8 @@ public readonly record struct NonSentinelRule<T> : Core.IValidationRule<T>, Core
 	/// <summary>Gets the error code reported when the rule fails.</summary>
 	public const string ErrorCode = "invalid_value";
 
-	/// <summary>Gets the message format; <c>{0}</c> is the offending value.</summary>
-	public const string MessageFormat = "Value is a sentinel value, but got {0}";
+	/// <summary>Gets the message format; <c>{0}</c> is a description of the offending sentinel value.</summary>
+	public const string MessageFormat = "Value has a sentinel value, but got {0}";
 
 	readonly string _message;
 
@@ -60,7 +60,8 @@ public readonly record struct NonSentinelRule<T> : Core.IValidationRule<T>, Core
 	/// </summary>
 	/// <param name="value">The value that failed validation</param>
 	/// <returns>The error message</returns>
-	public string GetErrorMessage(in T value) => RuleMessage.Format(_message ?? MessageFormat, value);
+	public string GetErrorMessage(in T value) =>
+		RuleMessage.Format(_message ?? MessageFormat, SentinelValues<T>.Describe(value));
 
 	/// <summary>Gets the error code reported when the rule fails.</summary>
 	public string Code => field.Or(ErrorCode);
@@ -119,4 +120,65 @@ static class SentinelValues<T>
 
 		return false;
 	}
+
+	/// <summary>
+	/// Describes the sentinel <paramref name="value"/> represents, for use in an error message (for example
+	/// <c>"an empty GUID"</c>). A value that is not a known sentinel is described by its own string
+	/// representation.
+	/// </summary>
+	/// <param name="value">The value to describe.</param>
+	/// <returns>A human-readable description of the value.</returns>
+	public static string Describe(in T value)
+	{
+		if (typeof(T) == typeof(Guid))
+			return Unsafe.As<T, Guid>(ref Unsafe.AsRef(in value)) == Guid.Empty ? "an empty GUID" : Raw(in value);
+
+		if (typeof(T) == typeof(DateTime))
+		{
+			var typed = Unsafe.As<T, DateTime>(ref Unsafe.AsRef(in value));
+			return typed == DateTime.MinValue ? "DateTime.MinValue"
+				: typed == DateTime.MaxValue ? "DateTime.MaxValue"
+				: Raw(in value);
+		}
+
+		if (typeof(T) == typeof(DateTimeOffset))
+		{
+			var typed = Unsafe.As<T, DateTimeOffset>(ref Unsafe.AsRef(in value));
+			return typed == DateTimeOffset.MinValue ? "DateTimeOffset.MinValue"
+				: typed == DateTimeOffset.MaxValue ? "DateTimeOffset.MaxValue"
+				: Raw(in value);
+		}
+
+		if (typeof(T) == typeof(DateOnly))
+		{
+			var typed = Unsafe.As<T, DateOnly>(ref Unsafe.AsRef(in value));
+			return typed == DateOnly.MinValue ? "DateOnly.MinValue"
+				: typed == DateOnly.MaxValue ? "DateOnly.MaxValue"
+				: Raw(in value);
+		}
+
+		if (typeof(T) == typeof(TimeOnly))
+		{
+			var typed = Unsafe.As<T, TimeOnly>(ref Unsafe.AsRef(in value));
+			return typed == TimeOnly.MinValue ? "TimeOnly.MinValue"
+				: typed == TimeOnly.MaxValue ? "TimeOnly.MaxValue"
+				: Raw(in value);
+		}
+
+		if (typeof(T) == typeof(string))
+		{
+			var typed = Unsafe.As<T, string?>(ref Unsafe.AsRef(in value));
+			return typed switch
+			{
+				null => "null",
+				{ Length: 0 } => "an empty string",
+				_ when string.IsNullOrWhiteSpace(typed) => "whitespace",
+				_ => typed,
+			};
+		}
+
+		return Raw(in value);
+	}
+
+	static string Raw(in T value) => value?.ToString() ?? "null";
 }

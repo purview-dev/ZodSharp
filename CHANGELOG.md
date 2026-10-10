@@ -30,8 +30,18 @@ been published to NuGet.
   keeps it, and `message`/`code`/`origin` remain properties. Attribute usages for required values become
   positional — `[MinValue(3)]`, `[Regex("^[a-z]+$")]`. Usages that previously set a required value by property
   name no longer compile.
+- **`NonSentinelRule<T>.MessageFormat` reworded and the `{0}` argument now describes the sentinel.** The format
+  is now `Value has a sentinel value, but got {0}`, and `{0}` is a description (`an empty GUID`,
+  `DateTime.MinValue`, `an empty string`, …) instead of the raw value. Code or tests that assert against the old
+  string must be updated.
 
 ### Added
+
+- **A type-level rule on a `[Scalar]` type now names the scalar in its default message.** Because a scalar's
+  error reports an empty path, the generator replaces the leading subject word `Value` in the resolved rule's
+  `MessageFormat` with the scalar's name, so `[NonSentinel]` on `[Scalar] TenantId` reports
+  `TenantId has a sentinel value, but got an empty GUID`. A rule whose format does not contain `Value`, and any
+  explicit `message`/`ErrorMessage`, are left unchanged.
 
 - **Native C# 15 union support.** `Z.NativeUnion` and `ZodTypedNativeUnion` return a native union on `net11.0`,
   giving allocation-free, exhaustively pattern-matchable options. `ZODSGEN041` suggests it where a typed union's

@@ -178,7 +178,7 @@ static partial class SourceGenLibrary
 			// rather than a property, which is what makes a scalar value object validatable as a unit. The
 			// generator only needs the descriptors: ZodSchemaAnalyzer resolves the same attributes and
 			// reports the diagnostics, so a dropped rule is visible in the build instead of failing silently.
-			var typeRules = CustomRuleResolver.Resolve(symbol, symbol);
+			var typeRules = CustomRuleResolver.Resolve(symbol, symbol, isTypeLevel: true);
 			var accessibility = symbol.ContainingType is null
 				? symbol.DeclaredAccessibility == Accessibility.Public
 					? TypeDeclarationAccessibility.Public

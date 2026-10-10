@@ -177,6 +177,8 @@ The reported message is resolved in this order:
 
 `MessageFormat` is therefore the fallback, not the only message.
 
+When the fallback is used by a **type-level** rule on a scalar, the generator rewords it: the leading subject word `Value` in `MessageFormat` is replaced with the scalar's name, so the error still identifies its owner even though it reports an empty path. A rule whose `MessageFormat` does not contain `Value` (for example `"Number must be even, but got {0}"`) is left unchanged, and an explicit `message`/`ErrorMessage` is never rewritten. This is why `NonSentinelRule<T>` reports `TenantId has a sentinel value, but got an empty GUID` for `[NonSentinel]` on a `[Scalar] TenantId`, but `Value has a sentinel value, but got an empty GUID` for a member or the fluent API.
+
 ### Rule against the value object
 
 Define one generic rule per underlying primitive, close it over the scalar, and implement `IZodRule` so each scalar keeps its own code:
@@ -309,10 +311,16 @@ var adaptedError = TenantIdSchema.Validate(default).Errors[0];
 await Assert.That(adaptedError.Code).IsEqualTo(NonSentinelRule<Guid>.ErrorCode); // "invalid_value"
 await Assert.That(adaptedError.Message).IsEqualTo("TenantId must not be empty."); // attribute override
 
-// With no Message override, the rule's MessageFormat is the message:
+// With no Message override, the rule's MessageFormat is the message. When the rule runs at the type
+// level of a scalar, the subject ("Value") is replaced with the scalar's name and the sentinel is
+// described rather than printed raw:
+await Assert.That(TenantIdSchema.Validate(default).Errors[0].Message)
+    .IsEqualTo("TenantId has a sentinel value, but got an empty GUID");
+
+// Anywhere else (a member, or the fluent API), the generic subject is kept:
 await Assert.That(
-    string.Format(CultureInfo.CurrentCulture, NonSentinelRule<Guid>.MessageFormat, Guid.Empty))
-    .IsEqualTo("Value is a sentinel value, but got 00000000-0000-0000-0000-000000000000");
+    string.Format(CultureInfo.CurrentCulture, NonSentinelRule<Guid>.MessageFormat, "an empty GUID"))
+    .IsEqualTo("Value has a sentinel value, but got an empty GUID");
 ```
 
 ## Diagnostics and troubleshooting

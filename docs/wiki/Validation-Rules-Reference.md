@@ -177,10 +177,10 @@ Behaviour notes:
 
 | Rule | Constructor | Fluent method | Code | Message format |
 |---|---|---|---|---|
-| `NonSentinelRule<T>` | `(string? message)` | `NonSentinel()` | `invalid_value` | `Value is a sentinel value, but got {0}` |
+| `NonSentinelRule<T>` | `(string? message)` | `NonSentinel()` | `invalid_value` | `Value has a sentinel value, but got {0}` |
 | `NullOrNonWhiteSpaceRule` | `(string? message, string? code)` | — | `invalid_string` | `Value must be null or non-whitespace, but got '{0}'` |
 
-`NonSentinelRule<T>` rejects the framework default/boundary values an ORM commonly stores to mean "no value": `Guid.Empty`; `DateTime`, `DateTimeOffset`, `DateOnly`, and `TimeOnly` `MinValue`/`MaxValue`; and `null`/empty/whitespace strings. Types without a known sentinel always pass, so the rule never rejects a type it does not understand. It detects sentinels with a `typeof(T)` dispatch and reinterprets the value in place, so no boxing occurs.
+`NonSentinelRule<T>` rejects the framework default/boundary values an ORM commonly stores to mean "no value": `Guid.Empty`; `DateTime`, `DateTimeOffset`, `DateOnly`, and `TimeOnly` `MinValue`/`MaxValue`; and `null`/empty/whitespace strings. Types without a known sentinel always pass, so the rule never rejects a type it does not understand. It detects sentinels with a `typeof(T)` dispatch and reinterprets the value in place, so no boxing occurs. The `{0}` argument is a **description** of the sentinel (`an empty GUID`, `DateTime.MinValue`, `an empty string`, …) rather than the raw value, and a type-level `[NonSentinel]` on a `[Scalar]` type replaces the message's `Value` subject with the scalar's name — see [Value Objects Integration](Value-Objects-Integration.md#message-overrides).
 
 `NullOrNonWhiteSpaceRule` is the null-tolerant counterpart: it accepts `null` but rejects an empty or whitespace-only string. It exists for nullable scalar value objects, which round-trip JSON `null`, so their schema must accept `null` while still rejecting whitespace — `[RequiredZod]` always rejects `null` and so cannot express it. Apply it to a nullable scalar type with `[NullOrNonWhiteSpace]`; a rule written against the underlying `string?` value is adapted to the value object automatically.
 
